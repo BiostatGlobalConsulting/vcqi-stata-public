@@ -1,2 +1,4 @@
-# vcqi-stata-public
+# vcqi-public
 Vaccination Coverage Quality Indicators (VCQI)
+
+This is the public repository for VCQI, an open source group of Stata programs meant to analyze data from vaccination coverage surveys.  VCQI conducts analyses that are consistent with recent guidance from the World Health Organization (WHO) in the [2015 draft version of the Vaccination Coverage Cluster Survey Reference Manual](http://www.who.int/immunization/monitoring_surveillance/Vaccination_coverage_cluster_survey_with_annexes.pdf?ua=1).  VCQI documentation is included as part of the distribution.  A [VCQI User's Group](http://www.technet-21.org/en/network/groups/293-vcqi) is hosted on the [TechNet-21](http://www.technet-21.org/en/) website.  The user's group includes a forum for discussion and links to tutorial materials.  Users are welcome to submit issues to this repository, but the main thread for discussing VCQI development plans will be in the user's group forum.

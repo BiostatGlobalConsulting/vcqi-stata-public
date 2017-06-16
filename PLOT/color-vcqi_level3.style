@@ -1,0 +1,5 @@
+*! version 1.0
+sequence 8999
+label "VCQI Blue 2 (mid)"
+
+set rgb "158 202 225"

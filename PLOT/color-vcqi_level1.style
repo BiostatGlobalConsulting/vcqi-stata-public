@@ -1,0 +1,5 @@
+*! version 1.0
+sequence 9000
+label "VCQI Blue 3 (dark)"
+
+set rgb "49 130 189"

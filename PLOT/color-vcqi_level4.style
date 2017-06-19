@@ -1,0 +1,4 @@
+*! version 1.0
+label "VCQI Blue 3 (light)"
+
+set rgb "222 235 247"

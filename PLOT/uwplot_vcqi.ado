@@ -227,7 +227,7 @@ program define uwplot_vcqi
 	
 	gen shadeclipx = .
 	gen shadeclipy = `bign' + 0.75 if _n < 3
-	replace shadeclipx = 100 in 1
+	replace shadeclipx = 103 in 1
 	set obs `=max(_N,2)'
 	replace shadeclipx = `xrangemax' in 2
 	

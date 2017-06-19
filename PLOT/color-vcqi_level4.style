@@ -1,5 +1,4 @@
-*! version 1.00  2017-05-26
+*! version 1.0
+label "VCQI Blue 3 (light)"
 
-set rgb "255 255 255"
-
-
+set rgb "222 235 247"

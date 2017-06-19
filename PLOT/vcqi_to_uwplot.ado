@@ -149,10 +149,11 @@ program define vcqi_to_uwplot
 	forvalues i = 1/3 {
 		replace param6 = "vcqi_level`i'" if level == `i'
 	}
-	replace param6 = "vcqi_level4" if !missing(level4id)
+	replace param6 = "vcqi_outline" if !missing(level4id)
 
 	gen shadebehind = "gs15" if level == 1 & (`show2' + `show3' > 0)
-	gen outline = !missing(level4id)
+	gen outline = !missing(level4id) // If you want the level 4 shapes to have white centers
+	
 
 	gen rowname = name
 	
@@ -170,6 +171,9 @@ program define vcqi_to_uwplot
 		
 	unweighted_plotit, filetag(`filetag') show1(`show1') show2(`show2') show3(`show3') ///
 	        show4(`show4') `pass_thru_options' name(`name')
+			
+	if $DELETE_TEMP_VCQI_DATASETS == 1 capture erase "Plots_IW_UW/uwplot_params_`filetag'_`show1'`show2'`show3'`show4'.dta"
+
 			
 	* Make plot for every level 2 stratum, if requested
 
@@ -197,12 +201,14 @@ program define vcqi_to_uwplot
 					show4(`show4') `pass_thru_options' name(`name'_l2_`l2l'_`l2name_`l2l'')
 				
 			vcqi_log_comment $VCP 3 Comment "Unweighted proportion plot was created and exported."
+			
+			if $DELETE_TEMP_VCQI_DATASETS == 1 capture erase "Plots_IW_UW/uwplot_params_`filetag'_l2_`l2l'_`show1'`show2'`show3'`show4'.dta"
 		
 			graph drop _all
 		}
 	}
 	
-	if $DELETE_TEMP_VCQI_DATASETS == 1 capture erase "Plots_IW_UW/uwplot_params_base"
+	if $DELETE_TEMP_VCQI_DATASETS == 1 capture erase "Plots_IW_UW/uwplot_params_base.dta"
 	
 	vcqi_log_comment $VCP 5 Flow "Exiting"
 	global VCP `oldvcp'

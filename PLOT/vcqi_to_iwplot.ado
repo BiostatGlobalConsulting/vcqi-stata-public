@@ -169,8 +169,7 @@ program define vcqi_to_iwplot
 	forvalues i = 1/3 {
 		replace areacolor = "vcqi_level`i'" if level == `i'
 	}
-	replace areacolor = "white" if !missing(level4id)
-	replace areacolor = "gs15"  if !missing(level4id) & level == 1
+	replace areacolor = "vcqi_level4" if !missing(level4id)
 
 	gen markvalue = .
 	gen clip = 95
@@ -301,6 +300,6 @@ program define inchworm_plotit
 		name(`=substr("`name'",1,min(32,length("`name'")))', replace) `saving' `clean' `export' 		
 		
 	if $DELETE_TEMP_VCQI_DATASETS == 1 capture erase "Plots_IW_UW/iwplot_params_`filetag'_`show1'`show2'`show3'`show4'.dta"
-		
+	if $DELETE_TEMP_VCQI_DATASETS == 1 capture erase "Plots_IW_UW/iwplot_params_base.dta"	
 end
 

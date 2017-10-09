@@ -1,4 +1,4 @@
-*! make_tables_from_svyp_output version 1.05 - Biostat Global Consulting - 2016-03-10
+*! make_tables_from_svyp_output version 1.08 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -14,10 +14,12 @@
 * 2017-01-30	1.06	Dale Rhoda		Small formatting changes to implement
 *										VCQI_LEVEL4_SET_VARLIST & VCQI_LEVEL4_SET_LAYOUT
 * 2017-05-16	1.07	Dale Rhoda		Allow user to put stderr in the table
+* 2017-08-26	1.08	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define make_tables_from_svyp_output
-
+	version 14.1
+	
 	syntax  , VARiables(string) ESTLABel(string asis) ///
 	          VID(string) MEASureid(string) SHEET(string)
 				

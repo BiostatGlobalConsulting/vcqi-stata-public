@@ -1,4 +1,4 @@
-*! COVG_DIFF_02_04GO version 1.03 - Biostat Global Consulting - 2017-01-09
+*! COVG_DIFF_02_04GO version 1.04 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -10,9 +10,11 @@
 * 2016-09-21	1.02	Dale Rhoda		Restrict observations to appropriate 
 *										level in svy tab statement
 * 2017-01-09	1.03	Dale Rhoda		Switch from svyp to svypd
+* 2017-08-26	1.04	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
-program COVG_DIFF_02_04GO
+program define COVG_DIFF_02_04GO
+	version 14.1
 
 	local oldvcp $VCP
 	global VCP COVG_DIFF_02_04GO

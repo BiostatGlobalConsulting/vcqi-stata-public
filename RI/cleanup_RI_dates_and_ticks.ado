@@ -1,4 +1,4 @@
-*! cleanup_RI_dates_and_ticks v 1.10  Biostat Global Consulting 2017-05-12
+*! cleanup_RI_dates_and_ticks version 1.11 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -25,6 +25,7 @@
 *
 * 2017-05-12	1.10	Dale Rhoda		Fixed a typo
 *
+* 2017-08-26	1.11	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 * This program accomplishes several things:
@@ -55,10 +56,10 @@
 *
 * The dataset that comes from this program will need unique IDs and then it 
 * should have everything needed to calculate the RI analyses.
-*   
 
 program define cleanup_RI_dates_and_ticks
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP cleanup_RI_dates_and_ticks
 	vcqi_log_comment $VCP 5 Flow "Starting"

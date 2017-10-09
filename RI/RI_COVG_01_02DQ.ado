@@ -1,14 +1,16 @@
-*! RI_COVG_01_02DQ version 1.01 - Biostat Global Consulting- 2016-03-07
+*! RI_COVG_01_02DQ version 1.02 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name			What Changed
 * 2016-03-07	1.01	Dale Rhoda		cleaned up exitflag
+* 2017-08-26	1.02	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_COVG_01_02DQ
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_COVG_01_02DQ
 	vcqi_log_comment $VCP 5 Flow "Starting"

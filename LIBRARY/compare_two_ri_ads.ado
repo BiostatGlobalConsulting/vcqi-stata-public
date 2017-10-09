@@ -1,4 +1,4 @@
-*! compare_two_ri_ads version 1.03 - Biostat Global Consulting - 2017-02-28
+*! compare_two_ri_ads version 1.05 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -17,7 +17,7 @@
 * 										Added footnotes and note about disconcordance after each table
 *										Hard coded Indicator name in cell A1
 * 2017-04-25	1.04	MK Trimner		Added comments about syntax to align with User's guide
-*										
+* 2017-08-26	1.05	Mary Prier		Added version 14.1 line										
 *******************************************************************************
 *
 * This program allows the user to compare the results of two augmented datasets created by the make_RI_augmented_dataset program.
@@ -63,9 +63,9 @@
 *
 ********************************************************************************
 
-capture program drop compare_two_ri_ads
 program define compare_two_ri_ads
-
+	version 14.1
+	
 	syntax , FILE1name(string) FILE2name(string) [OUTPUTpath(string)]
 	
 	set more off

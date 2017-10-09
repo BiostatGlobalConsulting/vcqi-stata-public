@@ -1,4 +1,4 @@
-*! RI_QUAL_03_00GC version 1.01 - Biostat Global Consulting 2015-09-21
+*! RI_QUAL_03_00GC version 1.02 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -6,10 +6,12 @@
 * Date 			number 	Name			What Changed
 * 2016-09-21	1.01	Dale Rhoda		Exit if user specifies dose2 or 3 in 
 *										a multi-dose list
+* 2017-08-26	1.02	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_QUAL_03_00GC
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_QUAL_03_00GC
 	vcqi_log_comment $VCP 5 Flow "Starting"

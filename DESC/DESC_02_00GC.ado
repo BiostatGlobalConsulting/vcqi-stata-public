@@ -1,4 +1,4 @@
-*! DESC_02_00GC version 1.03 - Biostat Global Consulting 2016-10-19
+*! DESC_02_00GC version 1.04 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -9,10 +9,12 @@
 *                                       from warning to comment
 * 2016-10-19	1.03	Dale Rhoda		Improved logic for warnings on 
 *										MISSING_LEVELS and SUBTOTALS
+* 2017-08-26	1.04	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define DESC_02_00GC
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP DESC_02_00GC
 	vcqi_log_comment $VCP 5 Flow "Starting"

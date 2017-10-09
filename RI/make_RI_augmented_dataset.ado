@@ -1,4 +1,4 @@
-*! make_RI_augmented_dataset version 1.05 - Biostat Global Consulting - 2017-02-28
+*! make_RI_augmented_dataset version 1.08 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -13,7 +13,12 @@
 *										augmented dataset
 * 2017-02-28	1.04	MK Trimner		Added code to account for if there is no RICH dataset
 * 2017-04-25	1.05	MK Trimner		Added comments about syntax to align with User's guide
+* 2017-07-19	1.06	MK Trimner		Added code to allow for dups to be spelled with an "e"- noidenticaldupes
+* 2017-08-22	1.07	Dale Rhoda		Removed VCQI billboard at end of run
+*										(because we usually run this within VCQI)
+* 2017-08-26	1.08	Mary Prier		Added version 14.1 line
 *******************************************************************************
+
 * This program creates one RI dataset containing the original RI dataset provided in VCQI 
 * And all RI Indicator datasets found in the OUTPUTPATH. 
 
@@ -62,12 +67,17 @@
 ********************************************************************************
 
 program define make_RI_augmented_dataset
-
-	syntax  , [ OUTPUTpath(string asis) ANALYSIScounter(integer 5) noidenticaldups noerase]
+	version 14.1
+	
+	syntax  , [ OUTPUTpath(string asis) ANALYSIScounter(integer 5) noidenticaldups noidenticaldupes noerase]
 	
 	quietly {
 	
 		set more off
+		
+		* Set local to allow for either spelling of dups
+		if "`identicaldupes'" != "" local identicaldups "noidenticaldups"
+		
 		* This program will be used to take the individual indicator datasets to make 
 		* one large VCQI dataset
 
@@ -366,26 +376,7 @@ program define make_RI_augmented_dataset
 	di "VCQI Augmented Dataset was saved as RI_augmented_dataset.dta".
 
 	di ""
-	di ""
 
-	di "========================================="
-	di " VACCINATION COVERAGE QUALITY INDICATORS "
-	di "========================================="
-	di "                                         "
-	di "  VVV   VVV    CCCCC    QQQ    IIIIIII   "
-	di "   VV   VV    CC       QQ QQ     III     "
-	di "    VV VV    CC       QQ   QQ    III     "
-	di "     VVV      CC       QQ QQ     III     "
-	di "      V        CCCCC    QQQ Q  IIIIIII   "
-	di "                                         " 
-	di "=========================================" 
-	di "     (C) WORLD HEALTH ORGANIZATION       " 
-	di "========================================="
-
-	di ""
-	di ""
-	
-	
 
 end
 	

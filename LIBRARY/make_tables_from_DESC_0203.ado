@@ -1,4 +1,4 @@
-*! make_tables_from_DESC_0203 version 1.05 - Biostat Global Consulting - 2017-03-26
+*! make_tables_from_DESC_0203 version 1.06 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -20,10 +20,12 @@
 *										a) put sub-total BEFORE a variable or response
 *										b) put sub-total AFTER  a variable or response
 *										c) show sub-totals only
+* 2017-08-26	1.06	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define make_tables_from_DESC_0203
-
+	version 14.1
+	
 	syntax ,  VID(string) MEASureid(string) SHEET(string)
 				
 	local oldvcp $VCP

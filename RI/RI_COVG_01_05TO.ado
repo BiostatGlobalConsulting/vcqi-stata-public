@@ -1,5 +1,4 @@
-*! RI_COVG_01_05TO version 1.04 - Biostat Global Consulting - 2016-09-15
-*
+*! RI_COVG_01_05TO version 1.05 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -9,10 +8,12 @@
 * 2016-03-08	1.02	Dale Rhoda		Move titles & footnotes to control pgm
 * 2016-06-06	1.03	Dale Rhoda		Added card or register
 * 2016-09-15	1.04	Dale Rhoda		Added BCG scar
+* 2017-08-26	1.05	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_COVG_01_05TO
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_COVG_01_05TO
 	vcqi_log_comment $VCP 5 Flow "Starting"

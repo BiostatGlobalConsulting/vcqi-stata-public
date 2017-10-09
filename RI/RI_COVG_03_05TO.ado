@@ -1,5 +1,4 @@
-*! RI_COVG_03_05TO version 1.03 - Biostat Global Consulting - 2017-01-09
-*
+*! RI_COVG_03_05TO version 1.04 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -9,10 +8,12 @@
 * 2016-03-08	1.02	Dale Rhoda		Move titles & footnotes to control pgm
 * 2017-01-09	1.03	Dale Rhoda		Skip valid dose calculations if none
 *										of the respondents have complete DOB
+* 2017-08-26	1.04	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_COVG_03_05TO
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_COVG_03_05TO
 	vcqi_log_comment $VCP 5 Flow "Starting"

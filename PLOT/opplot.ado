@@ -1,4 +1,4 @@
-*! opplot version 1.05 - Biostat Global Consulting - 2016-09-10
+*! opplot version 1.06 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -25,6 +25,7 @@
 *
 * 2016-09-10	1.05	Dale Rhoda		Improve option to save plotting dataset
 *
+* 2017-08-26	1.06	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 *******************************************************************************
@@ -52,7 +53,8 @@
 *******************************************************************************
 
 program define opplot
-
+	version 14.1
+	
 	syntax varlist(max=1) [if] [in], CLUSTVAR(varname fv) ///
 	[STRATVAR(varname fv) STRATUM(string) WEIGHTvar(varname) ///
 	 TITLE(string) SUBtitle(string) FOOTnote(string) ///

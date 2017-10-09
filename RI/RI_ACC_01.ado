@@ -1,14 +1,16 @@
-*! RI_ACC_01 version 1.01 - Biostat Global Consulting - 2017-02-02
+*! RI_ACC_01 version 1.02 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name			What Changed
 * 2017-02-02	1.01	Dale Rhoda		Cosmetic changes
+* 2017-08-26	1.02	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_ACC_01
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_ACC_01
 	vcqi_log_comment $VCP 5 Flow "Starting"

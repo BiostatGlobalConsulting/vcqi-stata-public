@@ -1,4 +1,4 @@
-*! RI_COVG_05_03DV version 1.02 - Biostat Global Consulting - 2017-01-31
+*! RI_COVG_05_03DV version 1.03 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -8,10 +8,12 @@
 *										fixed percent when count == 0
 * 2017-01-31	1.02	Dale Rhoda		Check global to see whether to save
 *										database or not
+* 2017-08-26	1.03	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_COVG_05_03DV
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_COVG_05_03DV
 	vcqi_log_comment $VCP 5 Flow "Starting"

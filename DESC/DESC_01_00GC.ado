@@ -1,7 +1,15 @@
-*! DESC_01_00GC version 1.00 - Biostat Global Consulting 2015-11-12
+*! DESC_01_00GC version 1.01 - Biostat Global Consulting - 2017-08-26
+*******************************************************************************
+* Change log
+* 				Updated
+*				version
+* Date 			number 	Name			What Changed
+* 2017-08-26	1.01	Mary Prier		Added version 14.1 line
+*******************************************************************************
 
 program define DESC_01_00GC
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP DESC_01_00GC
 	vcqi_log_comment $VCP 5 Flow "Starting"

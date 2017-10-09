@@ -1,4 +1,4 @@
-*! SIA_QUAL_01_06PO version 1.04 - Biostat Global Consulting - 2017-01-31
+*! SIA_QUAL_01_06PO version 1.05 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -8,10 +8,12 @@
 * 2016-04-04	1.02	Dale Rhoda		Add leading 0 to stratum ID for export
 * 2016-09-08	1.03	Dale Rhoda		Add VCQI_MAKE_XX_PLOTS macros
 * 2017-01-31	1.04	Dale Rhoda		Fixed a typo
+* 2017-08-26	1.05	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define SIA_QUAL_01_06PO
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP SIA_QUAL_01_06PO
 	vcqi_log_comment $VCP 5 Flow "Starting"

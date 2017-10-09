@@ -1,4 +1,4 @@
-*! DESC_03_00GC version 1.05 - Biostat Global Consulting 2017-03-26
+*! DESC_03_00GC version 1.06 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -14,10 +14,12 @@
 *										a) put sub-total BEFORE a variable or response
 *										b) put sub-total AFTER  a variable or response
 *										c) show sub-totals only
+* 2017-08-26	1.06	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define DESC_03_00GC
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP DESC_03_00GC
 	vcqi_log_comment $VCP 5 Flow "Starting"

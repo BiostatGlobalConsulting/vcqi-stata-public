@@ -1,4 +1,4 @@
-*! RI_COVG_03_03DV version 1.00 - Biostat Global Consulting - 2015-03-09
+*! RI_COVG_03_03DV version 1.02 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -7,9 +7,12 @@
 * 
 * 2017-01-09	1.01	Dale Rhoda		Skip valid dose calculations if none
 *										of the respondents have complete DOB
+* 2017-08-26	1.02	Mary Prier		Added version 14.1 line
 *******************************************************************************
-program define RI_COVG_03_03DV
 
+program define RI_COVG_03_03DV
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_COVG_03_03DV
 	vcqi_log_comment $VCP 5 Flow "Starting"

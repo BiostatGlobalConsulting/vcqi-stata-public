@@ -1,4 +1,4 @@
-*! iwplot_svyp version 1.21 - Biostat Global Consulting - 2016-06-14
+*! iwplot_svyp version 1.23 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -110,6 +110,11 @@
 *										measures with citext and with row
 *										label and text at right
 *
+*	2017-08-21	1.22	Dale Rhoda		Put the shaded rows BEHIND vertical 
+*										and horizontal lines and stripped
+*										.0 from 100.0 in cistring
+*										
+* 2017-08-26	1.23	Mary Prier		Added version 14.1 line
 *********************************************************************************
 * All datasets which are called into this program should be stored in 
 * the working directory; the plot will also be saved in the working directory
@@ -273,9 +278,9 @@
 *                  keep working directory clean, recommended option
 ********************************************************************************
 
-capture program drop iwplot_svyp
 program define iwplot_svyp
-	version 14.0
+	version 14.1
+	
 	syntax, 					///
 		INPUTdata(string) [		///
 		NL(integer 50) 			///
@@ -853,6 +858,8 @@ program define iwplot_svyp
 				quietly `svyset`i''
 				local ifi `if`i''
 				
+				qui count `ifi'
+				if r(N) == 0 continue
 				local call_svyp qui svypd `y' `ifi', method(`method`i'') adjust truncate 
 				
 			}
@@ -1095,7 +1102,7 @@ program define iwplot_svyp
 		
 		tempfile tempfile1 
 		save `tempfile1', replace
-				
+		
 		* distribution number (dn)
 		gen dn = _n
 		
@@ -1106,6 +1113,9 @@ program define iwplot_svyp
 		}			
 
 		* go from wide dataset to long
+		drop if    p == .
+		drop if ssx1 == .
+		
 		reshape long ssx ssy sbx sby, i(dn) j(j)
 		
 		* calculate scaling factor to give  equal area
@@ -1263,12 +1273,15 @@ program define iwplot_svyp
 		gen ub_str3 = "100"
 		
 		gen cistring0 = ""
+		
+		gen pstring = strtrim(string(p, "%4.1f"))
+		replace pstring = "100" if pstring == "100.0"
 
 		*   cistring1 contains lower 95% confidence bound (LCB), p, and 95% upper confidence bound
-		gen cistring1 =  strtrim(lb_str3) + " | " + strtrim(string(p, "%4.1f")) + " | " + ub_str2 
+		gen cistring1 =  strtrim(lb_str3) + " | " + pstring + " | " + ub_str2 
 
 		*   cistring2 contains p, (95%CI)
-		gen cistring2 =  strtrim(string(p, "%4.1f")) + " (" + lb_str1 + "," + ub_str1 + ")"
+		gen cistring2 =  pstring + " (" + lb_str1 + "," + ub_str1 + ")"
 
 		*   cistring3 contains p, (0, 95% UCB]
 		gen cistring3 = strtrim(cistring2) + " (" + lb_str2 + "," + ub_str2 + "]" 
@@ -1278,6 +1291,17 @@ program define iwplot_svyp
 
 		*   cistring5 contains p, 95% CI, (95% LCB, 100] [0, 95% UCB)
 		gen cistring5 = strtrim(cistring2) + " [" + lb_str3 + "," + ub_str3 + ")" + " (" + lb_str2 + "," + ub_str2 + "]" 
+		
+		*   cistring6 contains 2sided-95%-lower-limit - p - 2sided-95%-upper-limit  N=N
+		*   (where N is ESS for ESS and N for DATASET)
+		* 	(and the estimates do not have info after decimal place, per Nigeria 2016 MICS/NICS report protocol)
+		
+		gen cistring6 = string(lb_95pct, "%02.0f") + " - " + string(p, "%02.0f") + " - " + string(ub_95pct, "%02.0f") + "  N= " + string(effss, "%5.0fc")
+		replace cistring6 = " " + cistring6 if lb_95pct < 9.5
+		replace cistring6 = subinstr(cistring6,"N=","N= " ,1) if effss < 1000 & effss > 99
+		replace cistring6 = subinstr(cistring6,"N=","N=  ",1) if effss < 99
+		replace cistring6 = cistring6 + " (*)" if effss < 50 & effss > 25
+		replace cistring6 = cistring6 + " (!)" if effss < 25
 
 		* Clear out the auto-generated cistrings if the user is plotting more 
 		* than one distribution per row - we can't know which distribution to 
@@ -1425,6 +1449,19 @@ program define iwplot_svyp
 		******************************************************************
 		* Plot row names
 		local plotit `plotit' (scatter rownumber p , m(i) c(none)) 
+
+		* syntax to shade behind selected distributions
+		
+		gen yshade = .
+		gen xshade = .
+		forvalues i = 1/`nplotrows' {
+			if "`shadebehind`i''" != "" {
+				replace yshade = `i'+0.45 	if rownumber == `i' & inlist(j,1,2)
+				replace xshade = `xrangemin' 		if rownumber == `i' & j == 1
+				replace xshade = `=min(`xlabelmax',100)'	if rownumber == `i' & j == 2
+				local plotit `plotit' ( area yshade xshade if rownumber == `i', color(`shadebehind`i'') fcolor(`shadebehind`i'') base(`=`i'-0.45') )
+			}
+		}	
 		
 		* Build macros to plot vertical reference lines that the user requested
 		*
@@ -1462,19 +1499,7 @@ program define iwplot_svyp
 			}
 		}		
 			
-		* syntax to shade behind selected distributions
-		gen yshade = .
-		gen xshade = .
-		forvalues i = 1/`nplotrows' {
-			if "`shadebehind`i''" != "" {
-				replace yshade = `i'+0.45 	if rownumber == `i' & inlist(j,1,2)
-				replace xshade = `xrangemin' 		if rownumber == `i' & j == 1
-				replace xshade = `=min(`xlabelmax',100)'	if rownumber == `i' & j == 2
-				local plotit `plotit' ( area yshade xshade if rownumber == `i', color(`shadebehind`i'') fcolor(`shadebehind`i'') base(`=`i'-0.45') )
-			}
-		}	
-								   
-		
+   		
    		* Add custom text that user has requested
 		
 		local textonplotit

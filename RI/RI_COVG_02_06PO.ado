@@ -1,4 +1,4 @@
-*! RI_COVG_02_06PO version 1.08 - Biostat Global Consulting - 2017-05-16
+*! RI_COVG_02_06PO version 1.10 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -15,12 +15,13 @@
 *										given before age 1
 * 2016-05-16	1.08	Dale Rhoda		Tell user how many inchworm plots
 *										will be made
+* 2017-06-06	1.09	MK Trimner		fixed comment under double plot
+* 2017-08-26	1.10	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
-
 program define RI_COVG_02_06PO
-
-	version 14
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_COVG_02_06PO
 	vcqi_log_comment $VCP 5 Flow "Starting"
@@ -137,8 +138,8 @@ program define RI_COVG_02_06PO
 					vcqi_log_comment $VCP 3 Comment "Valid coverage by age 1 inchworm plot was created and exported."
 				}
 				
-				* Double inchworm plot that shows valid coverage in gray and 
-				* valid coverage if no MOVs in color
+				* Double inchworm plot that shows crude coverage in gray and 
+				* valid coverage in color
 				
 				graph drop _all
 

@@ -1,4 +1,4 @@
-*! COVG_DIFF_01_01PP version 1.03 - Biostat Global Consulting - 2016-08-25
+*! COVG_DIFF_01_01PP version 1.04 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -7,9 +7,11 @@
 * 2016-01-18	1.01	Dale Rhoda		Changed to vcqi_global
 * 2016-02-14	1.02	Dale Rhoda		Make list of temp datasets
 * 2016-08-25	1.03	Dale Rhoda		Moved PP steps from GC program to here
+* 2017-08-26	1.04	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
-program COVG_DIFF_01_01PP
+program define COVG_DIFF_01_01PP
+	version 14.1
 
 	local oldvcp $VCP
 	global VCP COVG_DIFF_01_01PP

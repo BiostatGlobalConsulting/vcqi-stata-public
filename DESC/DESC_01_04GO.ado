@@ -1,4 +1,4 @@
-*! DESC_01_04GO version 1.02 - Biostat Global Consulting 2017-01-31
+*! DESC_01_04GO version 1.03 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -7,10 +7,12 @@
 * 2015-12-21	1.01	MK Trimner		Added var name to new variable name: 
 *										label variable name "Survey name for table output"
 * 2017-01-31	1.02	Dale Rhoda		Incorporate VCQI_LEVEL4_SET
+* 2017-08-26	1.03	Mary Prier		Added version 14.1 line
 *******************************************************************************
-*
-program define DESC_01_04GO
 
+program define DESC_01_04GO
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP DESC_01_04GO
 	vcqi_log_comment $VCP 5 Flow "Starting"

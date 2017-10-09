@@ -1,4 +1,4 @@
-*! TT_COVG_01_06PO version 1.06 - Biostat Global Consulting - 2017-05-16
+*! TT_COVG_01_06PO version 1.07 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -12,11 +12,12 @@
 * 2016-09-08	1.05	Dale Rhoda		Add VCQI_MAKE_XX_PLOTS macros
 * 2016-05-16	1.06	Dale Rhoda		Tell user how many inchworm plots
 *										will be made
+* 2017-08-26	1.07	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define TT_COVG_01_06PO
-
-	version 14
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP TT_COVG_01_06PO
 	vcqi_log_comment $VCP 5 Flow "Starting"

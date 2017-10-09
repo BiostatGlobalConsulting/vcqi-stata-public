@@ -1,4 +1,4 @@
-*! TT_COVG_01_03DV version 1.03 - Biostat Global Consulting - 2016-02-17
+*! TT_COVG_01_03DV version 1.04 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -13,11 +13,12 @@
 * 2016-02-17	1.03	MK Trimner		change variable lable on most_recent_dose_c_or_h
 *										changed variable label on most_recent_tt_r_or_h
 *										changed var name on line 102 to most_recent_tt_r_or_h was previously a copy paste error
+* 2017-08-26	1.04	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define TT_COVG_01_03DV
-
-	version 14
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP TT_COVG_01_03DV
 	

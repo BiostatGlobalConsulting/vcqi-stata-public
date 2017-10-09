@@ -107,6 +107,7 @@ The program will calculate 2-sided limits for as many levels as you specify in t
 {pmore3} 6. Jeffreys {p_end}
 {pmore3} 7. Wald {p_end}
 {pmore3} 8. Wilson {p_end}
+{pmore3} 9. Arcsine {p_end}
 
 {pmore} {bf:NOTE} The formulae for calculating most of these limits are described 
 in Dean & Pagano ({help svypd##2015:2015}).  (This command corrects a typographical 

@@ -1,4 +1,4 @@
-*! vcqi_log_comment version 1.04 - Biostat Global Consulting - 2017-01-29
+*! vcqi_log_comment version 1.05 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -8,6 +8,7 @@
 * 2016-02-21    1.02    Mary Prier      In the error message displayed to the screen when checking the fourth argument, the word "third" was changed to "fourth" and the number 1000 was changed to 2000.
 * 2016-03-23	1.03	Dale Rhoda		Add diagnostic output when args have a problem
 * 2017-01-29	1.04	Dale Rhoda		Extend log comment limit to 2045 chars
+* 2017-08-26	1.05	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 * The user provides four inputs, all of which are written as a new row 
@@ -26,10 +27,9 @@
 *
 *   Initial length limits are 50, 50, 50, and 2000 characters.
 
-version 14.0
-
 program define vcqi_log_comment
-
+	version 14.1
+	
 	* Be sure there are four arguments
 	* Add a syntax statement here for more error checking later
 

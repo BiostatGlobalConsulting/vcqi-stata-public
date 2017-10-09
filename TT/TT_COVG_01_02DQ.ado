@@ -1,15 +1,16 @@
-*! TT_COVG_01_02DQ version 1.01 - Biostat Global Consulting - 2017-02-03
+*! TT_COVG_01_02DQ version 1.02 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name			What Changed
 * 2017-02-03	1.01	Dale Rhoda		Cosmetic changes
+* 2017-08-26	1.02	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define TT_COVG_01_02DQ
-
-	version 14
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP TT_COVG_01_02DQ
 	

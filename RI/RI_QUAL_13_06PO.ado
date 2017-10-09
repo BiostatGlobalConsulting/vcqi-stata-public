@@ -1,17 +1,17 @@
-*! RI_QUAL_13_06PO version 1.02 - Biostat Global Consulting - 2016-09-08
+*! RI_QUAL_13_06PO version 1.03 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name			What Changed
+* 2016-02-11	1.01	Dale Rhoda	
 * 2016-09-08	1.02	Dale Rhoda		Add VCQI_MAKE_XX_PLOTS macros
-* 2016-02-11	1.01	Dale Rhoda		
-* 2016-09-08	1.02	Dale Rhoda		Add VCQI_MAKE_XX_PLOTS macros
+* 2017-08-26	1.03	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_QUAL_13_06PO
-
-	version 14
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_QUAL_13_06PO
 	vcqi_log_comment $VCP 5 Flow "Starting"

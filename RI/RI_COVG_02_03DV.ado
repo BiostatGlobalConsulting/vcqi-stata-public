@@ -1,4 +1,4 @@
-*! RI_COVG_02_03DV version 1.06 - Biostat Global Consulting - 2017-02-01
+*! RI_COVG_02_03DV version 1.07 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -33,10 +33,12 @@
 *
 * 2017-01-30	1.05	Dale Rhoda		Fixed a typo in a variable label
 * 2017-02-01	1.06	Dale Rhoda		Edited comment
+* 2017-08-26	1.07	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_COVG_02_03DV
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_COVG_02_03DV
 	vcqi_log_comment $VCP 5 Flow "Starting"

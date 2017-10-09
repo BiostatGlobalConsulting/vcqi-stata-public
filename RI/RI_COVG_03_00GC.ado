@@ -1,16 +1,18 @@
-*! RI_COVG_03_00GC version 1.00 - Biostat Global Consulting 2017-01-27
+*! RI_COVG_03_00GC version 1.01 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name			What Changed
 * 
-* 2017-01-27	1.0		Dale Rhoda		Original version; used for both
+* 2017-01-27	1.00	Dale Rhoda		Original version; used for both
 *										RI_COVG_03 and RI_COVG_04
+* 2017-08-26	1.01	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_COVG_03_00GC
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_COVG_03_00GC
 	vcqi_log_comment $VCP 5 Flow "Starting"

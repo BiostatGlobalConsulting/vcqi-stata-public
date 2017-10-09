@@ -1,4 +1,4 @@
-*! RI_CONT_01_01PP version 1.03 - Biostat Global Consulting - 2017-02-02
+*! RI_CONT_01_01PP version 1.04 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -7,10 +7,12 @@
 * 2016-02-12	1.01	Dale Rhoda		Make list of temp datasets 
 * 2017-01-31	1.02	Dale Rhoda		Added VCQI_LEVEL4_SET_VARLIST
 * 2017-02-02	1.03	Dale Rhoda		Cosmetic changes
+* 2017-08-26	1.04	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_CONT_01_01PP
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_CONT_01_01PP
 	vcqi_log_comment $VCP 5 Flow "Starting"

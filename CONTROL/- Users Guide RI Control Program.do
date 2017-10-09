@@ -7,7 +7,7 @@
 *
 * Written by Biostat Global Consulting
 *
-* Updated 2017-02-15
+* Updated 2017-07-19
 *
 * The user might customize this program by changing items below in the
 * code blocks marked RI-B, RI-D, and RI-F below.  Those blocks are
@@ -41,6 +41,12 @@ global VCQI_OUTPUT_FOLDER   Q:/- Folders shared outside BGC/BGC Team - WHO Softw
 * Establish analysis name (used in log file name and Excel file name)
 
 global VCQI_ANALYSIS_NAME RI_Test
+
+* Set this global to 1 to test all metadata and code that makes
+* datasets and calculates derived variables...without running the
+* indicators or generating output
+
+global	VCQI_CHECK_INSTEAD_OF_RUN		0
 
 ********************************************************************************
 * Code Block: RI-C                                               (Do not change)
@@ -302,17 +308,17 @@ vcqi_global DELETE_VCQI_DATABASES_AT_END	1
 
 vcqi_global DELETE_TEMP_VCQI_DATASETS		1
 
-* Set this global to 1 to test all metadata and code that makes
-* datasets and calculates derived variables...without running the
-* indicators or generating output
-
-vcqi_global	VCQI_CHECK_INSTEAD_OF_RUN		0
-
 * For RI analysis, there is an optional report on data quality
 * Set this global to 1 to generate that report
 * It appears in its own separate Excel spreadsheet
 
 vcqi_global VCQI_REPORT_DATA_QUALITY		0
+
+* Set this global to 1 if you would like to create an augmented dataset
+* that merges survey dataset with derived variables calculated by VCQI.
+* Default value is 0 (no)
+
+vcqi_global VCQI_MAKE_AUGMENTED_DATASET		0
 
 ********************************************************************************
 * Code Block: RI-E                                               (Do not change)
@@ -865,6 +871,10 @@ COVG_DIFF_02
 *                  Exit gracefully
 *-------------------------------------------------------------------------------
 *
+* Make RI augmented dataset for additional anaylsis purposes if user requests it.
+
+if "$VCQI_MAKE_AUGMENTED_DATASET"=="1" make_RI_augmented_dataset, noidenticaldupes
+
 * Close the datasets that hold the results of 
 * hypothesis tests, and put them into the output spreadsheet
 *

@@ -1,4 +1,4 @@
-*! RI_COVG_04_06PO version 1.08 - Biostat Global Consulting - 2017-05-16
+*! RI_COVG_04_06PO version 1.09 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -16,11 +16,12 @@
 *										has DOB data
 * 2016-05-16	1.08	Dale Rhoda		Tell user how many inchworm plots
 *										will be made
+* 2017-08-26	1.09	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_COVG_04_06PO
-
-	version 14
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_COVG_04_06PO
 	vcqi_log_comment $VCP 5 Flow "Starting"

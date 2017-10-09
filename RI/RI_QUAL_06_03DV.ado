@@ -1,4 +1,4 @@
-*! RI_QUAL_06_03DV version 1.02 - Biostat Global Consulting - 2017-02-01
+*! RI_QUAL_06_03DV version 1.03 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -6,10 +6,12 @@
 * Date 			number 	Name			What Changed
 * 2015-12-21	1.01	MK Trimner		Added var label to valid_`d'_before_age1
 * 2017-02-01	1.02	Dale Rhoda		Cosmetic changes
+* 2017-08-26	1.03	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_QUAL_06_03DV
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_QUAL_06_03DV
 	vcqi_log_comment $VCP 5 Flow "Starting"

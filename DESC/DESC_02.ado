@@ -1,4 +1,4 @@
-*! DESC_02 version 1.01 - Biostat Global Consulting - 2017-03-07
+*! DESC_02 version 1.02 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -6,10 +6,12 @@
 * Date 			number 	Name			What Changed
 * 2017-03-07	1.01	Dale Rhoda		Announce the current DESC_02_VARIABLES
 *										to the screen while running
+* 2017-08-26	1.02	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define DESC_02
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP DESC_02
 	vcqi_log_comment $VCP 5 Flow "Starting"

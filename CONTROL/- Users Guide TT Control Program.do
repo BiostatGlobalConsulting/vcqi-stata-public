@@ -7,7 +7,7 @@
 *
 * Written by Biostat Global Consulting
 *
-* Updated 2017-02-15
+* Updated 2017-07-18
 *
 * The user might customize this program by changing items below in the
 * code blocks marked TT-B, TT-D, and TT-F below.  Those blocks are
@@ -41,6 +41,12 @@ global VCQI_OUTPUT_FOLDER  Q:/- Folders shared outside BGC/BGC Team - WHO Softwa
 * Establish analysis name (used in log file name and Excel file name)
 
 global VCQI_ANALYSIS_NAME TT_Test
+
+* Set this global to 1 to test all metadata and code that makes
+* datasets and calculates derived variables...without running the
+* indicators or generating output
+
+global	VCQI_CHECK_INSTEAD_OF_RUN		0
 
 ********************************************************************************
 * Code Block: TT-C                                               (Do not change)
@@ -226,11 +232,6 @@ vcqi_global DELETE_VCQI_DATABASES_AT_END	1
 
 vcqi_global DELETE_TEMP_VCQI_DATASETS		1
 
-* Set this globlal to 1 to test all metadata and code that makes
-* datasets and calculates derived variables...without running the
-* indicators or generating output
-
-vcqi_global	VCQI_CHECK_INSTEAD_OF_RUN		0
 
 ********************************************************************************
 * Code Block: TT-E                                               (Do not change)
@@ -238,7 +239,6 @@ vcqi_global	VCQI_CHECK_INSTEAD_OF_RUN		0
 *                  Pre-process survey data
 *-------------------------------------------------------------------------------
 
-establish_unique_TT_ids
 
 
 if "$VCQI_CHECK_INSTEAD_OF_RUN" == "1" {
@@ -253,6 +253,9 @@ if "$VCQI_CHECK_INSTEAD_OF_RUN" == "1" {
 check_TT_schedule_metadata
 check_TT_survey_metadata
 check_TT_analysis_metadata
+
+establish_unique_TT_ids
+
 
 ********************************************************************************
 * Code Block: TT-F                                             (User may change)

@@ -1,4 +1,4 @@
-*! make_tables_from_unwtd_output version 1.05 - Biostat Global Consulting - 2017-01-30
+*! make_tables_from_unwtd_output version 1.06 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -12,10 +12,12 @@
 * 2016-03-07	1.04	Dale Rhoda		Allow spaces in `sheet' via _nospaces
 * 2017-01-30	1.05	Dale Rhoda		Small formatting changes to implement
 *										VCQI_LEVEL4_SET_VARLIST & VCQI_LEVEL4_SET_LAYOUT
+* 2017-08-26	1.06	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define make_tables_from_unwtd_output
-
+	version 14.1
+	
 	syntax  , VARiable(string) ESTLABel(string asis) ///
 	          VID(string) MEASureid(string) SHEET(string) [ noOMITpriorn RATIO ]
 				

@@ -1,4 +1,4 @@
-*! RI_QUAL_05_01PP version 1.02 - Biostat Global Consulting - 2017-02-01
+*! RI_QUAL_05_01PP version 1.03 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -6,10 +6,12 @@
 * Date 			number 	Name			What Changed
 * 2016-02-12	1.01	Dale Rhoda		Make list of temp datasets 
 * 2017-02-01	1.02	Dale Rhoda		Use saved RI_dose_intervals dataset
+* 2017-08-26	1.03	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_QUAL_05_01PP
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_QUAL_05_01PP
 	vcqi_log_comment $VCP 5 Flow "Starting"

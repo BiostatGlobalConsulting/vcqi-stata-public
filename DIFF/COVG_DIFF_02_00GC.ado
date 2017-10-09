@@ -1,4 +1,4 @@
-*! COVG_DIFF_02_00GC version 1.04 - Biostat Global Consulting - 2016-08-25
+*! COVG_DIFF_02_00GC version 1.05 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -16,9 +16,11 @@
 * 2016-08-24	1.03	Dale Rhoda		Check to be sure that levels are 
 * 										non-negative integers
 * 2016-08-25	1.04	Dale Rhoda		Moved PP steps from here to PP program
+* 2017-08-26	1.05	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
-program COVG_DIFF_02_00GC
+program define COVG_DIFF_02_00GC
+	version 14.1
 
 	local oldvcp $VCP
 	global VCP COVG_DIFF_02_00GC

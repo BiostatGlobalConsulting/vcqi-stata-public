@@ -1,4 +1,4 @@
-*! RI_COVG_02_04GO version 1.00 - Biostat Global Consulting - 2015-09-28
+*! RI_COVG_02_04GO version 1.02 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -6,11 +6,12 @@
 * Date 			number 	Name			What Changed
 * 2016-11=18	1.01	Dale Rhoda		Do not calculate the 'by age 1' outcomes
 *										if the dose is administered after age 1
-*
+* 2017-08-26	1.02	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_COVG_02_04GO
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_COVG_02_04GO
 	vcqi_log_comment $VCP 5 Flow "Starting"

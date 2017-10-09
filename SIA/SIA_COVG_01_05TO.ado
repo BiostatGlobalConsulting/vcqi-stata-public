@@ -1,5 +1,4 @@
-*! SIA_COVG_01_05TO version 1.03 - Biostat Global Consulting - 2016-03-10
-*
+*! SIA_COVG_01_05TO version 1.04 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -9,10 +8,12 @@
 *
 * 2016-02-24	1.02	Dale Rhoda		No need to make table for vid(a) twice
 * 2016-03-10	1.03	Dale Rhoda		Moved title & footnotes to control pgm
+* 2017-08-26	1.04	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define SIA_COVG_01_05TO
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP SIA_COVG_01_05TO
 	vcqi_log_comment $VCP 5 Flow "Starting"

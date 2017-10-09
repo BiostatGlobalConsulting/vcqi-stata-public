@@ -1,14 +1,15 @@
-*! RI_COVG_01 version 1.01 - Biostat Global Consulting - 2016-02-13
+*! RI_COVG_01 version 1.02 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name			What Changed
 * 2016-02-12	1.01	Dale Rhoda		Delete temp datasets at user's request
-*
+* 2017-08-26	1.02	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_COVG_01
+	version 14.1
 	
 	local oldvcp $VCP
 	global VCP RI_COVG_01

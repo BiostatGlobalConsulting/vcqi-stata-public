@@ -1,4 +1,4 @@
-*! RI_QUAL_12_01PP version 1.04 - Biostat Global Consulting - 2017-03-09
+*! RI_QUAL_12_01PP version 1.05 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -8,10 +8,12 @@
 * 2016-02-12	1.02	Dale Rhoda		Make list of temp datasets 
 * 2017-01-31	1.03	Dale Rhoda		Reworked to be one row per child
 * 2017-03-09	1.04	Dale Rhoda		Remove temp dataset	
+* 2017-08-26	1.05	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_QUAL_12_01PP
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_QUAL_12_01PP
 	vcqi_log_comment $VCP 5 Flow "Starting"

@@ -1,14 +1,16 @@
-*! which_program_version version 1.01 - Biostat Global Consulting - 2016-02-12
+*! which_program_version version 1.03 - Biostat Global Consulting - 2017-08-26
 ******************************************************************************* 
 * Change log 
 * 				Updated 
 *				version 
 * Date 			number 	Name			What Changed 
 * 2016-02-12	1.02	Dale Rhoda		Set linesize to 250 for capturing long paths
+* 2017-08-26	1.03	Mary Prier		Added version 14.1 line
+*******************************************************************************
  
-capture program drop which_program_version
 program define which_program_version, rclass
-
+	version 14.1
+	
 	local pgmname `1'
 
 	tempfile tfile

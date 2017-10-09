@@ -1,4 +1,4 @@
-*! make_svyp_output_database version 1.06 - Biostat Global Consulting - 2017-05-16
+*! make_svyp_output_database version 1.07 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -12,10 +12,12 @@
 *										VCQI_LEVEL4_SET_VARLIST & 
 *										VCQI_LEVEL4_SET_LAYOUT
 * 2017-05-15	1.06	Dale Rhoda		Put stderr in the database
+* 2017-08-26	1.07	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define make_svyp_output_database
-
+	version 14.1
+	
 	syntax , VARiable(string) ESTLABel(string asis) VID(string) MEASureid(string)
 	
 	local oldvcp $VCP

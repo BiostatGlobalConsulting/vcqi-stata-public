@@ -1,4 +1,4 @@
-*! vcqi_to_double_iwplot version 1.16 - Biostat Global Consulting - 2017-05-26
+*! vcqi_to_double_iwplot version 1.17 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -30,12 +30,11 @@
 * 2017-05-25	1.15	Dale Rhoda		Fix a problem with ylines
 * 2017-05-26	1.16	Dale Rhoda		Handle vertical lines when national 
 *										results are at the top or bottom row
+* 2017-08-26	1.17	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
-capture program drop vcqi_to_double_iwplot
 program define vcqi_to_double_iwplot
-
-	version 14
+	version 14.1
 	
 	syntax , DATABASE(string asis) FILETAG(string) DATAFILE(string asis) DATABASE2(string asis) DATAFILE2(string asis) ///
 	[ TITLE(string asis) NAME(string) SUBTITLE(string asis) CAPTION(string asis) ]
@@ -324,7 +323,8 @@ program define vcqi_to_double_iwplot
 end
 	
 program define double_inchworm_plotit
-
+	version 14.1
+	
 	syntax ,  FILETAG(string) show1(integer) show2(integer) show3(integer) show4(integer) ///
 	  [ TITLE(string asis) NAME(string) ///
 	  SUBTITLE(string asis) NOTE(string asis) CAPTION(string asis) ]

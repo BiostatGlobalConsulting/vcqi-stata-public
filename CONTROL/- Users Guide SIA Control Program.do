@@ -42,6 +42,12 @@ global VCQI_OUTPUT_FOLDER     Q:/- Folders shared outside BGC/BGC Team - WHO Sof
 
 global VCQI_ANALYSIS_NAME SIA_Test
 
+* Set this global to 1 to test all metadata and code that makes
+* datasets and calculates derived variables...without running the
+* indicators or generating output
+
+global	VCQI_CHECK_INSTEAD_OF_RUN		0
+
 ********************************************************************************
 * Code Block: SIA-C                                              (Do not change)
 *-------------------------------------------------------------------------------
@@ -211,12 +217,6 @@ vcqi_global DELETE_VCQI_DATABASES_AT_END	1
 * set the option to 0.
 
 vcqi_global DELETE_TEMP_VCQI_DATASETS		1
-
-* Set this globlal to 1 to test all metadata and code that makes
-* datasets and calculates derived variables...without running the
-* indicators or generating output
-
-vcqi_global	VCQI_CHECK_INSTEAD_OF_RUN		0
 
 ********************************************************************************
 * Code Block: SIA-E                                              (Do not change)

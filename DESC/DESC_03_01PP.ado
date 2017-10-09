@@ -1,4 +1,4 @@
-*! DESC_03_01PP version 1.02 - Biostat Global Consulting - 2017-01-31
+*! DESC_03_01PP version 1.03 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -6,10 +6,12 @@
 * Date 			number 	Name			What Changed
 * 2016-02-13	1.01	Dale Rhoda		Make list of temp datasets 
 * 2017-01-31	1.02	Dale Rhoda		Added $VCQI_LEVEL4_SET_VARLIST
+* 2017-08-26	1.03	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
-program DESC_03_01PP
-
+program define DESC_03_01PP
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP DESC_03_01PP
 	vcqi_log_comment $VCP 5 Flow "Starting"

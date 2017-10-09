@@ -1,4 +1,4 @@
-*! RI_COVG_02_01PP version 1.03 - Biostat Global Consulting - 2017-01-31
+*! RI_COVG_02_01PP version 1.05 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -8,10 +8,12 @@
 * 2017-01-12	1.02	Dale Rhoda		Keep age_at_interview
 * 2017-01-31	1.03	Dale Rhoda		Added VCQI_LEVEL4_SET_VARLIST
 * 2017-02-01	1.04	Dale Rhoda		Check for COVG_01 output
+* 2017-08-26	1.05	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_COVG_02_01PP 
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_COVG_02_01PP 
 	vcqi_log_comment $VCP 5 Flow "Starting"

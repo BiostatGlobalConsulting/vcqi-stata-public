@@ -1,8 +1,15 @@
-*! TT_COVG_01_04GO version 1.00 - Biostat Global Consulting - 2015-09-28
+*! TT_COVG_01_04GO version 1.01 - Biostat Global Consulting - 2017-08-26
+*******************************************************************************
+* Change log
+* 				Updated
+*				version
+* Date 			number 	Name			What Changed
+* 2017-08-26	1.01	Mary Prier		Added version 14.1 line
+*******************************************************************************
 
 program define TT_COVG_01_04GO
-
-	version 14
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP TT_COVG_01_04GO
 	vcqi_log_comment $VCP 5 Flow "Starting"

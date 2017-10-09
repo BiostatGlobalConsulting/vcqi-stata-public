@@ -1,10 +1,10 @@
-*! cleanup_TT_dates_and_ticks v 1.00  Biostat Global Consulting 2016-03-12
+*! cleanup_TT_dates_and_ticks version 1.01 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name			What Changed
-*
+* 2017-08-26	1.01	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 * This program is much simpler than its RI counterpart.
@@ -45,7 +45,8 @@
 *   
 
 program define cleanup_TT_dates_and_ticks
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP cleanup_TT_dates_and_ticks
 	vcqi_log_comment $VCP 5 Flow "Starting"

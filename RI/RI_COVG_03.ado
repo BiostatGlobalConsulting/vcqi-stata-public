@@ -1,4 +1,4 @@
-*! RI_COVG_03 version 1.02 - Biostat Global Consulting - 2017-01-27
+*! RI_COVG_03 version 1.03 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -6,10 +6,12 @@
 * Date 			number 	Name			What Changed
 * 2016-02-12	1.01	Dale Rhoda		Delete temp datasets at user's request
 * 2017-01-27	1.02	Dale Rhoda		Add call to GC
+* 2017-08-26	1.03	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_COVG_03
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_COVG_03
 	vcqi_log_comment $VCP 5 Flow "Starting"

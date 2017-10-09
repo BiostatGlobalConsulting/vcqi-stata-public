@@ -1,15 +1,17 @@
-*! check_RI_schedule_metadata version 1.02 - Biostat Global Consulting - 2017-04-25
+*! check_RI_schedule_metadata version 1.03 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name			What Changed
 * 2016-02-14	1.01	Dale Rhoda		Set VCQI_ERROR to 1 if exitflag == 1
-* 2017-04-25	1.02	MK Trimner		Added code to check the length of each dose name						
+* 2017-04-25	1.02	MK Trimner		Added code to check the length of each dose name
+* 2017-08-26	1.03	Mary Prier		Added version 14.1 line						
 *******************************************************************************
 
 program define check_RI_schedule_metadata
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP check_RI_schedule_metadata
 	vcqi_log_comment $VCP 5 Flow "Starting"

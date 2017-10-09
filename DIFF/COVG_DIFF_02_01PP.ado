@@ -1,4 +1,4 @@
-*! COVG_DIFF_02_01PP version 1.05 - Biostat Global Consulting - 2017-02-09
+*! COVG_DIFF_02_01PP version 1.06 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -10,9 +10,11 @@
 * 2016-09-21	1.04	Dale Rhoda		Clear exitflag at top
 * 2017-02-09	1.05	Dale Rhoda		Obtain value label from variable name 
 *										directly
+* 2017-08-26	1.06	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
-program COVG_DIFF_02_01PP
+program define COVG_DIFF_02_01PP
+	version 14.1
 
 	local oldvcp $VCP
 	global VCP COVG_DIFF_02_01PP

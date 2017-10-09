@@ -1,4 +1,4 @@
-*! SIA_COVG_03_03DV version 1.04 - Biostat Global Consulting - 2017-03-07
+*! SIA_COVG_03_03DV version 1.05 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -8,10 +8,12 @@
 * 2016-01-18	1.02	Dale Rhoda		Switched to vcqi_global
 * 2017-02-13	1.03	Dale Rhoda		use int(HM29)
 * 2017-03-07	1.04	Dale Rhoda		Fixed a typo in a comment
+* 2017-08-26	1.05	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define SIA_COVG_03_03DV
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP SIA_COVG_03_03DV
 	vcqi_log_comment $VCP 5 Flow "Starting"

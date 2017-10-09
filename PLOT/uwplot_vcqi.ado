@@ -1,4 +1,4 @@
-*! uwplot_vcqi version 1.05 - Biostat Global Consulting 2017-05-19
+*! uwplot_vcqi version 1.06 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -18,6 +18,7 @@
 *										filled with white triangle
 * 2017-05-19	1.05	Dale Rhoda		Tweak shadebehind width and white 
 *										rectangle dimensions
+* 2017-08-26	1.06	Mary Prier		Added version 14.1 line
 *********************************************************************************
 * All datasets which are called into this program should be stored in 
 * the working directory; the plot will also be saved in the working directory
@@ -72,9 +73,9 @@
 *             png (Portable Network Graphics), tif (TIFF)
 ********************************************************************************
 
-capture program drop uwplot_vcqi
 program define uwplot_vcqi
-	version 14.0
+	version 14.1
+	
 	syntax, 					///
 		INPUTdata(string) [		///
 		XTITLE(string) 			///

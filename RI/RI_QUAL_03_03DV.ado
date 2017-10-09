@@ -1,4 +1,4 @@
-*! RI_QUAL_03_03DV version 1.03 - Biostat Global Consulting - 2017-02-01
+*! RI_QUAL_03_03DV version 1.04 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -8,9 +8,12 @@
 * 										that the dose was invalid
 * 2016-09-21	1.02	Dale Rhoda		Bring in logic from RI_COVG_02
 * 2017-02-01	1.03	Dale Rhoda		Clarified the SOUGHT logic
+* 2017-08-26	1.04	Mary Prier		Added version 14.1 line
 *******************************************************************************
-program define RI_QUAL_03_03DV
 
+program define RI_QUAL_03_03DV
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_QUAL_03_03DV
 	vcqi_log_comment $VCP 5 Flow "Starting"

@@ -1,5 +1,4 @@
-*! DESC_03_05TO version 1.01 - Biostat Global Consulting 2016-01-18
-*
+*! DESC_03_05TO version 1.03 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -8,10 +7,12 @@
 * 2016-01-18	1.01	Dale Rhoda		Changed to vcqi_global
 * 2017-03-07	1.02	Dale Rhoda		Set two footnotes by default whether 
 *										measure is weighted or not
+* 2017-08-26	1.03	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define DESC_03_05TO
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP DESC_03_05TO
 	vcqi_log_comment $VCP 5 Flow "Starting"

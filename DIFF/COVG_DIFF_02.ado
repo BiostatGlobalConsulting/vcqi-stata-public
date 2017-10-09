@@ -1,6 +1,14 @@
-*! COVG_DIFF_02 version 1.00 - Biostat Global Consulting - 2015-10-28
+*! COVG_DIFF_02 version 1.01 - Biostat Global Consulting - 2017-08-26
+*******************************************************************************
+* Change log
+* 				Updated
+*				version
+* Date 			number 	Name			What Changed
+* 2017-08-26	1.01	Mary Prier		Added version 14.1 line
+*******************************************************************************
 
 program define COVG_DIFF_02
+	version 14.1
 
 	local oldvcp $VCP
 	global VCP COVG_DIFF_02

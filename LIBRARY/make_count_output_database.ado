@@ -1,4 +1,4 @@
-*! make_count_output_database version 1.04 - Biostat Global Consulting - 2017-01-31
+*! make_count_output_database version 1.05 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -10,10 +10,12 @@
 * 2017-01-31	1.04	Dale Rhoda		Generate LEVEL4 output using
 *										VCQI_LEVEL4_SET_VARLIST & 
 *										VCQI_LEVEL4_SET_LAYOUT
+* 2017-08-26	1.05	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define make_count_output_database
-
+	version 14.1
+	
 	syntax , NUMerator(string) DENominator(string) ESTLABel(string asis) VID(string) MEASureid(string)
 
 	local oldvcp $VCP

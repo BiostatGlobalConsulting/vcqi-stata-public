@@ -1,5 +1,4 @@
-*! make_tables_from_DESC_01 version 1.03 - Biostat Global Consulting - 2017-01-31
-*
+*! make_tables_from_DESC_01 version 1.04 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -12,10 +11,12 @@
 * 2017-01-31	1.03	Dale Rhoda		Generate LEVEL4 output using
 *										VCQI_LEVEL4_SET_VARLIST & 
 *										VCQI_LEVEL4_SET_LAYOUT
+* 2017-08-26	1.04	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define make_tables_from_DESC_01
-
+	version 14.1
+	
 	syntax , MEASureid(string) SHEET(string)
 				
 	local oldvcp $VCP

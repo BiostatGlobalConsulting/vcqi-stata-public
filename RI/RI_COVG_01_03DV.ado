@@ -1,5 +1,4 @@
-*! RI_COVG_01_03DV version 1.02 - Biostat Global Consulting - 2017-01-12
-*
+*! RI_COVG_01_03DV version 1.03 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -11,10 +10,12 @@
 *										survey eligibility age and if the age
 *										of the respondent is not clearly >
 *										the dose eligibility age
+* 2017-08-26	1.03	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_COVG_01_03DV
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_COVG_01_03DV
 	vcqi_log_comment $VCP 5 Flow "Starting"

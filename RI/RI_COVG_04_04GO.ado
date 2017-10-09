@@ -1,4 +1,4 @@
-*! RI_COVG_04_04GO version 1.01 - Biostat Global Consulting - 2017-01-09
+*! RI_COVG_04_04GO version 1.02 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -6,10 +6,12 @@
 * Date 			number 	Name			What Changed
 * 2016-01-07	1.01	Dale Rhoda		Skip valid dose tables if no respondent
 *										has DOB data
+* 2017-08-26	1.02	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_COVG_04_04GO
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_COVG_04_04GO
 	vcqi_log_comment $VCP 5 Flow "Starting"

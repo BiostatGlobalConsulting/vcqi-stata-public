@@ -1,4 +1,4 @@
-*! calculate_MOV_flags version 1.08 - Biostat Global Consulting - 2017-02-09
+*! calculate_MOV_flags version 1.09 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -44,9 +44,12 @@
 *
 * 2017-02-09	1.08	Dale Rhoda		Set tick back to 0 if register sets
 *										it to missing
+*
+* 2017-08-26	1.09	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define calculate_MOV_flags
+	version 14.1
 	
 	local oldvcp $VCP
 	global VCP calculate_MOV_flags

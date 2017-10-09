@@ -1,4 +1,4 @@
-*! RI_dose_intervals version 1.04 - Biostat Global Consulting - 2017-05-17
+*! RI_dose_intervals version 1.05 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -8,10 +8,12 @@
 * 2017-02-01	1.02	Dale Rhoda		Save RI_dose_intervals dataset
 * 2017-03-17	1.03	Dale Rhoda		Include psweight in the dataset
 * 2017-05-17	1.04	Dale Rhoda		Trim down the reshape i() list 
+* 2017-08-26	1.05	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_dose_intervals
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_dose_intervals
 	vcqi_log_comment $VCP 5 Flow "Starting"

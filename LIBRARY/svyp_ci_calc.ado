@@ -1,4 +1,4 @@
-*! svyp_ci_calc version 1.08 - Biostat Global Consulting - 2017-05-16
+*! svyp_ci_calc version 1.11 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -33,11 +33,17 @@
 *
 * 2017-05-15	1.08	Dale Rhoda		Pass stderr as an output
 *
+* 2017-08-16  	1.09  	Dale Rhoda    	Fix two problems with Agresti-Coull CI code
+*
+* 2017-08-18	1.10	Dale Rhoda		Remove arcsine and Anscombe options
+*										because of their problems with wrap-
+*										around when p-hat is near 0 or 1
+*
+* 2017-08-26	1.11	Mary Prier		Added version 14.1 line
 *-------------------------------------------------------------------------------
-capture program drop svyp_ci_calc
-program svyp_ci_calc, rclass	
 
-	version 14.0
+program define svyp_ci_calc, rclass	
+	version 14.1
 	
 	syntax , P(numlist >=0 <=1 min=1 max=1)			///
 	         STDERR(real) N(real) 					///
@@ -73,7 +79,7 @@ program svyp_ci_calc, rclass
 	*   the levels here (e.g., if you want the 0.01% 10% 50% 95% and 99.99% CIs
 	*   then set CILEVELLIST(0.01 10 50 95 99.99)
 	*
-	* METHOD:	Wald, Wilson, Clopper, Clopper-Pearson, Jeffreys, Agresti, Agresti-Coull, Logit, Arcsine, Fleiss, Wilsoncc or Anscombe
+	* METHOD:	Wald, Wilson, Clopper, Clopper-Pearson, Jeffreys, Agresti, Agresti-Coull, Logit, Fleiss or Wilsoncc 
 	*
 	*			Note that if P is 0 or 1 and method is WALD or WILSON
 	*			then the program calculates a CLOPPER-PEARSON intervals.
@@ -108,9 +114,9 @@ program svyp_ci_calc, rclass
 		if !inlist("`method'","Wald","Wilson","Clopper","Clopper-Pearson") & ///
 		   !inlist("`method'","Jeffreys","Agresti","Agresti-Coull","Logit") & ///
 		   !inlist("`method'","Arcsine","Fleiss","Wilsoncc","Anscombe") 	{
-			noi display as error                  "The method option must be either Wald, Wilson, Clopper, Clopper-Pearson, Jeffreys, Agresti, Agresti-Coull, Logit, Arcsine, Fleiss, Wilsoncc or Anscombe"
+			noi display as error                  "The method option must be either Wald, Wilson, Clopper, Clopper-Pearson, Jeffreys, Agresti, Agresti-Coull, Logit, Fleiss or Wilsoncc"
 			if "$VCQI_LOGOPEN" == "1" {
-				vcqi_log_comment svypd 1 Error "The method option must be either Wald, Wilson, Clopper, Clopper-Pearson, Jeffreys, Agresti, Agresti-Coull, Logit, Arcsine, Fleiss, Wilsoncc or Anscombe"
+				vcqi_log_comment svypd 1 Error "The method option must be either Wald, Wilson, Clopper, Clopper-Pearson, Jeffreys, Agresti, Agresti-Coull, Logit, Fleiss, or Wilsoncc"
 				vcqi_halt_immediately
 			}
 			else exit 99
@@ -140,10 +146,6 @@ program svyp_ci_calc, rclass
 		* Default level of 95
 		
 		if "`cilevellist'" == "" & "`level'" == "" local cilevellist 95 90			
-
-	********************************************************************************
-
-	********************************************************************************
 
 		local ncis = wordcount("`cilevellist'")
 
@@ -187,6 +189,7 @@ program svyp_ci_calc, rclass
 		
 		gen double ao2     = (100 - level) / 100 / 2  
 		gen double zao2    = invnormal(1-ao2)
+		gen double acc		 = (zao2^2)/2 // Agresti-Coull c
 		
 		*noi di "df_n = `=df_N[1]'; df = `=df[1]'"
 		
@@ -223,33 +226,6 @@ program svyp_ci_calc, rclass
 			}
 		}
 
-	********************************************************************************
-	********************************************************************************
-		
-		if "`method'" == "Arcsine" {
-				
-			* If p is 0 or 1, skip the Arcsine calculation  and go to Clopper-Pearson
-			if real("`p'") == 0 | real("`p'") == 1 local method = "Clopper-Pearson"
-			else {
-				gen lcb_2sided = sin(max(    0,asin(sqrt(phat))-(zao2/(2*sqrt(neff)))))^2
-				gen ucb_2sided = sin(min(_pi/2,asin(sqrt(phat))+(zao2/(2*sqrt(neff)))))^2
-
-				replace lcb_2sided = 0 if phat == 0
-				replace ucb_2sided = 1 if phat == 1
-			}
-		}
-
-	********************************************************************************
-	********************************************************************************
-		
-		if "`method'" == "Anscombe" {
-				
-			gen lcb_2sided = sin(max(    0,asin(sqrt(((3/8)+neff*phat-1/2)/(neff+(3/4))))-(zao2/(2*sqrt(neff+(1/2))))))^2
-			gen ucb_2sided = sin(min(_pi/2,asin(sqrt(((3/8)+neff*phat+1/2)/(neff+(3/4))))+(zao2/(2*sqrt(neff+(1/2))))))^2
-		
-			replace lcb_2sided = 0 if phat == 0
-			replace ucb_2sided = 1 if phat == 1
-		}
 
 	********************************************************************************
 	********************************************************************************
@@ -313,13 +289,13 @@ program svyp_ci_calc, rclass
 		
 		if inlist("`method'", "Agresti", "Agresti-Coull") {
 				
-			gen double xtilde  = phat*neff + 1.92
-			gen double ntilde  =      neff + 1.92 + 1.92
+			gen double xtilde  = phat*neff + acc
+			gen double ntilde  =      neff + 2*acc
 			gen double ptilde  = xtilde / ntilde
 			gen double pqtilde = ptilde * ( 1 - ptilde )
 				
-			gen double lcb_2sided = ptilde - zao2 * sqrt( pqtilde / neff ) 
-			gen double ucb_2sided = ptilde + zao2 * sqrt( pqtilde / neff )
+			gen double lcb_2sided = ptilde - zao2 * sqrt( pqtilde / ntilde ) 
+			gen double ucb_2sided = ptilde + zao2 * sqrt( pqtilde / ntilde )
 
 			drop xtilde ntilde ptilde pqtilde
 		}
@@ -393,7 +369,7 @@ program svyp_ci_calc, rclass
 		
 		* Adjust the point estimate if user requested Agresti-Coull method;
 		* Otherwise pass thru p as the output svyp.
-		if inlist("`method'", "Agresti", "Agresti-Coull") scalar `svyp' = (phat[1]*neff[1]+1.92) / (neff[1]+1.92+1.92)
+		if inlist("`method'", "Agresti", "Agresti-Coull") scalar `svyp' = (phat[1]*neff[1]+acc[1]) / (neff[1]+acc[1]+acc[1])
 		else scalar `svyp' = `p'
 			
 		if "`nclusters'" == "-999" scalar `clusters' = .

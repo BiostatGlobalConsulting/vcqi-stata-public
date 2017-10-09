@@ -1,15 +1,15 @@
-*! DESC_03_03DV version 1.01 - Biostat Global Consulting - 2016-01-18
-*
+*! DESC_03_03DV version 1.02 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name			What Changed
 * 2016-01-18	1.01	Dale Rhoda		Changed to vcqi_global
+* 2017-08-26	1.02	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
-program DESC_03_03DV
-
+program define DESC_03_03DV
+	version 14.1
 
 	local oldvcp $VCP
 	global VCP DESC_03_03DV

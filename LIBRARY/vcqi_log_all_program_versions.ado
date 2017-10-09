@@ -1,4 +1,4 @@
-*! vcqi_log_all_program_versions 1.05 - Biostat Global Consulting - 2017-02-15
+*! vcqi_log_all_program_versions 1.06 - Biostat Global Consulting - 2017-08-26
 ******************************************************************************* 
 * Change log 
 * 				Updated 
@@ -9,11 +9,11 @@
 * 2016-12-01	1.03	Dale Rhoda		Updated for svyp upgrade
 * 2016-12-19	1.04	Dale Rhoda		Fixed a typo
 * 2017-02-15	1.05	Dale Rhoda		Updated with new programs
+* 2017-08-26	1.06	Mary Prier		Added version 14.1 line
 ******************************************************************************* 
- 
-capture program drop vcqi_log_all_program_versions 
- 
-program vcqi_log_all_program_versions 
+
+program define vcqi_log_all_program_versions 
+	version 14.1
  
 	local oldvcp $VCP
 	global VCP vcqi_log_all_program_versions 

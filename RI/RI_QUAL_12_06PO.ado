@@ -1,4 +1,4 @@
-*! RI_QUAL_12_06PO version 1.04 - Biostat Global Consulting - 2017-02-03
+*! RI_QUAL_12_06PO version 1.05 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -9,11 +9,12 @@
 *										so the same dose pair can be plotted
 * 										using different thresholds
 * 2017-02-03	1.04	Dale Rhoda		Switched to _DOSE_PAIR_LIST
+* 2017-08-26	1.05	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_QUAL_12_06PO
-
-	version 14
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_QUAL_12_06PO
 	vcqi_log_comment $VCP 5 Flow "Starting"

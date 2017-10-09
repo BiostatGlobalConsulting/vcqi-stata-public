@@ -1,5 +1,4 @@
-*! RI_COVG_05_05TO version 1.03 - Biostat Global Consulting - 2016-03-11
-*
+*! RI_COVG_05_05TO version 1.04 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -9,10 +8,12 @@
 * 2016-03-08	1.02	Dale Rhoda		Added subtitles and enabled 
 *                                       user-specified footnotes (starting @ 3)
 * 2016-03-11	1.03	Dale Rhoda		Moved footnotes 1 & 2 to control pgm
+* 2017-08-26	1.04	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_COVG_05_05TO
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_COVG_05_05TO
 	vcqi_log_comment $VCP 5 Flow "Starting"

@@ -1,4 +1,4 @@
-*! RI_QUAL_09_04GO version 1.03 - Biostat Global Consulting - 2017-05-17
+*! RI_QUAL_09_04GO version 1.04 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -10,10 +10,12 @@
 *										VCQI_LEVEL4_SET_LAYOUT
 * 2017-05-17	1.03	Dale Rhoda		Only calculate anydose results for levels
 *										the user has requested
+* 2017-08-26	1.04	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_QUAL_09_04GO
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_QUAL_09_04GO
 	vcqi_log_comment $VCP 5 Flow "Starting"

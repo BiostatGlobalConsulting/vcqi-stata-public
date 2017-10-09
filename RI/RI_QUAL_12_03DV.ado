@@ -1,4 +1,4 @@
-*! RI_QUAL_12_03DV version 1.03 - Biostat Global Consulting - 2017-02-03
+*! RI_QUAL_12_03DV version 1.04 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -7,10 +7,12 @@
 * 2015-12-21	1.01	MK Trimner		added var labels
 * 2017-01-31	1.02	Dale Rhoda		Reworked to be one row per child
 * 2017-02-03	1.03	Dale Rhoda		Switched to _DOSE_PAIR_LIST
+* 2017-08-26	1.04	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_QUAL_12_03DV
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_QUAL_12_03DV
 	vcqi_log_comment $VCP 5 Flow "Starting"

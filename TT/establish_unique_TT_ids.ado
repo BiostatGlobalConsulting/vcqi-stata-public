@@ -1,4 +1,4 @@
-*! establish_unique_TT_ids version 1.02 - Biostat Global Consulting - 2015-09-20
+*! establish_unique_TT_ids version 1.04 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -8,26 +8,19 @@
 *										to erase later if the users says to
 * 2016-09-20	1.02	Dale Rhoda		Run only if VCQI_CHECK_INSTEAD_OF_RUN
 *										is not 1
+* 2017-06-07	1.03	MK Trimner		Remove code that creates level3names dataset
+* 2017-08-26	1.04	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define establish_unique_TT_ids
-
-	version 14
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP establish_unique_TT_ids
 	vcqi_log_comment $VCP 5 Flow "Starting"
 	
 	if "$VCQI_CHECK_INSTEAD_OF_RUN" != "1" {
 	
-		* make a little dataset named level3names
-		use "${VCQI_DATA_FOLDER}/${VCQI_CM_DATASET}", clear
-		keep HH01 HH02
-		duplicates drop
-		rename HH01 level3id
-		rename HH02 level3name
-		save level3names, replace	
-		vcqi_global TT_TEMP_DATASETS $TT_TEMP_DATASETS level3names
-		
 		* make a little dataset named level2namesforlevel3
 		use "${VCQI_DATA_FOLDER}/${VCQI_CM_DATASET}", clear
 		keep HH01 province_id

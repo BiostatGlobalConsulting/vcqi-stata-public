@@ -1,4 +1,4 @@
-*! RI_CONT_01_03DV version 1.02 - Biostat Global Consulting - 2017-01-13
+*! RI_CONT_01_03DV version 1.03 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -10,10 +10,13 @@
 *
 * 2017-01-13	1.02	Dale Rhoda		Only calculate the indicator if the
 *										child was eligible for both doses
+*
+* 2017-08-26	1.03	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_CONT_01_03DV
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_CONT_01_03DV
 	vcqi_log_comment $VCP 5 Flow "Starting"

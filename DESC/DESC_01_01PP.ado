@@ -1,4 +1,4 @@
-*! DESC_01_01PP version 1.02 - Biostat Global Consulting - 2016-02-13
+*! DESC_01_01PP version 1.03 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -7,11 +7,12 @@
 * 2015-11-28 	1.01	-Dale 			-Added line to generate register_has_dates in the TT dataset
 *                   					if TT_RECORDS_NOT_SOUGHT is 1
 * 2016-02-13	1.02	Dale Rhoda		Make list of temp datasets 
-*
+* 2017-08-26	1.03	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define DESC_01_01PP
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP DESC_01_01PP
 	vcqi_log_comment $VCP 5 Flow "Starting"
@@ -83,7 +84,7 @@ program define DESC_01_01PP
 			keep HH01 HH03 HH14 hhid HH18 ${DESC_01_DATASET}_eligible_in_hh
 
 			* This dataset has one row per HH
-		save "$VCQI_OUTPUT_FOLDER/DESC_01_HH_DATASET", replace
+		save "$VCQI_OUTPUT_FOLDER/DESC_01_HH_DATASET", replace		
 		vcqi_global DESC_01_TEMP_DATASETS $DESC_01_TEMP_DATASETS DESC_01_HH_DATASET
 
 		use "${VCQI_DATA_FOLDER}/${VCQI_HM_DATASET}", clear
@@ -145,7 +146,6 @@ program define DESC_01_01PP
 				
 			* This dataset has one row per HH member who was eligible for the survey
 		save "$VCQI_OUTPUT_FOLDER/DESC_01_HM_DATASET", replace
-
 		vcqi_global DESC_01_TEMP_DATASETS $DESC_01_TEMP_DATASETS DESC_01_HM_DATASET
 
 		use "$VCQI_OUTPUT_FOLDER/DESC_01_HH_DATASET", clear

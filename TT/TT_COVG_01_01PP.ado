@@ -1,4 +1,4 @@
-*! TT_COVG_01_01PP version 1.02 - Biostat Global Consulting - 2017-01-31
+*! TT_COVG_01_01PP version 1.03 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -6,6 +6,7 @@
 * Date 			number 	Name			What Changed
 * 2016-02-12	1.01	Dale Rhoda		Make list of temp datasets 
 * 2017-01-31	1.02	Dale Rhoda		Added VCQI_LEVEL4_SET_VARLIST
+* 2017-08-26	1.03	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 * To-do: add some checks for register data
@@ -15,8 +16,8 @@
 *        documented value.
 
 program define TT_COVG_01_01PP
-
-	version 14
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP TT_COVG_01_01PP
 	

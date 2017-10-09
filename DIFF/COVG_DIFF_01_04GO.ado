@@ -1,13 +1,15 @@
-*! COVG_DIFF_01_04GO version 1.01 - Biostat Global Consulting - 2017-01-09
+*! COVG_DIFF_01_04GO version 1.02 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name			What Changed
 * 2017-01-09	1.01	Dale Rhoda		Switch from svyp to svypd
+* 2017-08-26	1.02	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
-program COVG_DIFF_01_04GO
+program define COVG_DIFF_01_04GO
+	version 14.1
 
 	local oldvcp $VCP
 	global VCP COVG_DIFF_01_04GO

@@ -1,4 +1,4 @@
-*! vcqi_to_uwplot version 1.09 - Biostat Global Consulting - 2017-05-26
+*! vcqi_to_uwplot version 1.11 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -20,12 +20,12 @@
 * 2017-05-19	1.08	Dale Rhoda		Fix a problem with quotation marks
 * 2017-05-26	1.09	Dale Rhoda		Handle vertical lines when national 
 *										results are at the top or bottom row
+* 2017-08-22	1.10	Dale Rhoda		Force level4name to be a string
+* 2017-08-26	1.11	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
-capture program drop vcqi_to_uwplot
 program define vcqi_to_uwplot
-
-	version 14
+	version 14.1
 	
 	syntax , DATABASE(string asis) FILETAG(string) ///
 	[ TITLE(string asis) NAME(string) SUBTITLE(string asis) ]
@@ -126,6 +126,7 @@ program define vcqi_to_uwplot
 	if `show4' == 1 sort `l2est' `l3est' estimate level4id
 	
 	capture gen level4name = "" // in case it is not populated
+	capture tostring level4name, replace // in case it is not a string
 	replace name = level4name if `show4' & !missing(level4id)
 
 	keep name n estimate level level*id outcome
@@ -216,7 +217,8 @@ program define vcqi_to_uwplot
 end
 	
 program define unweighted_plotit
-
+	version 14.1
+	
 	syntax ,  FILETAG(string) show1(integer) show2(integer) show3(integer) show4(integer) ///
 	[ TITLE(string asis) NAME(string) SUBTITLE(string asis) NOTE(string asis) CAPTION(string asis) ]
 	  

@@ -1,4 +1,4 @@
-*! check_RI_survey_metadata version 1.02 - Biostat Global Consulting - 2016-02-14
+*! check_RI_survey_metadata version 1.04 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -10,10 +10,12 @@
 * 2017-01-12	1.03	Dale Rhoda		Set MAX and MIN age of survey 
 *										eligibility if the user hasn't already
 *										set them
+* 2017-08-26	1.04	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define check_RI_survey_metadata
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP check_RI_survey_metadata
 	vcqi_log_comment $VCP 5 Flow "Starting"	

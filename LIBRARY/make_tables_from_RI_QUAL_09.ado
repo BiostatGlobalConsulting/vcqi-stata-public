@@ -1,4 +1,4 @@
-*! make_tables_from_RI_QUAL_09 version 1.05 - Biostat Global Consulting - 2017-01-31
+*! make_tables_from_RI_QUAL_09 version 1.06 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -13,10 +13,12 @@
 * 2017-01-31	1.05	Dale Rhoda		Generate LEVEL4 output using
 *										VCQI_LEVEL4_SET_VARLIST & 
 *										VCQI_LEVEL4_SET_LAYOUT
+* 2017-08-26	1.06	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define make_tables_from_RI_QUAL_09
-
+	version 14.1
+	
 	syntax  , DOSE(string) MEASureid(string) SHEET(string) 
 				
 	local oldvcp $VCP

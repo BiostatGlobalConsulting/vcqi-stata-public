@@ -1,4 +1,4 @@
-*! RI_QUAL_07_06PO version 1.03 - Biostat Global Consulting - 2017-05-16
+*! RI_QUAL_07_06PO version 1.04 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -10,11 +10,12 @@
 *										does not exist
 * 2016-05-16	1.03	Dale Rhoda		Tell user how many inchworm plots
 *										will be made
+* 2017-08-26	1.04	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_QUAL_07_06PO
-
-	version 14
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_QUAL_07_06PO
 	vcqi_log_comment $VCP 5 Flow "Starting"

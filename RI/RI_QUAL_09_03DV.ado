@@ -1,4 +1,4 @@
-*! RI_QUAL_09_03DV version 1.02 - Biostat Global Consulting 2017-03-21
+*! RI_QUAL_09_03DV version 1.03 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -9,10 +9,12 @@
 *										total_elig_visits is missing 
 *										(because missing DOB or dose dates so
 *										MOV flags are not calculable)
+* 2017-08-26	1.03	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_QUAL_09_03DV
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_QUAL_09_03DV
 	vcqi_log_comment $VCP 5 Flow "Starting"

@@ -1,4 +1,4 @@
-*! SIA_COVG_03_01PP version 1.04 - Biostat Global Consulting - 2017-06-08
+*! SIA_COVG_03_01PP version 1.05 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -8,10 +8,12 @@
 * 2017-02-04	1.02	Dale Rhoda		Minor edits
 * 2017-02-13	1.03	Dale Rhoda		Fixed a typo
 * 2017-06-08	1.04	Dale Rhoda		Added $VCQI_LEVEL4_SET_VARLIST 
+* 2017-08-26	1.05	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define SIA_COVG_03_01PP
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP SIA_COVG_03_01PP
 	vcqi_log_comment $VCP 5 Flow "Starting"

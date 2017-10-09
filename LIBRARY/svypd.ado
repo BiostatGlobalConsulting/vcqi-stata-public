@@ -1,23 +1,24 @@
-*! svypd version 1.02 - Biostat Global Consulting - 2017-01-09
+*! svypd version 1.04 - Biostat Global Consulting - 2017-08-26
 ********************************************************************************
 * Change log
 * 				Updated
 *				version
-* Date 			number 	Name				What Changed
-* 2016-10-22	1.00	Dale Rhoda			Original version, improvement to
-*											older version that calculated
-*											confidence intervals for a single
-*											value of LEVEL
+* Date 			number 	Name			What Changed
+* 2016-10-22	1.00	Dale Rhoda		Original version, improvement to
+*										older version that calculated
+*										confidence intervals for a single
+*										value of LEVEL
+
 *
-* 2016-11-15	1.01	Dale				Handle case where phat is 0 or 100%
-*
+* 2016-11-15	1.01	Dale			Handle case where phat is 0 or 100%
 * 2017-01-09	1.02	Dale Rhoda		Change svyp to svypd in error msgs
+* 2017-08-18	1.03	Dale Rhoda		Remove arcsine and Anscombe methods
+* 2017-08-26	1.04	Mary Prier		Added version 14.1 line
 
 ********************************************************************************
-capture program drop svypd
-program svypd
 
-	version 14.0
+program define svypd
+	version 14.1
 	
 	syntax varlist (min=1 max=1 numeric) [if]   ///
 		[, LEVEL(numlist >0 <100 min=1 max=1)   ///
@@ -41,9 +42,9 @@ program svypd
 	* - If we want more than one CI, e.g., to make an inchworm plot, specify
 	*   the levels here (e.g., if you want the 0.01% 10% 50% 95% and 99.99% CIs
 	*   then set CILEVELLIST(0.01 10 50 95 99.99)
-	* METHOD:	WALD, WILSON, CLOPPER-PEARSON, LOGIT, ARCSINE, AGRESTI-COULL
-	*			or JEFFREYS
-	*			(Note that if P is 0 or 1 and method is WALD, WILSON, ARCSINE
+	* METHOD:	WALD, WILSON, CLOPPER-PEARSON, LOGIT, AGRESTI-COULL
+	*			JEFFREYS or FLEISS 
+	*			(Note that if P is 0 or 1 and method is WALD, WILSON
 	*			 or AGRESTI-COULL then the program calculates 
 	*			 CLOPPER-PEARSON intervals.)
 	* If the Adjust option is specified, then the CI calculations will

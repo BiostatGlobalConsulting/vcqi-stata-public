@@ -1,23 +1,15 @@
-*!excel_wrapper_for_iwplot_svyp version 1.1 2016-06-07
-
-/**********************************************************************
-Program Name:              excel_wrapper_for_iwplot_svyp
-Purpose:                   Program to allow users to use an excel file as input for iwplot_svyp
-Project:                   
-Charge Number:  
-Date Created:    			2016-05-12
-Date Modified:  
-Input Data:                 
-Output2:                                
-Comments: 
-Author:         Mary Kay Trimner
-
-Stata version:    14.0
-**********************************************************************/
-capture program drop excel_wrapper_for_iwplot_svyp
+*! excel_wrapper_for_iwplot_svyp version 1.01 - Biostat Global Consulting - 2017-08-26
+*******************************************************************************
+* Change log
+* 				Updated
+*				version
+* Date 			number 	Name			What Changed
+* 2017-08-26	1.01	Mary Prier		Added version 14.1 line
+*******************************************************************************
 
 program define excel_wrapper_for_iwplot_svyp
-
+	version 14.1
+	
 	* Set the local for xlsname for importing data
 	local xlsname `1'
 	

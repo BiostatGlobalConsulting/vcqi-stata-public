@@ -1,4 +1,4 @@
-*! vcqi_halt_immediately version 1.10 - Biostat Global Consulting - 2016-09-20
+*! vcqi_halt_immediately version 1.12 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -42,10 +42,13 @@
 *
 * 2016-09-20	1.10	Dale Rhoda		Call them error  'messages' instead of
 *										errors
+* 2017-07-05	1.11	MK Trimner		Added code to check to see if "$VCQI_OUTPUT_FOLDER/`surveytype'_with_ids" 
+*										exists prior to running add_HH_vars_to_opplot_datasets program
+*
+* 2017-08-26	1.12	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
-program vcqi_halt_immediately
-
+program define vcqi_halt_immediately
 	version 14.1
 
 	global VCP vcqi_halt_immediately
@@ -78,9 +81,10 @@ program vcqi_halt_immediately
 			****************************************************************************
 			* If the user made organ pipe plots and saved accompanying datasets,
 			* augment those datasets with the cluster names
-			
-			if "$MAKE_PLOTS" == "1" & "$VCQI_MAKE_OP_PLOTS" == "1" & "$VCQI_SAVE_OP_PLOT_DATA" == "1" noi add_HH_vars_to_opplot_datasets
-			
+			capture confirm file "$VCQI_OUTPUT_FOLDER/`surveytype'_with_ids"
+			if _rc==0 {
+				if "$MAKE_PLOTS" == "1" & "$VCQI_MAKE_OP_PLOTS" == "1" & "$VCQI_SAVE_OP_PLOT_DATA" == "1" noi add_HH_vars_to_opplot_datasets
+			}
 			****************************************************************************
 			* If the user executed some COVG_DIFF_01 hypothesis tests, close
 			* that postfile, export it to excel, and format it

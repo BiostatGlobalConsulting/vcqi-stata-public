@@ -1,10 +1,11 @@
-*! vcqi_log_global version 1.03 - Biostat Global Consulting - 2017-01-29
+*! vcqi_log_global version 1.04 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name			What Changed
 * 2017-01-29	1.03	Dale Rhoda		Break long comments into parts
+* 2017-08-26	1.04	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 
@@ -14,11 +15,10 @@
 * If it is not defined, a message saying so is written to the log.
 *
 * These are considered to be low-level details, so the comment level is set to 3.
-*
 
-version 14.0
 
-program vcqi_log_global
+program define vcqi_log_global
+	version 14.1
  
 	if "`1'" == ""  {
 		di as error "You must provide the name of a global macro to the program vcqi_log_global"

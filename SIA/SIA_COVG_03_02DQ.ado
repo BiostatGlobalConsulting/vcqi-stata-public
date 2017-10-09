@@ -1,4 +1,4 @@
-*! SIA_COVG_03_02DQ version 1.02 - Biostat Global Consulting - 2017-02-04
+*! SIA_COVG_03_02DQ version 1.03 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -8,10 +8,12 @@
 *										MIN_SIA_YEARS and MAX_SIA_YEARS as
 *										these are defined in 03DV
 * 2017-02-04	1.02	Dale Rhoda		Edited error msgs
+* 2017-08-26	1.03	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define SIA_COVG_03_02DQ
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP SIA_COVG_03_02DQ
 	vcqi_log_comment $VCP 5 Flow "Starting"

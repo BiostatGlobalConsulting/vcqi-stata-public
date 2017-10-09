@@ -1,4 +1,4 @@
-*! check_RI_COVG_03_03DV version 1.02 - Biostat Global Consulting - 2017-02-01	
+*! check_RI_COVG_03_03DV version 1.03 - Biostat Global Consulting - 2017-08-26	
 *******************************************************************************
 * Change log
 * 				Updated
@@ -7,6 +7,7 @@
 * 2016-02-14	1.01	Dale Rhoda		Set VCQI_ERROR to 1
 * 2017-02-01	1.02	Dale Rhoda		Copy _1 to _$ANALYSIS_COUNTER if
 *										necessary
+* 2017-08-26	1.03	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 * VCQI users are encouraged to generate output and then change the value of
@@ -28,7 +29,8 @@
 * the new analysis.
 
 program define check_RI_COVG_03_03DV
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP check_RI_COVG_03_03DV
 	vcqi_log_comment $VCP 5 Flow "Starting"	

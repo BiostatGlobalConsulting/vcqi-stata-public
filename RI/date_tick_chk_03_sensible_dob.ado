@@ -1,12 +1,14 @@
-*! date_tick_chk_03_sensible_dob v 1.00  Biostat Global Consulting 2016-08-24
+*! date_tick_chk_03_sensible_dob version 1.01 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name			What Changed
+* 2017-08-26	1.01	Mary Prier		Added version 14.1 line
 *******************************************************************************
-capture program drop date_tick_chk_03_sensible_dob
-program define       date_tick_chk_03_sensible_dob
+
+program define date_tick_chk_03_sensible_dob
+	version 14.1
 
 	local oldvcp $VCP
 	global VCP date_tick_chk_03_sensible_dob

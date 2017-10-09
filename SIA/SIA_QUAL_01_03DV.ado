@@ -1,14 +1,16 @@
-*! SIA_QUAL_01_03DV version 1.01 - Biostat Global Consulting - 2016-03-07
+*! SIA_QUAL_01_03DV version 1.02 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name			What Changed
 * 2016-03-07	1.01	Dale Rhoda		Added _seen and _unseen variables
+* 2017-08-26	1.02	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define SIA_QUAL_01_03DV
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP SIA_QUAL_01_03DV
 	vcqi_log_comment $VCP 5 Flow "Starting"

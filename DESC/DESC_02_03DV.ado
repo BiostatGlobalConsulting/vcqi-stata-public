@@ -1,4 +1,4 @@
-*! DESC_02_03DV version 1.01 - Biostat Global Consulting - 2016-01-18
+*! DESC_02_03DV version 1.03 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -6,10 +6,12 @@
 * Date 			number 	Name			What Changed
 * 2016-01-18	1.01	Dale Rhoda		Changed to vcqi_global
 * 2016-03-22	1.02	Dale Rhoda		Only tabulate missing if denom == "ALL"
+* 2017-08-26	1.03	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
-program DESC_02_03DV
-
+program define DESC_02_03DV
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP DESC_02_03DV
 	vcqi_log_comment $VCP 5 Flow "Starting"

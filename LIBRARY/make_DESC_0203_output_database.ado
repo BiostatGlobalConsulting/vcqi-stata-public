@@ -1,4 +1,4 @@
-*! make_DESC_0203_output_database version 1.08 - Biostat Global Consulting - 2017-03-26
+*! make_DESC_0203_output_database version 1.09 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -18,10 +18,12 @@
 *										a) put sub-total BEFORE a variable or response
 *										b) put sub-total AFTER  a variable or response
 *										c) show sub-totals only
+* 2017-08-26	1.09	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define make_DESC_0203_output_database
-
+	version 14.1
+	
 	syntax , VARiable(string) LABel(string asis) VID(string) MEASureid(string)
 
 	local oldvcp $VCP

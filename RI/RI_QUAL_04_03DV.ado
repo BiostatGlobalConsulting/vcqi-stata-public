@@ -1,4 +1,4 @@
-*! RI_QUAL_04_03DV version 1.02 - Biostat Global Consulting - 2016-09-13
+*! RI_QUAL_04_03DV version 1.03 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -6,10 +6,12 @@
 * Date 			number 	Name			What Changed
 * 2015-12-21	1.01	MK Trimner		Added missing var label to early_`d'_`t'_`s'
 * 2016-09-13	1.02	Dale Rhoda		Made label consistent with RI_QUAL_13
+* 2017-08-26	1.03	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
 program define RI_QUAL_04_03DV
-
+	version 14.1
+	
 	local oldvcp $VCP
 	global VCP RI_QUAL_04_03DV
 	vcqi_log_comment $VCP 5 Flow "Starting"

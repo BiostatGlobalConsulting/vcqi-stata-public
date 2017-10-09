@@ -1,4 +1,4 @@
-*! vcqi_open_log version 1.02 - Biostat Global Consulting - 2017-01-29
+*! vcqi_open_log version 1.03 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -7,9 +7,11 @@
 * 2015-10-30    1.00	Dale Rhoda		<first draft>
 * 2016-02-27	1.01	Mary Prier		Export placeholder text for "Log" worksheet & posted characteristics of computer running VCQI to log file
 * 2017-01-29	1.02	Dale Rhoda		Increase log comment length limit to 32,767
+* 2017-08-26	1.03	Mary Prier		Added version 14.1 line
 *******************************************************************************
 
-program vcqi_open_log
+program define vcqi_open_log
+	version 14.1
 
 	* If the user has not established the required global variables then exit.
 	* We do not call the program to exit gracefully here, because that, too

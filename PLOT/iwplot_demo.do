@@ -1,3 +1,12 @@
+*! iwplot_demo version 1.00 - Biostat Global Consulting - 2017-05-09
+*******************************************************************************
+* Change log
+* 				Updated
+*				version
+* Date 			number 	Name			What Changed
+* 2017-05-09	1.00	Dale Rhoda		Original version
+*******************************************************************************
+
 cd "Q:\- Folders shared outside BGC\BGC Team - WHO Software\Working folder - Dale\delete-soon"  // <--- Change this path
 
 excel_wrapper_for_iwplot_svyp "iwplot_inputs - demo 01 plot.xlsx" 

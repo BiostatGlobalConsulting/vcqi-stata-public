@@ -1,4 +1,4 @@
-*! RI_COVG_01_05TO version 1.05 - Biostat Global Consulting - 2017-08-26
+*! RI_COVG_01_05TO version 1.06 - Biostat Global Consulting - 2017-10-27
 *******************************************************************************
 * Change log
 * 				Updated
@@ -9,6 +9,8 @@
 * 2016-06-06	1.03	Dale Rhoda		Added card or register
 * 2016-09-15	1.04	Dale Rhoda		Added BCG scar
 * 2017-08-26	1.05	Mary Prier		Added version 14.1 line
+* 2017-10-27	1.06	Dale Rhoda		Removed redundant % signs from labels
+*										and added the _BRIEF sheet
 *******************************************************************************
 
 program define RI_COVG_01_05TO
@@ -33,12 +35,12 @@ program define RI_COVG_01_05TO
 			
 			* Add the words 'or scar' to the ch and chr labels if the dose is BCG
 			if lower("`d'") == "bcg" {
-				local ch_label by card or history or scar (%)
-				local chr_label by card or history or register or scar (%)
+				local ch_label by card or history or scar
+				local chr_label by card or history or register or scar
 			}
 			else {
-				local ch_label by card or history (%)
-				local chr_label by card or history or register (%)
+				local ch_label by card or history
+				local chr_label by card or history or register
 			}
 		
 			* by card or history (or scar if BCG)
@@ -54,8 +56,9 @@ program define RI_COVG_01_05TO
 			}
 			* to analyze
 			make_tables_from_svyp_output, measureid(RI_COVG_01) var(estimate ci stderr lcb ucb deff icc n nwtd) sheet(RI_COVG_01 ${ANALYSIS_COUNTER})  vid(`d'_a) estlabel(`du' crude coverage (%))
+			make_tables_from_svyp_output, measureid(RI_COVG_01) var(estimate ci) sheet(RI_COVG_01_BRIEF ${ANALYSIS_COUNTER})  vid(`d'_a) estlabel(`du' crude coverage (%))
 		}	
-		noi di ""
+		noi di as text ""
 	}
 		
 	vcqi_log_comment $VCP 5 Flow "Exiting"

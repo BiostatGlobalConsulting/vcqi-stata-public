@@ -1,4 +1,4 @@
-*! RI_QUAL_09_04GO version 1.04 - Biostat Global Consulting - 2017-08-26
+*! RI_QUAL_09_04GO version 1.06 - Biostat Global Consulting - 2019-11-10
 *******************************************************************************
 * Change log
 * 				Updated
@@ -11,6 +11,8 @@
 * 2017-05-17	1.03	Dale Rhoda		Only calculate anydose results for levels
 *										the user has requested
 * 2017-08-26	1.04	Mary Prier		Added version 14.1 line
+* 2019-11-09	1.05 	Dale Rhoda		Introduced MOV_OUTPUT_DOSE_LIST
+* 2019-11-10	1.06	Dale Rhoda		Added _`vc' to DV names
 *******************************************************************************
 
 program define RI_QUAL_09_04GO
@@ -28,7 +30,7 @@ program define RI_QUAL_09_04GO
 		
 		use "${VCQI_OUTPUT_FOLDER}/RI_QUAL_09_${ANALYSIS_COUNTER}", clear
 		
-		foreach d in $RI_DOSE_LIST {
+		foreach d in $MOV_OUTPUT_DOSE_LIST {
 		
 			noi di _continue _col(5) "`d' "
 
@@ -38,20 +40,35 @@ program define RI_QUAL_09_04GO
 				"${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}_`d'_database", replace
 
 			global VCQI_DATABASES $VCQI_DATABASES `measureid'_${ANALYSIS_COUNTER}_`d'_database
-								
-			forvalues l = 1/3 {
+
+			local lastl 3
+			if $VCQI_SHOW1 == 0 & $VCQI_SHOW2 == 0 & $VCQI_SHOW3 == 0 & $VCQI_SHOW4 == 1 local lastl 4		
+			
+			forvalues l = 1/`lastl' {
+
+				* Take over l temporarily if l is 4 and set back to 1
+				* to make the output come out right
+				if `l' != 4 local l_was_4 0
+				else {
+					local l_was_4 1
+					local l 1
+				}
+				
 				quietly levelsof level`l'id, local(llist)
-				if "${VCQI_SHOW`l'}" == "1" & "`llist'" != "" {
+				if ("${VCQI_SHOW`l'}" == "1" & "`llist'" != "") | (`l_was_4') {
 					foreach i in `llist' {
 						local plist
-						count if !missing(child_had_mov_`d') & level`l'id == `i'
+						count if !missing(child_had_mov_`d'_`vc') & level`l'id == `i'
 						local plist `plist' (`=scalar(r(N))')
-						count if child_had_mov_`d' == 1 & level`l'id == `i'
+						count if child_had_mov_`d'_`vc' == 1 & level`l'id == `i'
 						local plist `plist' (`=scalar(r(N))')
-						count if child_had_uncor_mov_`d' == 1 & level`l'id == `i'
+						count if child_had_uncor_mov_`d'_`vc' == 1 & level`l'id == `i'
 						local plist `plist' (`=scalar(r(N))')
-						count if child_had_cor_mov_`d' == 1 & level`l'id == `i'
+						count if child_had_cor_mov_`d'_`vc' == 1 & level`l'id == `i'
 						local plist `plist' (`=scalar(r(N))')
+						
+						// Post if l was 1 or 2 or 3, but skip if l was 4
+						if `l_was_4' == 0 ///
 						post go (`l') (`i') ("") ("") ("`=upper("`d'")'") `plist'
 
 						* if the user has asked for a stratified analysis, either by
@@ -60,7 +77,7 @@ program define RI_QUAL_09_04GO
 						* level strata
 								
 
-						if "$VCQI_LEVEL4_STRATIFIER" != "" {
+						if "$VCQI_LEVEL4_STRATIFIER" != "" & ( "$SHOW_LEVEL_4_ALONE" == "1" | "${SHOW_LEVELS_`l'_4_TOGETHER}" == "1"  | ( inlist(`l',2,3) & "$SHOW_LEVELS_2_3_4_TOGETHER" == "1"  )) {
 						
 							levelsof $VCQI_LEVEL4_STRATIFIER, local(llist4)
 							
@@ -72,16 +89,16 @@ program define RI_QUAL_09_04GO
 								if substr("`: type $VCQI_LEVEL4_STRATIFIER'",1,3) != "str" ///
 									local l4name = "`: label ($VCQI_LEVEL4_STRATIFIER) `j''"
 								
-								count if !missing(child_had_mov_`d') & level`l'id == `i' & ///
+								count if !missing(child_had_mov_`d'_`vc') & level`l'id == `i' & ///
 									$VCQI_LEVEL4_STRATIFIER == `j'	
 								local plist (`=scalar(r(N))')
-								count if child_had_mov_`d' == 1 & level`l'id == `i' & ///
+								count if child_had_mov_`d'_`vc' == 1 & level`l'id == `i' & ///
 									$VCQI_LEVEL4_STRATIFIER == `j'	
 								local plist `plist' (`=scalar(r(N))')
-								count if child_had_uncor_mov_`d' == 1 & level`l'id == `i' & ///
+								count if child_had_uncor_mov_`d'_`vc' == 1 & level`l'id == `i' & ///
 									$VCQI_LEVEL4_STRATIFIER == `j'	
 								local plist `plist' (`=scalar(r(N))')
-								count if child_had_cor_mov_`d' == 1 & level`l'id == `i' & ///
+								count if child_had_cor_mov_`d'_`vc' == 1 & level`l'id == `i' & ///
 									$VCQI_LEVEL4_STRATIFIER == `j'	
 								local plist `plist' (`=scalar(r(N))')
 								post go (`l') (`i') ("`j'") ("`l4name'") ///
@@ -90,7 +107,7 @@ program define RI_QUAL_09_04GO
 							}
 						}	
 						
-						if "$VCQI_LEVEL4_SET_VARLIST" != "" & ( "${SHOW_LEVELS_`l'_4_TOGETHER}" == "1"  | ( inlist(`l',2,3) & "$SHOW_LEVELS_2_3_4_TOGETHER" == "1"  )) {
+						if "$VCQI_LEVEL4_SET_VARLIST" != "" & ( "$SHOW_LEVEL_4_ALONE" == "1" | "${SHOW_LEVELS_`l'_4_TOGETHER}" == "1"  | ( inlist(`l',2,3) & "$SHOW_LEVELS_2_3_4_TOGETHER" == "1"  )) {
 							
 							forvalues j = 1/$LEVEL4_SET_NROWS {
 							
@@ -99,25 +116,25 @@ program define RI_QUAL_09_04GO
 							
 								if "${LEVEL4_SET_ROWTYPE_`j'}" == "DATA_ROW" {
 								
-									count if !missing(child_had_mov_`d') & ///
+									count if !missing(child_had_mov_`d'_`vc') & ///
 										level`l'id == `i' & ///
 										${LEVEL4_SET_CONDITION_`j'}	
 									
 									local plist (`=scalar(r(N))')
 									
-									count if child_had_mov_`d' == 1 & ///
+									count if child_had_mov_`d'_`vc' == 1 & ///
 										level`l'id == `i' & ///
 										${LEVEL4_SET_CONDITION_`j'}	
 									
 									local plist `plist' (`=scalar(r(N))')
 									
-									count if child_had_uncor_mov_`d' == 1 & ///
+									count if child_had_uncor_mov_`d'_`vc' == 1 & ///
 										level`l'id == `i' & ///
 										${LEVEL4_SET_CONDITION_`j'}	
 									
 									local plist `plist' (`=scalar(r(N))')
 									
-									count if child_had_cor_mov_`d' == 1 & ///
+									count if child_had_cor_mov_`d'_`vc' == 1 & ///
 										level`l'id == `i' & ///
 										${LEVEL4_SET_CONDITION_`j'}	
 									
@@ -138,6 +155,9 @@ program define RI_QUAL_09_04GO
 						}						
 					}
 				}
+				* Now set l back to 4 if that's its value at the top of the 
+				* loop so we exit the loop gracefully
+				if `l_was_4' local l 4
 			}
 		
 			capture postclose go
@@ -153,19 +173,33 @@ program define RI_QUAL_09_04GO
 			"${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}_anydose_database", replace
 			
 		global VCQI_DATABASES $VCQI_DATABASES `measureid'_${ANALYSIS_COUNTER}_anydose_database
-							
-		forvalues l = 1/3 {
-			levelsof level`l'id, local(llist)
-			if "${VCQI_SHOW`l'}" == "1" & "`llist'" != "" {
+
+		local lastl 3
+		if $VCQI_SHOW1 == 0 & $VCQI_SHOW2 == 0 & $VCQI_SHOW3 == 0 & $VCQI_SHOW4 == 1 local lastl 4		
+		
+		forvalues l = 1/`lastl' {
+
+			* Take over l temporarily if l is 4 and set back to 1
+			* to make the output come out right
+			if `l' != 4 local l_was_4 0
+			else {
+				local l_was_4 1
+				local l 1
+			}
+			
+			quietly levelsof level`l'id, local(llist)
+			if ("${VCQI_SHOW`l'}" == "1" & "`llist'" != "") | (`l_was_4') {
 				foreach i in `llist' {
-					count if !missing(child_had_mov) & level`l'id == `i'
+					count if !missing(child_had_mov_`vc') & level`l'id == `i'
 					local plist (`=scalar(r(N))')
-					count if child_had_mov == 1 & level`l'id == `i'
+					count if child_had_mov_`vc' == 1 & level`l'id == `i'
 					local plist `plist' (`=scalar(r(N))')
-					count if child_had_only_uncor_mov == 1 & level`l'id == `i'
+					count if child_had_only_uncor_mov_`vc' == 1 & level`l'id == `i'
 					local plist `plist' (`=scalar(r(N))')
-					count if child_had_only_cor_mov == 1 & level`l'id == `i'
+					count if child_had_only_cor_mov_`vc' == 1 & level`l'id == `i'
 					local plist `plist' (`=scalar(r(N))')
+					// Post if l was 1 or 2 or 3, but skip if l was 4
+					if `l_was_4' == 0 ///
 					post go (`l') (`i') ("") ("") ("ALLDOSES") `plist'
 
 					* if the user has asked for a stratified analysis, either by
@@ -173,7 +207,7 @@ program define RI_QUAL_09_04GO
 					* coverage results for each sub-stratum within the third
 					* level strata
 							
-					if "$VCQI_LEVEL4_STRATIFIER" != "" {
+					if "$VCQI_LEVEL4_STRATIFIER" != "" & ( "$SHOW_LEVEL_4_ALONE" == "1" | "${SHOW_LEVELS_`l'_4_TOGETHER}" == "1"  | ( inlist(`l',2,3) & "$SHOW_LEVELS_2_3_4_TOGETHER" == "1"  )) {
 					
 						levelsof $VCQI_LEVEL4_STRATIFIER, local(llist4)
 						
@@ -186,16 +220,16 @@ program define RI_QUAL_09_04GO
 								local l4name = "`: label ($VCQI_LEVEL4_STRATIFIER) `j''"
 							
 							local plist
-							count if !missing(child_had_mov) & level`l'id == `i' & ///
+							count if !missing(child_had_mov_`vc') & level`l'id == `i' & ///
 								$VCQI_LEVEL4_STRATIFIER == `j'	
 							local plist `plist' (`=scalar(r(N))')
-							count if child_had_mov == 1 & level`l'id == `i' & ///
+							count if child_had_mov_`vc' == 1 & level`l'id == `i' & ///
 								$VCQI_LEVEL4_STRATIFIER == `j'	
 							local plist `plist' (`=scalar(r(N))')
-							count if child_had_only_uncor_mov == 1 & level`l'id == `i' & ///
+							count if child_had_only_uncor_mov_`vc' == 1 & level`l'id == `i' & ///
 								$VCQI_LEVEL4_STRATIFIER == `j'	
 							local plist `plist' (`=scalar(r(N))')
-							count if child_had_only_cor_mov == 1 & level`l'id == `i' & ///
+							count if child_had_only_cor_mov_`vc' == 1 & level`l'id == `i' & ///
 								$VCQI_LEVEL4_STRATIFIER == `j'	
 							local plist `plist' (`=scalar(r(N))')
 							post go (`l') (`i') ("`j'") ("`l4name'") ("ALLDOSES") `plist'
@@ -203,7 +237,7 @@ program define RI_QUAL_09_04GO
 						}
 					}
 							
-					if "$VCQI_LEVEL4_SET_VARLIST" != "" & ( "${SHOW_LEVELS_`l'_4_TOGETHER}" == "1"  | ( inlist(`l',2,3) & "$SHOW_LEVELS_2_3_4_TOGETHER" == "1"  )) {
+					if "$VCQI_LEVEL4_SET_VARLIST" != "" & ( "$SHOW_LEVEL_4_ALONE" == "1" | "${SHOW_LEVELS_`l'_4_TOGETHER}" == "1"  | ( inlist(`l',2,3) & "$SHOW_LEVELS_2_3_4_TOGETHER" == "1"  )) {
 						
 						forvalues j = 1/$LEVEL4_SET_NROWS {
 						
@@ -213,25 +247,25 @@ program define RI_QUAL_09_04GO
 							if "${LEVEL4_SET_ROWTYPE_`j'}" == "DATA_ROW" {
 					
 								local plist
-								count if !missing(child_had_mov) & ///
+								count if !missing(child_had_mov_`vc') & ///
 									level`l'id == `i' & ///
 									${LEVEL4_SET_CONDITION_`j'}		
 								
 								local plist `plist' (`=scalar(r(N))')
 								
-								count if child_had_mov == 1 & ///
+								count if child_had_mov_`vc' == 1 & ///
 									level`l'id == `i' & ///
 									${LEVEL4_SET_CONDITION_`j'}		
 								
 								local plist `plist' (`=scalar(r(N))')
 								
-								count if child_had_only_uncor_mov == 1 & ///
+								count if child_had_only_uncor_mov_`vc' == 1 & ///
 									level`l'id == `i' & ///
 									${LEVEL4_SET_CONDITION_`j'}		
 								
 								local plist `plist' (`=scalar(r(N))')
 								
-								count if child_had_only_cor_mov == 1 & ///
+								count if child_had_only_cor_mov_`vc' == 1 & ///
 									level`l'id == `i' & ///
 									${LEVEL4_SET_CONDITION_`j'}		
 								
@@ -253,6 +287,9 @@ program define RI_QUAL_09_04GO
 					}
 				}
 			}
+			* Now set l back to 4 if that's its value at the top of the 
+			* loop so we exit the loop gracefully
+			if `l_was_4' local l 4
 		}
 
 		capture postclose go
@@ -269,7 +306,7 @@ program define RI_QUAL_09_04GO
 		* 2. It will serve as the basis of the `measureid'_05TO program that
 		*    exports requested records out to Microsoft Excel.
 
-		foreach d in $RI_DOSE_LIST anydose {
+		foreach d in $MOV_OUTPUT_DOSE_LIST anydose {
 			
 			use "${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}_`d'_database", clear
 			qui compress
@@ -329,9 +366,30 @@ program define RI_QUAL_09_04GO
 			sort level id name
 			
 			destring _all, replace
-			
-			qui compress
 
+			capture tostring level1name, replace
+			capture tostring level2name, replace
+			capture tostring level3name, replace
+			capture tostring level4name, replace
+		
+			qui compress
+			
+			capture label variable level1name  "Level1 name"
+			capture label variable level2id    "Level2 ID"
+			capture label variable level2name  "Level2 stratum name"
+			capture label variable level3id    "Level3 ID"
+			capture label variable level3name  "Level3 stratum name"
+				
+			label variable level       "Stratum geographic level"
+			label variable id          "Stratum ID (at its level)"
+			label variable level4id    "Sub-stratum ID"
+			label variable level4name  "Sub-stratum name"
+			label variable dose        "Dose"
+			label variable n_eligible  "Number of respondents with vx dates when age-eligible for the dose"
+			label variable n_mov       "Number of missed opportunities (MOVs)"	
+			label variable n_uncor_mov "Number of uncorrected MOVs"
+			label variable n_cor_mov   "Number of corrected MOVs"
+		
 			save, replace
 		}
 	}

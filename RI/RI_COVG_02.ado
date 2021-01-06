@@ -23,18 +23,18 @@ program define RI_COVG_02
 	}
 	else {
 
-		noi di "Calculating $VCP ..."
+		noi di as text "Calculating $VCP ..."
 
-		if "$VCQI_PREPROCESS_DATA" 		== "1" noi di _col(3) "Pre-processing dataset"
+		if "$VCQI_PREPROCESS_DATA" 		== "1" noi di as text _col(3) "Pre-processing dataset"
 		if "$VCQI_PREPROCESS_DATA" 		== "1" RI_COVG_02_01PP
 		*RI_COVG_02_02DQ
-		if "$VCQI_GENERATE_DVS" 		== "1" noi di _col(3) "Calculating derived variables"
+		if "$VCQI_GENERATE_DVS" 		== "1" noi di as text _col(3) "Calculating derived variables"
 		if "$VCQI_GENERATE_DVS" 		== "1" RI_COVG_02_03DV
-		if "$VCQI_GENERATE_DATABASES" 	== "1" noi di _col(3) "Generating output databases"
+		if "$VCQI_GENERATE_DATABASES" 	== "1" noi di as text _col(3) "Generating output databases"
 		if "$VCQI_GENERATE_DATABASES" 	== "1" RI_COVG_02_04GO
-		if "$EXPORT_TO_EXCEL" 			== "1" noi di _col(3) "Exporting to Excel"
+		if "$EXPORT_TO_EXCEL" 			== "1" noi di as text _col(3) "Exporting to Excel"
 		if "$EXPORT_TO_EXCEL" 			== "1" RI_COVG_02_05TO
-		if "$MAKE_PLOTS" 				== "1" noi di _col(3) "Making plots"
+		if "$MAKE_PLOTS" 				== "1" noi di as text _col(3) "Making plots"
 		if "$MAKE_PLOTS"      			== "1" RI_COVG_02_06PO
 	
 	}

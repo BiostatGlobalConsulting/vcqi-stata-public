@@ -1,4 +1,13 @@
-*! version 1.0
-label "VCQI Blue 3 (light)"
+*! color-vcqi_level4 version 1.01 - Biostat Global Consulting - 2020-03-23
+* ******************************************************************************
+* Change log
+*             Updated
+*             version
+* Date        number   Name             What Changed
+* 2017-05-26  1.00     Dale Rhoda       Original version
+* 2020-03-23  1.01     Dale             Fixed comment block to suppress warnings
+* ******************************************************************************
+
+label resource "VCQI Blue 3 (light)"
 
 set rgb "222 235 247"

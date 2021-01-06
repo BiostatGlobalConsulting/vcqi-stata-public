@@ -42,9 +42,9 @@ program define DESC_03_03DV
 			* If this level is a missing value then allow the user to specify the label via input global macros
 			* (Actually you could use this options to overwrite the label for any option...we just call it 'missing'
 			*
-			if "$DESC_03_N_MISSING_LEVELS" == "" vcqi_global DESC_03_N_MISSING_LEVELS -1
-			forvalues i = 1/$DESC_03_N_MISSING_LEVELS {
-				if "`v'" == "${DESC_03_MISSING_LEVEL_`i'}" label variable desc03_`vcounter'_`lcounter' "${DESC_03_MISSING_LABEL_`i'}"
+			if "$DESC_03_N_RELABEL_LEVELS" == "" vcqi_global DESC_03_N_RELABEL_LEVELS -1
+			forvalues i = 1/$DESC_03_N_RELABEL_LEVELS {
+				if "`v'" == "${DESC_03_RELABEL_LEVEL_`i'}" label variable desc03_`vcounter'_`lcounter' "${DESC_03_RELABEL_LABEL_`i'}"
 			}		
 			
 			order desc03_`vcounter'_`lcounter', after(`v')
@@ -60,13 +60,13 @@ program define DESC_03_03DV
 		if "$DESC_03_N_SUBTOTALS" == "" vcqi_global DESC_03_N_SUBTOTALS -1
 		forvalues i = 1/$DESC_03_N_SUBTOTALS {
 			gen desc03_`vcounter'_st`i' = 0 
-			gen desc03_missing_`vcounter'_st`i' = 1
+			gen desc03_RELABEL_`vcounter'_st`i' = 1
 			foreach v of varlist ${DESC_03_SUBTOTAL_LEVELS_`i'} {
 				replace desc03_`vcounter'_st`i' = 1 if (`v' == `quote'${DESC_03_SELECTED_VALUE}`quote')
-				replace desc03_missing_`vcounter'_st`i' = 0 if !missing(`v')
+				replace desc03_RELABEL_`vcounter'_st`i' = 0 if !missing(`v')
 			}
-			replace desc03_`vcounter'_st`i' = . if desc03_missing_`vcounter'_st`i' == 1 & upper("$DESC_03_DENOMINATOR")=="RESPONDED"
-			drop desc03_missing_`vcounter'_st`i'
+			replace desc03_`vcounter'_st`i' = . if desc03_RELABEL_`vcounter'_st`i' == 1 & upper("$DESC_03_DENOMINATOR")=="RESPONDED"
+			drop desc03_RELABEL_`vcounter'_st`i'
 			label variable    desc03_`vcounter'_st`i' "${DESC_03_SUBTOTAL_LABEL_`i'}"
 			if `i' == 1 order desc03_`vcounter'_st`i', after(desc03_`vcounter'_`=`lcounter'-1')
 			if `i'  > 1 order desc03_`vcounter'_st`i', after(desc03_`vcounter'_st`=`i'-1')

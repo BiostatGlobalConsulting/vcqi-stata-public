@@ -1,4 +1,4 @@
-*! RI_QUAL_03_03DV version 1.04 - Biostat Global Consulting - 2017-08-26
+*! RI_QUAL_03_03DV version 1.05 - Biostat Global Consulting - 2019-07-17
 *******************************************************************************
 * Change log
 * 				Updated
@@ -9,6 +9,7 @@
 * 2016-09-21	1.02	Dale Rhoda		Bring in logic from RI_COVG_02
 * 2017-02-01	1.03	Dale Rhoda		Clarified the SOUGHT logic
 * 2017-08-26	1.04	Mary Prier		Added version 14.1 line
+* 2019-07-17	1.05	Dale Rhoda		Set outcomes to . if psweight == 0
 *******************************************************************************
 
 program define RI_QUAL_03_03DV
@@ -34,7 +35,7 @@ program define RI_QUAL_03_03DV
 		foreach s in card register {
 			*Assume age_at_`d' was calculated using a valid dob and valid vaccination date.
 			*Assume min_age scalar already in memory
-			gen got_invalid_`d'_by_`s'=(age_at_`d'_`s' < `d'_min_age_days) 
+			gen got_invalid_`d'_by_`s'=(age_at_`d'_`s' < `d'_min_age_days) if psweight > 0 & !missing(psweight)
 			replace got_invalid_`d'_by_`s' = . if missing(dob_for_valid_dose_calculations) 
 			replace got_invalid_`d'_by_`s' = . if missing(age_at_`d'_`s') 
 			

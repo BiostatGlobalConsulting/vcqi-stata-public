@@ -1,4 +1,4 @@
-*! TT_COVG_01_03DV version 1.04 - Biostat Global Consulting - 2017-08-26
+*! TT_COVG_01_03DV version 1.06 - Biostat Global Consulting - 2019-08-23
 *******************************************************************************
 * Change log
 * 				Updated
@@ -14,6 +14,8 @@
 *										changed variable label on most_recent_tt_r_or_h
 *										changed var name on line 102 to most_recent_tt_r_or_h was previously a copy paste error
 * 2017-08-26	1.04	Mary Prier		Added version 14.1 line
+* 2018-05-28	1.05	Dale Rhoda		Years since last dose must be non-negative
+* 2019-08-23	1.06	Dale Rhoda		Make outcomes missing if psweight == 0 | missing(psweight)
 *******************************************************************************
 
 program define TT_COVG_01_03DV
@@ -27,7 +29,7 @@ program define TT_COVG_01_03DV
 	quietly {
 		use "${VCQI_OUTPUT_FOLDER}/TT_COVG_01_${ANALYSIS_COUNTER}", clear
 		
-		gen lifetime_tt_doses_by_history = 0
+		gen lifetime_tt_doses_by_history = 0 
 		label variable lifetime_tt_doses_by_history "Lifetime TT doses per history"
 			
 		* sum up the doses recorded on the card, and allow the card
@@ -44,8 +46,8 @@ program define TT_COVG_01_03DV
 			replace lifetime_tt_doses_by_card = lifetime_tt_doses_by_card + 1 if !missing(TT`i')
 			replace years_since_last_dose_c_or_h = ( (TT09-TT`i') / 365 ) ///
 					if !missing(TT`i') & !missing(TT09) & ///
-				   ( (TT09-TT`i') / 365 ) < years_since_last_dose_c_or_h
-			
+				   ( (TT09-TT`i') / 365 ) < years_since_last_dose_c_or_h & ///
+				   ( (TT09-TT`i') / 365 ) >= 0			
 		}
 			
 		replace lifetime_tt_doses_by_history = lifetime_tt_doses_by_history + TT37 if inlist(TT37,1,2,3)
@@ -103,7 +105,8 @@ program define TT_COVG_01_03DV
 
 				replace years_since_last_dose_r_or_h = ( (TT09-TTHC`i') / 365 ) ///
 						if !missing(TTHC`i') & !missing(TT09) & ///
-						( (TT09-TTHC`i') / 365 ) < years_since_last_dose_r_or_h
+						( (TT09-TTHC`i') / 365 ) < years_since_last_dose_r_or_h & ///
+						( (TT09-TTHC`i') / 365 ) >= 0
 			}
 			
 			gen protected_at_birth_by_register = 0	
@@ -121,7 +124,6 @@ program define TT_COVG_01_03DV
 				local dropthis = r(N)
 				vcqi_log_comment $VCP 3 Comment "`dropthis' of `bigN' are protected_at_birth_`o'"
 			}
-			
 		}
 		
 		gen protected_at_birth_to_analyze = protected_at_birth_c_or_h
@@ -136,7 +138,11 @@ program define TT_COVG_01_03DV
 		if $TT_RECORDS_SOUGHT_FOR_ALL == 1 {
 			replace protected_at_birth_to_analyze = protected_at_birth_c_or_h_or_r 
 			label variable protected_at_birth_to_analyze "Protected at birth - TT_RECORDS_SOUGHT_FOR_ALL"
-
+		}
+		
+		* Set outcomes to missing if weight is missing or zero
+		foreach v of varlist protected_at_birth_* {
+			replace `v' = . if psweight == 0 | missing(psweight)
 		}
 		
 		save, replace

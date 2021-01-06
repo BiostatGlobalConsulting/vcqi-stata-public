@@ -1,4 +1,4 @@
-*! make_tables_from_unwtd_output version 1.06 - Biostat Global Consulting - 2017-08-26
+*! make_tables_from_unwtd_output version 1.11 - Biostat Global Consulting - 2020-12-12
 *******************************************************************************
 * Change log
 * 				Updated
@@ -13,13 +13,21 @@
 * 2017-01-30	1.05	Dale Rhoda		Small formatting changes to implement
 *										VCQI_LEVEL4_SET_VARLIST & VCQI_LEVEL4_SET_LAYOUT
 * 2017-08-26	1.06	Mary Prier		Added version 14.1 line
+* 2018-01-16	1.07	Dale Rhoda		The variables option can hold 
+*										numerator or estimate or n
+* 2018-01-16	1.08	Dale Rhoda		remove old noomitpriorn option
+* 2018-11-14	1.09	Dale Rhoda		Added flexible VCQI_NUM_DECIMAL_DIGITS
+* 2020-01-15	1.10	MK Trimner		Added double quotes when ustrlen was used for possible labels
+*										Created local to pass through the length for col widths
+* 2020-12-12	1.11	Dale Rhoda		Allow user to SHOW_LEVEL_4_ALONE
 *******************************************************************************
 
 program define make_tables_from_unwtd_output
 	version 14.1
 	
-	syntax  , VARiable(string) ESTLABel(string asis) ///
-	          VID(string) MEASureid(string) SHEET(string) [ noOMITpriorn RATIO ]
+	syntax  , VID(string) MEASureid(string) SHEET(string) ///
+			  [ RATIO NUMERLABEL(string asis) ///
+			    NLABEL(string asis) VARiables(string) ESTLABel(string asis) ]
 				
 	local oldvcp $VCP
 	global VCP make_tables_from_unwtd_output
@@ -28,15 +36,17 @@ program define make_tables_from_unwtd_output
 	quietly {
 
 		local sheet_nospaces = subinstr("`sheet'"," ","_",.)
+		local sheet_nospaces = subinstr("`sheet_nospaces'","-","_",.)
 
 		vcqi_log_comment $VCP 5 Flow "Starting"	
 		if "$VCQI_DEBUG" == "1" vcqi_log_comment $VCP 3 Comment "Worksheet = `sheet'"
 		if "$VCQI_DEBUG" == "1" vcqi_log_comment $VCP 3 Comment "Measure = `measureid'"
-		if "$VCQI_DEBUG" == "1" vcqi_log_comment $VCP 3 Comment "Variable = `variable'"
+		if "$VCQI_DEBUG" == "1" vcqi_log_comment $VCP 3 Comment "Variables = `variables'"
 		if "$VCQI_DEBUG" == "1" vcqi_log_comment $VCP 3 Comment "Label = `estlabel'"
 		if "$VCQI_DEBUG" == "1" vcqi_log_comment $VCP 3 Comment "VID = `vid'"
-		if "$VCQI_DEBUG" == "1" vcqi_log_comment $VCP 3 Comment "Omitpriorn = `omitpriorn'"
 		if "$VCQI_DEBUG" == "1" vcqi_log_comment $VCP 3 Comment "Ratio = `ratio'"
+		if "$VCQI_DEBUG" == "1" vcqi_log_comment $VCP 3 Comment "Nlabel = `nlabel'"
+		if "$VCQI_DEBUG" == "1" vcqi_log_comment $VCP 3 Comment "Numerlabel = `numerlabel'"
 		
 		* This program does several things...
 		*
@@ -60,6 +70,7 @@ program define make_tables_from_unwtd_output
 		* are not meant to be written out, but are handy for formatting the 
 		* spreadsheet cells
 		*
+		
 		capture postclose to_dataset
 
 		postfile to_dataset str50 stratum  estimate n block level substratum ///
@@ -70,10 +81,10 @@ program define make_tables_from_unwtd_output
 
 		use "${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}_`vid'_database", clear
 		
-		* Preperatory work and tidying of variables	
+		* Preparatory work and tidying of variables	
 		
 		* calculate maximum number of characters in the stratum name
-		gen stratum_name_length = length(name)
+		gen stratum_name_length = ustrlen(name)
 		qui summarize stratum_name_length
 		local max_stratum_name_length = r(max)
 		drop stratum_name_length
@@ -182,7 +193,6 @@ program define make_tables_from_unwtd_output
 			restore
 			if $SHOW_BLANKS_BETWEEN_LEVELS == 1 `postblankrow' 
 		}
-
 			
 		* Only show the sub-sub-national level (3) without aggregating upward	
 		if $SHOW_LEVEL_3_ALONE == 1 {
@@ -197,6 +207,21 @@ program define make_tables_from_unwtd_output
 			if $SHOW_BLANKS_BETWEEN_LEVELS == 1 `postblankrow' 
 		}
 		
+		* Only show the sub-strata (e.g., urban/rural)	
+		* (Note that the value of block here is 9 because this capability 
+		*  was added after that for blocks 1-8.)
+		if $SHOW_LEVEL_4_ALONE == 1 {
+			preserve
+			keep if level == 1 & !missing(level4id)
+			sort level4order
+			forvalues i = 1/`=_N' {
+				post to_dataset (name[`i']) (estimate[`i']) (n[`i'])  ///
+						(9) (level[`i']) (substratum[`i'])
+			}
+			restore
+			if $SHOW_BLANKS_BETWEEN_LEVELS == 1 `postblankrow' 
+		}
+	
 		* Show each level 2 stratum (sorted in the order the user asked for)
 		* and underneath the level 2 row, list one row for each of the level 3
 		* strata that are in the level 2 stratum.  e.g., Show a row for each
@@ -292,6 +317,17 @@ program define make_tables_from_unwtd_output
 		
 		use "${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}_`vid'_TO", clear
 		qui compress
+		* Re-calculate the integer numerator, using estimate and denominator
+		gen numerator = round(estimate*n/100)
+		
+		* Label the variables
+		if "`estlabel'" == "" local estlabel Estimate
+		if "`numerlabel'" == "" local numerlabel Numerator
+		if "`nlabel'"   == "" local nlabel   N
+		label variable numerator "`numerlabel'"
+		label variable n "`nlabel'"
+		label variable estimate "`estlabel'"
+		
 		save, replace
 		
 		*******************************************************
@@ -308,44 +344,52 @@ program define make_tables_from_unwtd_output
 		local rows 4,`=`startrow'+`nrows''
 		
 		if "$VCQI_DEBUG" == "1" vcqi_log_comment $VCP 3 Comment "LAST_COL full == ${LC4_`sheet_nospaces'}"
+		
+		* check for a valid list of variables
+		
+		if "`variables'" == "" local variables estimate n
+				
+		foreach v in `variables' {
+			if !inlist("`v'","estimate","numerator","n") {
+				di as error "make_tables_from_unwtd_output.ado: The variable `v' contains a word that is not one of the output options."
+				di as error "Options include: estimate, numerator and n."
+				vcqi_log_comment $VCP 1 Error  "make_tables_from_unwtd_output.ado: The variable `v' is not one of the output options."
+				vcqi_log_comment $VCP 1 Error  "Options include: estimate, numerator and n."
+				vcqi_halt_immediately
+			}
+		}		
+		
 		* If we have not yet written to this tab, be sure to include the
 		* stratum names in the output, and start at column 1
 		if "${LC4_`sheet_nospaces'}" == "" {
-			local vlist stratum estimate n 
+			local vlist stratum `variables' 
 			local nextcolumn 1
 			local sheetoption sheetreplace
 			local stratum	1
-			local estimate  2
-			local n			3
+			forvalues i = 1/`=wordcount("`variables'")' {
+				local `=word("`variables'",`i')'  `= 1 + `i''
+			}
 		}
 		* If we have already written something to this tab, then we do not
 		* need to repeat the stratum names;  
 		*
-		* If the option noomitpriorn is set, then we move over one column from
-		* where we last left off, so the N column from the last call will 
-		* still show up in the output
-		* 
-		* If the option noomitpriorn is not set, then we overwrite the previous 
-		* value of N with the new value of % (by starting in the same column
-		* where we last left off).  But of course the value of N is written out
-		* again by this operation, so if it is the last, the N will show, or if
-		* the next call to this program does not specify omitpriorn then this
-		* N column will also show in the final worksheet
-		
+		 
 		else {
-			local vlist estimate n 
-			* Assume that we wish to omit the earlier N
-			local nextcolumn = `=${LC4_`sheet_nospaces'}'
-			* Adjust nextcolumn if the user does NOT want to omit earlier N
-			if "`omitpriorn'" == "noomitpriorn" local nextcolumn = `=${LC4_`sheet_nospaces'}+1'
+			local vlist `variables'
+			
+			local nextcolumn = ${LC4_`sheet_nospaces'} + 1
+			
 			local sheetoption sheetmodify
-			local estimate  `nextcolumn'
-			local n			`=`nextcolumn'+1'
+			forvalues i = 1/`=wordcount("`variables'")' {
+				local `=word("`variables'",`i')'  `= `nextcolumn' + `i' -1'
+			}
 		}
+		
+		local ncols = wordcount("`vlist'")
 		
 		if "$VCQI_DEBUG" == "1" vcqi_log_comment $VCP 3 Comment "vlist = `vlist'"
 		
-		local cols `nextcolumn',`n'
+		local cols `nextcolumn',`= `nextcolumn' + `ncols' -1 '
 				
 		vcqi_excel_convert_to_letter `nextcolumn'
 		
@@ -355,14 +399,15 @@ program define make_tables_from_unwtd_output
 				
 		* Export the brief table to an Excel worksheet.  The user specifies the
 		* name of the worksheet.
+		
 		export excel `vlist' using "${VCQI_OUTPUT_FOLDER}/${VCQI_ANALYSIS_NAME}_TO.xlsx", ///
-		sheet("`sheet'") firstrow(variable) cell(`cell') `sheetoption'
+			sheet("`sheet'") firstrow(variable) cell(`cell') `sheetoption'
 
 		if "${LC4_`sheet_nospaces'}" == "" {
-			vcqi_global LC4_`sheet_nospaces' 3
+			vcqi_global LC4_`sheet_nospaces' `ncols'
 		}
 		else {
-			vcqi_global LC4_`sheet_nospaces' `=${LC4_`sheet_nospaces'} + 1 + ("`omitpriorn'" == "noomitpriorn")'	
+			vcqi_global LC4_`sheet_nospaces' `= ${LC4_`sheet_nospaces'} + `ncols' '
 		}	
 		
 		mata: b = xl()
@@ -373,8 +418,11 @@ program define make_tables_from_unwtd_output
 		*Overwrite the stratum variable name...it is not needed
 		mata: b.put_string(`startrow',1,"")
 
-		mata: b.put_string(`startrow',`estimate',"`estlabel'")
-		mata: b.put_string(`startrow',`n',"N")
+		forvalues i = 1/`ncols' {
+			if word("`vlist'",`i') == "estimate"  mata: b.put_string(`startrow',`estimate', "`estlabel'")
+			if word("`vlist'",`i') == "numerator" mata: b.put_string(`startrow',`numerator',"`numerlabel'")
+			if word("`vlist'",`i') == "n"         mata: b.put_string(`startrow',`n',        "`nlabel'")
+		}
 		
 		if `nextcolumn' == 1 {
 					
@@ -394,17 +442,39 @@ program define make_tables_from_unwtd_output
 		}
 		
 		if "$FORMAT_EXCEL" == "1" {
-					
+			if $VCQI_NUM_DECIMAL_DIGITS == 0 local dp 
+			if $VCQI_NUM_DECIMAL_DIGITS > 0 {
+				local dp .
+				forvalues i = 1/$VCQI_NUM_DECIMAL_DIGITS {
+					local dp `dp'0
+				}
+			}
+			if $VCQI_NUM_DECIMAL_DIGITS < 0 local dp .0
+								
 			if `nextcolumn' == 1 mata: b.set_column_width(`stratum',`stratum', `=`max_stratum_name_length'+3')
 			if `nextcolumn' == 1 mata: b.set_horizontal_align((`rows'),`stratum',"left")
 
-			mata: b.set_column_width(`estimate',`estimate', `=max(5,length("`estlabel'")+1)')
-			if "`ratio'" != "ratio" mata: b.set_number_format((`rows'),`estimate',"##0.0;;0.0;")
-			if "`ratio'" == "ratio" mata: b.set_number_format((`rows'),`estimate',"##0.000;;0.0;")
+			forvalues i = 1/`ncols' {
 
-			mata: b.set_column_width(`n',`n'      ,  8)
+				if word("`vlist'",`i') == "estimate"  {
+					local estlabel_length = max(5,ustrlen(`"`estlabel'"')+1)
+					mata: b.set_column_width(`estimate',`estimate', `estlabel_length')
+					if "`ratio'" != "ratio" mata: b.set_number_format((`rows'),`estimate',"##`dp';;`dp';")
+					if "`ratio'" == "ratio" mata: b.set_number_format((`rows'),`estimate',"##0.000;;0.0;")
+				}
 			
-			mata: b.set_number_format((`rows'),   `n',"number_sep")
+				if word("`vlist'",`i') == "numerator" {
+					local numlabel_length = max(8,ustrlen(`"`numerlabel'"')+1)
+					mata: b.set_column_width(`numerator',`numerator' , `numlabel_length')
+					mata: b.set_number_format((`rows'),  `numerator' , "number_sep")
+				}
+				
+				if word("`vlist'",`i') == "n" {
+					local nlabel_length = max(8,ustrlen(`"`nlabel'"')+1)
+					mata: b.set_column_width(`n',`n' , `nlabel_length')
+					mata: b.set_number_format((`rows'), `n' , "number_sep")
+				}
+			}
 		
 			mata: b.set_horizontal_align(`startrow',(`cols'),"right")
 			
@@ -435,7 +505,7 @@ program define make_tables_from_unwtd_output
 		
 		mata: b.close_book()
 		
-		vcqi_log_comment $VCP 3 Comment "Tabular output: `measureid' - `variable' to sheet `sheet' in ${VCQI_OUTPUT_FOLDER}/${VCQI_ANALYSIS_NAME}_TO.xlsx"	
+		vcqi_log_comment $VCP 3 Comment "Tabular output from: `measureid'_${VCQI_ANALYSIS_COUNTER}_`vid' to sheet `sheet' in ${VCQI_OUTPUT_FOLDER}/${VCQI_ANALYSIS_NAME}_TO.xlsx"	
 	}
 	
 	vcqi_log_comment $VCP 5 Flow "Exiting"

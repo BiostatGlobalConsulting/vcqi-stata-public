@@ -1,4 +1,4 @@
-*! uwplot_vcqi version 1.06 - Biostat Global Consulting - 2017-08-26
+*! uwplot_vcqi version 1.08 - Biostat Global Consulting - 2020-04-28
 *******************************************************************************
 * Change log
 * 				Updated
@@ -19,6 +19,15 @@
 * 2017-05-19	1.05	Dale Rhoda		Tweak shadebehind width and white 
 *										rectangle dimensions
 * 2017-08-26	1.06	Mary Prier		Added version 14.1 line
+* 2018-11-14 	1.07	Dale Rhoda		Use VCQI_NUM_DECIMAL_DIGITS
+* 2020-04-28	1.08	Dale Rhoda		Allow user to specify that right-side
+*                                       point estimate should be wrapped in ()
+*                                       if 25 <= N < 50 and that N should be
+*                                       followed by a double-dagger if N < 25.
+*                                       (Set global UWPLOT_ANNOTATE_LOW_MED = 1)
+*                                       (Also make the 25 and 50 programmable
+*                                        using globals UWPLOT_ANNOTATE_LOW_N 
+*                                        and UWPLOT_ANNOTATE_LOW_N.)
 *********************************************************************************
 * All datasets which are called into this program should be stored in 
 * the working directory; the plot will also be saved in the working directory
@@ -171,18 +180,28 @@ program define uwplot_vcqi
 	* to plot on the right hand side of the plot
 	*******************************************************************
 
-
 	*   rtstring1 contains % and N
 	
-	gen pstring = strtrim(string(param2, "%4.1f"))
+	gen pstring = strtrim(string(param2, "%4.${VCQI_NUM_DECIMAL_DIGITS}f"))
 	replace pstring = "100" if pstring == "100.0"
 	
 	gen nstring = strofreal(param1, "%10.0fc")
 	forvalues i = 1/10 {
-		replace nstring = " " + nstring if length(nstring) < 10
+		*replace nstring = " " + nstring if length(nstring) < 5
 	}
 
-	gen rtstring1 = pstring + " " + nstring
+	gen rtstring1 = pstring + "%  N= " + nstring
+	
+	
+	* If user requests to annotate small sample sizes, add paraentheses
+	* around N < 50 and square brackets around N < 25
+	
+	if "$UWPLOT_ANNOTATE_LOW_MED" != "" {
+		if "$UWPLOT_ANNOTATE_LOW_N" == "" vcqi_global UWPLOT_ANNOTATE_LOW_N 25
+		if "$UWPLOT_ANNOTATE_MED_N" == "" vcqi_global UWPLOT_ANNOTATE_MED_N_50
+	}
+	if "$UWPLOT_ANNOTATE_LOW_MED" != "" replace rtstring1 = "(" + pstring + "%) N= " + nstring if ${UWPLOT_ANNOTATE_LOW_N} <= param1 & param1 < ${UWPLOT_ANNOTATE_MED_N}
+	if "$UWPLOT_ANNOTATE_LOW_MED" != "" replace rtstring1 = pstring + "% N= " + nstring + " `=uchar(8225)'" if               param1 < ${UWPLOT_ANNOTATE_LOW_N}
 
 	local lenrttext0 = 0
 	local lenrttext1 = length(rtstring1)
@@ -346,7 +365,7 @@ program define uwplot_vcqi
 	* export graph in chosen format
 	if "`export'" != "" {
 		graph export "`export'", width(2000) replace
-		noi di "Exported unweighted plot: `export'"
+		noi di as text "Exported unweighted plot: `export'"
 	}
 
 	if "$VCQI_LOGOPEN" == "1" {

@@ -31,7 +31,7 @@ program define RI_QUAL_12_04GO
 
 			local ++i
 		}
-		noi di ""
+		noi di as text ""
 	}
 	
 	vcqi_log_comment $VCP 5 Flow "Exiting"

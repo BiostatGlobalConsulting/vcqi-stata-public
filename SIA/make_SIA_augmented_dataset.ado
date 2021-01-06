@@ -1,4 +1,4 @@
-*! make_SIA_augmented_dataset version 1.02 - Biostat Global Consulting - 2017-08-26
+*! make_SIA_augmented_dataset version 1.03 - Biostat Global Consulting - 2018-07-31
 *******************************************************************************
 * Change log
 * 				Updated
@@ -8,6 +8,7 @@
 * 2017-08-22	1.01	Dale Rhoda		Removed VCQI billboard from the end
 *										(because we usually run this in VCQI)
 * 2017-08-26	1.02	Mary Prier		Added version 14.1 line
+* 2018-07-31	1.03	MK Trimner		Made changes to align with RI ADS changes
 *******************************************************************************
 
 * This program creates one SIA dataset containing the original SIA dataset provided in VCQI 
@@ -80,7 +81,7 @@ program define make_SIA_augmented_dataset
 		* Note: Anytime a new SIA indicator is created it will need to be added to this list
 		* Note: This program will only work for indicators where the dataset has 1 row per person
 		
-		global SIALIST SIA_COVG_01 SIA_COVG_02 SIA_COVG_03 SIA_QUAL_01
+		global SIALIST SIA_COVG_01 SIA_COVG_02 SIA_COVG_03 SIA_COVG_04 SIA_QUAL_01
 							
 		******************************************************************************** 
 		******************************************************************************** 
@@ -111,9 +112,8 @@ program define make_SIA_augmented_dataset
 			local fileuse `=word("`filelist'",`i')' 
 
 			use "`fileuse'", clear
-			sort respid
-			compress
-						
+			sort respid stratumid clusterid
+									
 			* Save a copy of the dataset file that will be edited with any variable renames
 			save "VCQI_ADS_`fileuse'", replace
 				
@@ -137,64 +137,45 @@ program define make_SIA_augmented_dataset
 				
 		save "SIA_augmented_dataset", replace
 		
-		* Post to log that these variables are from the original SIA dataset
-		capture postclose vcqiadsvarlist
-		postfile vcqiadsvarlist str500 (variable dataset analysis_counter message new_var_name) using vcqi_ads_logfile, replace
-
-		local original 
-		foreach v of varlist * {
-			local original `original' `v'
-			post vcqiadsvarlist("`v'") ("Original SIA dataset") ("") ("Variable part of original SIA dataset provided - $VCQI_SIA_DATASET") ("")
-		}
-		
-		* Create respid for merging purposes
-		egen respid=group(SIA01 SIA03 SIA11 SIA12)
-		
-		* sort by respid 
-		sort respid
-		compress
-		save, replace
-		
-
 		*Merge together with the first file in SIA_LIST
-		merge 1:1 respid using "VCQI_ADS_`=word("`filelist'",1)'", update nogen
+		merge 1:1 SIA01 SIA03 SIA11 SIA12 using "VCQI_ADS_`=word("`filelist'",1)'", update nogen
 		
 		* Save as the augmented dataset for merging purposes
 		save "SIA_augmented_dataset", replace
 		
 		* Next compare the varlists for each dataset and create one large varlist  
-		* Also create a DS_TYPE list to show where the variables came from
-
 		* Set the variables as the varlist and dstype from first dataset	
-		local VARLIST `original'
+		local VARLIST `VARLIST_`=word("`filelist'",1)''
 
-		foreach v in `original' {
-			local DS_TYPE `DS_TYPE' original
+		* Foreach variable, post the variable and message about variable to log
+		capture postclose vcqiadsvarlist
+		postfile vcqiadsvarlist str500 (variable dataset analysis_counter message new_var_name) using vcqi_ads_logfile, replace
+		
+		foreach v in `VARLIST' {
+			post vcqiadsvarlist("`v'") ("``v'[Indicator]'") ("``v'[Analysiscounter]'") ("Variable added to varlist from this dataset") ("")
 		}
-				
+						
 		*Compare the remaining datasets varlists and values 
 		local dup 0
 		
-		forvalues i = 1/`=wordcount("`filelist'")' {
+		forvalues i = 2/`=wordcount("`filelist'")' {
 			local fn `=word("`filelist'",`i')'
 			foreach u in `VARLIST_`fn'' {
-				noi di "`u'"
+				
 				
 				if strpos("`VARLIST'","`u' ") >= 1 {
 				
-					noi di "`fn': Match for `u'..." _continue
+					noi di as text "`fn': Match for `u'..." _continue
 				
 					* Create two small datasets with specified variable and the identifiers to compare values
 					use "SIA_augmented_dataset", clear
-					keep respid `u'	
-					sort respid
-					
+					keep respid clusterid stratumid `u'	
+									
 					* Save as a new name
 					save "SIA_augmented_dataset_`i'_`u'", replace
 					
 					use "VCQI_ADS_`fn'", clear
-					keep respid `u'	
-					sort respid 
+					keep respid stratumid clusterid `u'	
 					
 					* If the specified variable is an identifying variable, create a clone variable
 					if inlist("`u'","respid", "stratumid", "clusterid") {
@@ -208,18 +189,16 @@ program define make_SIA_augmented_dataset
 					}
 					
 					* Merge the two datasets together
-					merge 1:1 respid using "SIA_augmented_dataset_`i'_`u'"
-					sort respid
-					save "COMPASIASON_VCQI_ADS_`fn'_`i'_`u'", replace
+					merge 1:1 respid clusterid stratumid using "SIA_augmented_dataset_`i'_`u'"
+					save "COMPARISON_VCQI_ADS_`fn'_`i'_`u'", replace
 					
-						
 					* Confirm the values of the specified variable match
 					capture assert `u'==`=substr("`u'_`fn'",1,32)' 
 					
 					* If the values match, no action is needed other than to post in the log...
 					if _rc!=9 {
 					
-						noi di "found identical values."
+						noi di as text "found identical values."
 
 						* Increase the local dup by 1 for first dup variable found
 						if `dup'==0 local dup 1
@@ -228,7 +207,6 @@ program define make_SIA_augmented_dataset
 						
 						if inlist("`u'","respid", "stratumid", "clusterid") {
 							clonevar ADS_DUPVAR_`dup'_`=substr("`fn'",1,length("`fn'")-2)'=`u'
-							
 							* Add unique characteristic for variable
 							char ADS_DUPVAR_`dup'_`=substr("`fn'",1,length("`fn'")-2)'[Unique] "Duplicate with identical values"
 							local VARLIST `VARLIST' ADS_DUPVAR_`dup'_`=substr("`fn'",1,length("`fn'")-2)'
@@ -253,7 +231,7 @@ program define make_SIA_augmented_dataset
 					
 					* If values differ, then the new variable will need to be renamed and added to the varlist
 					if _rc==9 {
-						noi di "found some differences."
+						noi di as text "found some differences."
 					
 						* Increase the local dup by 1 for first dup variable found
 						if `dup'==0 local dup 1
@@ -266,7 +244,7 @@ program define make_SIA_augmented_dataset
 							clonevar ADS_DUPVAR_`dup'_`=substr("`fn'",1,length("`fn'")-2)'=`u'
 							char ADS_DUPVAR_`dup'_`=substr("`fn'",1,length("`fn'")-2)'[Unique] "Duplicate with different values"
 							
-							* Add variable to VARLIST local and indicator to DS_TYPE local
+							* Add variable to VARLIST local
 							local VARLIST `VARLIST' ADS_DUPVAR_`dup'_`=substr("`fn'",1,length("`fn'")-2)'
 
 							save, replace
@@ -277,7 +255,7 @@ program define make_SIA_augmented_dataset
 							char ADS_DUPVAR_`dup'_`=substr("`fn'",1,length("`fn'")-2)'[Unique] "Duplicate with different values"
 						
 
-							* Add variable to VARLIST local and indicator to DS_TYPE local
+							* Add variable to VARLIST local
 							local VARLIST `VARLIST' ADS_DUPVAR_`dup'_`=substr("`fn'",1,length("`fn'")-2)'
 
 							save, replace
@@ -294,19 +272,18 @@ program define make_SIA_augmented_dataset
 					if "`erase'" == "" {
 						erase "SIA_augmented_dataset_`i'_`u'.dta" 
 						erase "VCQI_ADS_`fn'_`i'_`u'.dta"
-						erase "COMPASIASON_VCQI_ADS_`fn'_`i'_`u'.dta"
+						erase "COMPARISON_VCQI_ADS_`fn'_`i'_`u'.dta"
 					}
 				}
 				
 				* If the variable does not exist in any previous datasets, add it to the augmented log and post
 				else if strpos("`VARLIST'","`u' ") == 0 {
 
-					noi di "`fn': `u' is unique so far."
+					noi di as text "`fn': `u' is unique so far."
 				
 					local VARLIST `VARLIST' `u'
 						
 					* log to file
-					noi di "`u' ``u'[Indicator]' ``u'[Analysiscounter]'"
 					post vcqiadsvarlist("`u'") ("``u'[Indicator]'") ("``u'[Analysiscounter]'") ("Variable added to varlist from this dataset") ("")
 
 				}	
@@ -328,24 +305,21 @@ program define make_SIA_augmented_dataset
 		* drop any variables that are not unique per user's instructions
 		if "`identicaldups'"!="" {
 			
-			noi di "Dropping variables that are duplicates with identical values, per user's instruction."
+			noi di as text "Dropping variables that are duplicates with identical values, per user's instruction."
 			
 			use SIA_augmented_dataset, clear
 			local droplist 
 			foreach v of varlist * {
 				if "``v'[Unique]'"=="Duplicate with identical values" ///
 					local droplist `droplist' `v'
-			}
-		
+			}	
 			
 			if "`droplist'"!="" {
-				noi di "Dropping `droplist'"
+				noi di as text "Dropping `droplist'"
 				drop `droplist'
-			
-				save, replace
 			}
 			else {
-				noi di "No duplicate variables to drop"
+				noi di as text "No duplicate variables to drop"
 			}
 			save, replace
 		}
@@ -361,14 +335,14 @@ program define make_SIA_augmented_dataset
 	
 	}
 	
-	di ""
-	di "VCQI Augmented Dataset Program identified `dup' variables that had conflicting values between the VCQI indicator datasets."
-	di "Please reference the log: vcqi_ads_logfile.dta for details."
-	di ""
+	di as text ""
+	di as text "VCQI Augmented Dataset Program identified `dup' variables that had conflicting values between the VCQI indicator datasets."
+	di as text "Please reference the log: vcqi_ads_logfile.dta for details."
+	di as text ""
 	
-	di "VCQI Augmented Dataset was saved as SIA_augmented_dataset.dta".
+	di as text "VCQI Augmented Dataset was saved as SIA_augmented_dataset.dta".
 
-	di ""
+	di as text ""
 
 end
 	

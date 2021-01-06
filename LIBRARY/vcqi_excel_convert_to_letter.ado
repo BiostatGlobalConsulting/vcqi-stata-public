@@ -1,4 +1,4 @@
-*! vcqi_excel_convert_to_letter Version 1.01 - Biostat Global Consulting - 2017-08-26
+*! vcqi_excel_convert_to_letter version 1.01 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated

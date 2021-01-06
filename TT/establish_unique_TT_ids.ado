@@ -1,4 +1,4 @@
-*! establish_unique_TT_ids version 1.04 - Biostat Global Consulting - 2017-08-26
+*! establish_unique_TT_ids version 1.09 - Biostat Global Consulting - 2020-10-13
 *******************************************************************************
 * Change log
 * 				Updated
@@ -10,6 +10,14 @@
 *										is not 1
 * 2017-06-07	1.03	MK Trimner		Remove code that creates level3names dataset
 * 2017-08-26	1.04	Mary Prier		Added version 14.1 line
+* 2019-07-17	1.05	Dale Rhoda		Keep CM rows that do not match the
+*										dataset (for DOF purposes)
+* 2019-10-12	1.06	Dale Rhoda		Fix TT11 type mismatch in 1.05
+* 2019-12-04	1.07	Dale Rhoda		Set stratumid and clusterid if we have 
+*										clusters with no respondents
+* 2020-05-14	1.08	Dale Rhoda		Fix TTHC14 type mismatch in 1.05
+* 2020-10-13	1.09	Dale Rhoda		Use clonevar instead of gen for rare
+*                                       RI03 of type double
 *******************************************************************************
 
 program define establish_unique_TT_ids
@@ -50,25 +58,49 @@ program define establish_unique_TT_ids
 
 		egen respid = group(TT01 TT03 TT11 TT12)
 
-		gen HH01 = TT01
-		gen HH03 = TT03
+		clonevar HH01 = TT01
+		clonevar HH03 = TT03
 
 		merge m:1 HH01 HH03 using "${VCQI_DATA_FOLDER}/${VCQI_CM_DATASET}", keepusing(urban_cluster psweight_1year province_id HH04 HH02)
-		keep if _merge == 1 | _merge == 3
+		*keep if _merge == 1 | _merge == 3
+		* We want to keep clusters that do not appear in the dataset, for purposes of calculating degrees of freedom.
+		* Be sure to set their weight to zero so they are included properly in the calculations.
+		* Note that all outcomes will be missing for these respondents, so they will not affect point estimates, but their
+		* presence will help make the DOF calculation right.
+		replace psweight_1year = 0 if _merge == 2
+		replace TT01 = HH01 if _merge == 2
+		replace stratumid = HH01 if _merge == 2
+		capture gen TT02 = ""
+		capture replace TT02 = HH02 if _merge == 2
+		replace TT03 = HH03 if _merge == 2
+		replace clusterid = TT03 if _merge == 2
+		capture gen TT04 = ""
+		capture replace TT04 = HH04 if _merge == 2
+		replace TT11 = "1" if _merge == 2
+		replace TT12 = 1 if _merge == 2
 		drop _merge
 
 		gen level1id = 1
 		gen level2id = province_id
 		gen level3id = TT01	
 		
-		* obtain province names from a small dataset for that purpose
-		merge m:1 level2id using "${LEVEL2_NAME_DATASET}"
+		* obtain level1 names from a small dataset for that purpose
+		merge m:1 level1id using "$LEVEL1_NAME_DATASET"
 		keep if _merge == 1 | _merge == 3
 		drop _merge
 		
+		* obtain province names from a small dataset for that purpose
+		merge m:1 level2id using "$LEVEL2_NAME_DATASET"
+		keep if _merge == 1 | _merge == 3
+		drop _merge
+		
+		* obtain stratum names from a small dataset for that purpose
+		merge m:1 level3id using "$LEVEL3_NAME_DATASET"
+		keep if _merge == 1 | _merge == 3
+		drop _merge
+			
 		save, replace
 
-		
 		* add IDs to registry data, if present
 		*
 		* Be careful to use the same IDs that were established in the TT dataset
@@ -96,7 +128,20 @@ program define establish_unique_TT_ids
 			gen HH03 = TTHC03
 
 			merge m:1 HH01 HH03 using "${VCQI_DATA_FOLDER}/${VCQI_CM_DATASET}", keepusing(urban_cluster psweight_1year province_id)
-			keep if _merge == 1 | _merge == 3
+			*keep if _merge == 1 | _merge == 3
+			* We want to keep clusters that do not appear in the dataset, for purposes of calculating degrees of freedom.
+			* Be sure to set their weight to zero so they are included properly in the calculations.
+			* Note that all outcomes will be missing for these respondents, so they will not affect point estimates, but their
+			* presence will help make the DOF calculation right.
+			replace psweight_1year = 0 if _merge == 2
+			replace TTHC01 = HH01 if _merge == 2
+			capture gen TTHC02 = ""
+			capture replace TTHC02 = HH02 if _merge == 2
+			replace TTHC03 = HH03 if _merge == 2
+			capture gen TTHC04 = ""
+			capture replace TTHC04 = HH04 if _merge == 2
+			replace TTHC14 = "1" if _merge == 2
+			replace TTHC15 = 1 if _merge == 2
 			drop _merge
 
 			drop TT01 TT03 TT11 TT12 HH01 HH03
@@ -111,7 +156,6 @@ program define establish_unique_TT_ids
 			
 			save "${VCQI_OUTPUT_FOLDER}/TTHC_with_ids", replace
 			vcqi_global TT_TEMP_DATASETS $TT_TEMP_DATASETS TTHC_with_ids
-
 			
 			use "${VCQI_OUTPUT_FOLDER}/TT_with_ids", clear
 			merge 1:1 respid using "${VCQI_OUTPUT_FOLDER}/TTHC_with_ids", keepusing(register_has_dates) nogen

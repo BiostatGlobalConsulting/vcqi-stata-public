@@ -1,10 +1,11 @@
-*! SIA_COVG_01_03DV version 1.01 - Biostat Global Consulting - 2017-08-26
+*! SIA_COVG_01_03DV version 1.02 - Biostat Global Consulting - 2019-08-23
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name			What Changed
 * 2017-08-26	1.01	Mary Prier		Added version 14.1 line
+* 2019-08-23	1.02	Dale Rhoda		Make outcomes missing if psweight == 0 | missing(psweight)
 *******************************************************************************
 
 program define SIA_COVG_01_03DV
@@ -30,6 +31,11 @@ program define SIA_COVG_01_03DV
 			replace got_sia_dose = got_sia_dose == 1 | got_sia_dose_by_fingermark == 1
 			label variable got_sia_dose_by_fingermark "Got SIA dose, by fingermark"
 			label variable got_sia_dose "Got SIA dose, by card, history or fingermark"
+		}
+
+		* Set outcomes to missing if weight is missing or zero
+		foreach v of varlist got_sia_dose got_sia_dose_by_* {
+			replace `v' = . if psweight == 0 | missing(psweight)
 		}
 		
 		save, replace

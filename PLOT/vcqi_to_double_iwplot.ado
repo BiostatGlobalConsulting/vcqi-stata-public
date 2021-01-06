@@ -1,4 +1,4 @@
-*! vcqi_to_double_iwplot version 1.17 - Biostat Global Consulting - 2017-08-26
+*! vcqi_to_double_iwplot version 1.26 - Biostat Global Consulting - 2020-12-12
 *******************************************************************************
 * Change log
 * 				Updated
@@ -31,13 +31,34 @@
 * 2017-05-26	1.16	Dale Rhoda		Handle vertical lines when national 
 *										results are at the top or bottom row
 * 2017-08-26	1.17	Mary Prier		Added version 14.1 line
+* 2017-10-27    1.18	Dale Rhoda		Made outline for 2nd shape in double 
+*										plots 'vthin' instead of 'vvthin'
+* 2018-01-16	1.19	MK Trimner		Added $VCQI_SVYSET_SYNTAX
+* 2019-02-19	1.20	Mary Prier		Added different options for "rightsidetext"
+*										  e.g., 2 pt est or 2 pt est with CIs
+* 2019-03-18	1.21	Mary Prier		Added user option/global "SORT_PLOT_LOW_TO_HIGH";
+*										  Option high to low (global=1) requires gsort;
+* 										  Default is sorting low to high and using sort
+* 2019-04-08	1.22	Mary Prier		Added new option for "rightsidetext" of notext
+* 2019-04-16	1.22	Mary Prier		Added option CBTICKS if user wants to 
+*										  display LCB & UCB ticks on 1st distribution
+*										  (as code was set up) or NOT to display them.
+*										  If cbticks==1, then ticks are dislayed, 
+*										  otherwise they are not displayed
+* 2020-04-18	1.23	Dale Rhoda		Change default text at right to use the
+*                                       point estimate and 2-sided 95% CI
+* 2020-05-28	1.24	Dale Rhoda		Include level4id in merge key if relevant
+* 2020-12-11  	1.25  	Dale Rhoda		Allow user to plot strata in table order
+*                                       and round to the user requested number
+*                                       of decimal digits
+* 2020-12-12	1.26	Dale Rhoda		Allow the user to SHOW_LEVEL_4_ALONE
 *******************************************************************************
 
 program define vcqi_to_double_iwplot
 	version 14.1
 	
 	syntax , DATABASE(string asis) FILETAG(string) DATAFILE(string asis) DATABASE2(string asis) DATAFILE2(string asis) ///
-	[ TITLE(string asis) NAME(string) SUBTITLE(string asis) CAPTION(string asis) ]
+	[ TITLE(string asis) NAME(string) SUBTITLE(string asis) CAPTION(string asis) RIGHTSIDETEXT(string) CBTICKS(string) ]
 	
 	local oldvcp $VCP
 	global VCP vcqi_to_iwplot
@@ -96,7 +117,8 @@ program define vcqi_to_double_iwplot
 	* Drop Level 4 labels if using the SET nomenclature
 	if "$VCQI_LEVEL4_SET_VARLIST" != "" & "$LEVEL4_SET_CONDITION_1" == "" drop if level4id == 1
 
-	local show4 = $SHOW_LEVELS_1_4_TOGETHER   + ///
+	local show4 = $SHOW_LEVEL_4_ALONE         + ///
+				  $SHOW_LEVELS_1_4_TOGETHER   + ///
 				  $SHOW_LEVELS_2_4_TOGETHER   + ///
 				  $SHOW_LEVELS_3_4_TOGETHER   + ///
 				  $SHOW_LEVELS_2_3_4_TOGETHER > 0
@@ -111,7 +133,7 @@ program define vcqi_to_double_iwplot
 				  $SHOW_LEVELS_2_4_TOGETHER   + ///
 				  $SHOW_LEVELS_2_3_4_TOGETHER > 0 
 				   
-	local show1 = $SHOW_LEVEL_1_ALONE + $SHOW_LEVELS_1_4_TOGETHER > 0			   
+	local show1 = $SHOW_LEVEL_1_ALONE + $SHOW_LEVEL_4_ALONE + $SHOW_LEVELS_1_4_TOGETHER > 0			   
 
 	if `show4' == 0 drop if level4id != .
 
@@ -164,27 +186,117 @@ program define vcqi_to_double_iwplot
 	if `show1' == 1 & `show2' == 0 & `show3' == 1 replace level3_estimate = level1_estimate if level3_estimate == .
 	if `show2' == 1 & `show3' == 1 replace level3_estimate = level2_estimate if level3_estimate == .
 
-	sort `l2est' `l3est' estimate
-
-	if `show4' == 1 sort `l2est' `l3est' estimate level4id
-		
-	* Build rightsidetext to look like citext(1)
+	* Sort proportions based on user request 
+	*  Default is sorting proportions low at bottom of plot to high at top of plot
+	if("$SORT_PLOT_LOW_TO_HIGH"=="0") {  // meaning, sort prop high to low
+		* Expand locals so that each element gets a negative sign;
+		* This code doesn't assign minus sign to empty locals, because don't 
+		*   want a floating minus sign
+		* First, l2est
+		local gsort_l2est 
+		local n_l2est : word count `l2est'
+		if(`n_l2est'>0) {
+			forvalues i=1/`n_l2est' {
+				local gsort_l2est `gsort_l2est' -`: word `i' of `l2est''  // add the minus to the element
+			} 
+		}  
 	
-	* lower limit of traditional 95% CI
+		* Now, l3est
+		local gsort_l3est 
+		local n_l3est : word count `l3est'
+		if(`n_l3est'>0) {
+			forvalues i=1/`n_l3est' {
+				local gsort_l3est `gsort_l3est' -`: word `i' of `l3est''  // add the minus to the element
+			} 
+		}  
+
+		* Finally, do the gsort
+		gsort `gsort_l2est' `gsort_l3est' -estimate 
+		if `show4' == 1 gsort `gsort_l2est' `gsort_l3est' -estimate -level4id
+	}
+	else {
+		sort `l2est' `l3est' estimate 
+		if `show4' == 1 sort `l2est' `l3est' estimate level4id
+	}
+
+	* Build rightsidetext to look like citext(2)		
+	* 
 	gen p       = 100*estimate
-	replace lcb = 100*lcb
-	replace ucb = 100*ucb
+	replace cill = 100*cill
+	replace ciul = 100*ciul
 
 	* 95% upper confidence bound (UCB)
-	gen     ub_str2 = string(ucb, "%4.1f")
+	gen     ub_str2 = string(ciul, "%4.${VCQI_NUM_DECIMAL_DIGITS}f")
 	replace ub_str2 = "100" if ub_str2=="100.0"
 	
 	* 95% lower confidence bound (LCB)
-	gen     lb_str3 = string(lcb, "%4.1f")
+	gen     lb_str3 = string(cill, "%4.${VCQI_NUM_DECIMAL_DIGITS}f")
 	replace lb_str3 = "100" if lb_str3=="100.0"
 	
 	*   cistring1 contains lower 95% confidence bound (LCB), p, and 95% upper confidence bound
-	gen rightsidetext =  strtrim(lb_str3) + " | " + strtrim(string(p, "%4.1f")) + " | " + ub_str2 
+	* gen rightsidetext =  strtrim(lb_str3) + " | " + strtrim(string(p, "%4.1f")) + " | " + ub_str2 
+	* cistring2 contains p, (2-sided 95% CI)
+	gen rightsidetext = strtrim(string(p, "%4.${VCQI_NUM_DECIMAL_DIGITS}f")) + "% (" + lb_str3 + ", " + ub_str2 + ")"
+	
+	* Include level4id in the merge key if it is relevant
+	if `show4' == 1 local level4id level4id
+	
+	* replace "rightsidetext" if user specifies option #2 (two point estimates...one for each distr'n plotted)
+	if "`rightsidetext'"=="2" {
+		gen currentsortorder = _n
+		rename estimate estimate1
+		merge 1:1 level1id level2id level3id `level4id' using "`database2'", keepusing(estimate) nogen  // merge in pt est from 2nd database
+		gen p2 = 100*estimate
+	    replace rightsidetext = strtrim(string(p, "%4.${VCQI_NUM_DECIMAL_DIGITS}f")) + " | " + strtrim(string(p2, "%4.${VCQI_NUM_DECIMAL_DIGITS}f"))
+		sort currentsortorder
+		drop p2 estimate currentsortorder
+		rename estimate1 estimate		
+	}
+	
+	* replace "rightsidetext" if user specifies option #3 (pt est & CI for each distr'n plotted)
+	if "`rightsidetext'"=="3" {
+		gen currentsortorder = _n
+		rename estimate estimate1
+		rename cill cill1
+		rename ciul ciul1
+		merge 1:1 level1id level2id level3id `level4id' using "`database2'", keepusing(estimate cill ciul) nogen  // merge in pt est & CI from 2nd database
+		gen p2 = 100*estimate
+		foreach m of varlist cill1 ciul1 cill ciul {
+			replace `m' = 100*`m'
+			gen     `m'_str = string(`m', "%4.${VCQI_NUM_DECIMAL_DIGITS}f")
+			replace `m'_str = "100" if `m'_str=="100.0"
+		}
+	    replace rightsidetext = strtrim(string(p, "%4.${VCQI_NUM_DECIMAL_DIGITS}f")) + " (" + strtrim(cill1_str) + "," + strtrim(ciul1_str) + ") | " + strtrim(string(p2, "%4.${VCQI_NUM_DECIMAL_DIGITS}f")) + " (" + strtrim(cill_str) + "," + strtrim(ciul_str) + ") "
+		sort currentsortorder
+		drop p2 estimate cill ciul currentsortorder cill1_str ciul1_str cill_str ciul_str
+		rename estimate1 estimate	
+		rename cill1 cill
+		rename ciul1 ciul
+	}
+	
+	* replace "rightsidetext" if user specifies option #4 (NO RIGHT SIDE TEXT)
+	if "`rightsidetext'"=="4" {
+	    replace rightsidetext = ""
+	}
+	* If user wants strata plotted in table order, merge the table order
+	* and sort accordingly
+
+	if "$PLOT_OUTCOMES_IN_TABLE_ORDER" == "1" {
+
+		vcqi_log_comment $VCP 3 Comment "User has requested that outcomes be plotted in table order instead of sorting by indicator outcome."
+		preserve
+		make_table_order_database
+		make_table_order_dataset
+		restore
+			    
+		replace level2id = 0 if missing(level2id)
+		replace level3id = 0 if missing(level3id)
+		replace level4id = 0 if missing(level4id)		
+		merge 1:m level1id level2id level3id level4id using table_order_TO
+		keep if _merge == 1 | _merge == 3
+		drop _merge
+		sort table_bottom_to_top_row_order
+	}
 	
 	keep name n deff estimate level level*id outcome rightsidetext
 	
@@ -200,7 +312,7 @@ program define vcqi_to_double_iwplot
 			replace param7 = param7 + " & ${LEVEL4_SET_CONDITION_`i'} " if level4id == `i' & "${LEVEL4_SET_CONDITION_`i'}" != ""
 		}
 	}
-	gen param6 = "svyset clusterid, weight(psweight) strata(stratumid)"
+	gen param6 = "$VCQI_SVYSET_SYNTAX"
 	gen param5 = outcome
 	gen param4 = "`datafile'"
 
@@ -228,13 +340,26 @@ program define vcqi_to_double_iwplot
 
 	gen markvalue = .
 	gen clip = 95
-	gen lcb  = 95
-	gen ucb  = 95
-	gen lcbcolor = "gs7"
-	gen ucbcolor = "gs7"
+	
+	* Check if user wants LCB & UCB ticks on 1st distribution...
+	if("`cbticks'"=="1") {  // 1=yes, user wants ticks marking confidence bounds on plot
+		gen lcb  = 95
+		gen ucb  = 95
+		gen lcbcolor = "gs7"
+		gen ucbcolor = "gs7"
+	} 
+	else {
+		gen lcb  = .
+		gen ucb  = .
+		gen lcbcolor = ""
+		gen ucbcolor = ""
+	}
+	
 	gen shadebehind = "gs15" if level == 1 & (`show2' + `show3' > 0)
 
 	gen rowname = name
+	
+	keep if !missing(estimate)
 	
 	save "Plots_IW_UW/iwplot_params_`filetag'_`show1'`show2'`show3'`show4'", replace
 	
@@ -251,9 +376,13 @@ program define vcqi_to_double_iwplot
 	use "`database2'", clear
 	local outcome2 = outcome[1]
 	
+	* Back to 1st database...get ready to double the rows and add info from 2nd database
 	use "Plots_IW_UW/iwplot_params_`filetag'_`show1'`show2'`show3'`show4'", clear
+	
+	* Double each row and fill the second set with data from database2
 	gen rownumber = _n
 	local nrows = _N
+	capture gen outlinewidth = "vvthin"
 	expand 2
 	bysort rownumber: gen nn = _n
 	replace param4 = "`datafile2'" if nn == 2
@@ -263,6 +392,7 @@ program define vcqi_to_double_iwplot
 	replace lcb = .                if nn == 2
 	replace ucb = .                if nn == 2
 	replace rightsidetext = ""     if nn == 2
+	replace outlinewidth = "vthin" if nn == 2
 	
 	save "Plots_IW_UW/iwplot_params_base", replace
 	save "Plots_IW_UW/iwplot_params_`filetag'_`show1'`show2'`show3'`show4'", replace
@@ -274,7 +404,7 @@ program define vcqi_to_double_iwplot
 	if `"`caption'"'   != "" local pass_thru_options `pass_thru_options' caption(`caption')
 		
 	double_inchworm_plotit, filetag(`filetag') show1(`show1') show2(`show2') show3(`show3') ///
-	        show4(`show4') `pass_thru_options' name(`name')
+	        show4(`show4') `pass_thru_options' name(`name') rightsidetext(`rightsidetext')
 			
 	* Make inchworm plot for every level 2 stratum, if requested
 
@@ -302,12 +432,11 @@ program define vcqi_to_double_iwplot
 			}
 			sort rip_sortorder
 			drop rip_sortorder 
-			*
 			
 			save "Plots_IW_UW/iwplot_params_`filetag'_l2_`l2l'_`show1'`show2'`show3'`show4'", replace
 			
 			double_inchworm_plotit, filetag(`filetag'_l2_`l2l') show1(`show1') show2(`show2') show3(`show3') ///
-					show4(`show4') `pass_thru_options' name(`name'_l2_`l2l'_`l2name_`l2l'')
+					show4(`show4') `pass_thru_options' name(`name'_l2_`l2l'_`l2name_`l2l'') rightsidetext(`rightsidetext')
 				
 			vcqi_log_comment $VCP 3 Comment "Inchworm plot was created and exported."
 		
@@ -327,7 +456,7 @@ program define double_inchworm_plotit
 	
 	syntax ,  FILETAG(string) show1(integer) show2(integer) show3(integer) show4(integer) ///
 	  [ TITLE(string asis) NAME(string) ///
-	  SUBTITLE(string asis) NOTE(string asis) CAPTION(string asis) ]
+	  SUBTITLE(string asis) NOTE(string asis) CAPTION(string asis) RIGHTSIDETEXT(string) ]
 	  
 	use "Plots_IW_UW/iwplot_params_`filetag'_`show1'`show2'`show3'`show4'", clear
 	
@@ -376,8 +505,20 @@ program define double_inchworm_plotit
 	}
 	
 	* List key to right side text in a note
-	local note Text at right: 1-sided 95% LCB | Point Estimate | 1-sided 95% UCB, size(vsmall) span
-		
+	if "`rightsidetext'"=="2" {
+		local note Text at right: Point Estimates from colored and from gray hollow distributions, size(vsmall) span
+	}
+	else if "`rightsidetext'"=="3" {
+		local note Text at right: Point Estimate (95% CI)  |  Point Estimate (95% CI), size(vsmall) span
+	}
+	else if "`rightsidetext'"=="4" {
+		local note ""
+	}
+	else {
+		*local note Text at right: 1-sided 95% LCB | Point Estimate | 1-sided 95% UCB, size(vsmall) span
+		local note Text at right: Point Estimate (2-sided 95% Confidence interval), size(vsmall) span
+	}
+	
 	local saving
 	if $SAVE_VCQI_GPH_FILES ///
 		local saving saving(Plots_IW_UW/`name'_`show1'`show2'`show3'`show4', replace)

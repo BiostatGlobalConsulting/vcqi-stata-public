@@ -1,4 +1,4 @@
-*! check_RI_COVG_03_03DV version 1.03 - Biostat Global Consulting - 2017-08-26	
+*! check_RI_COVG_03_03DV version 1.04 - Biostat Global Consulting - 2018-10-06
 *******************************************************************************
 * Change log
 * 				Updated
@@ -8,6 +8,8 @@
 * 2017-02-01	1.02	Dale Rhoda		Copy _1 to _$ANALYSIS_COUNTER if
 *										necessary
 * 2017-08-26	1.03	Mary Prier		Added version 14.1 line
+* 2018-10-06	1.04	Dale Rhoda		Add the copied file to list at
+*										$RI_COVG_03_TEMP_DATASETS
 *******************************************************************************
 
 * VCQI users are encouraged to generate output and then change the value of
@@ -42,6 +44,7 @@ program define check_RI_COVG_03_03DV
 		capture confirm file "${VCQI_OUTPUT_FOLDER}/RI_COVG_03_1.dta"
 		if _rc == 0 {
 			copy "${VCQI_OUTPUT_FOLDER}/RI_COVG_03_1.dta" "${VCQI_OUTPUT_FOLDER}/RI_COVG_03_${ANALYSIS_COUNTER}.dta"
+			vcqi_global RI_COVG_03_TEMP_DATASETS $RI_COVG_03_TEMP_DATASETS RI_COVG_03_${ANALYSIS_COUNTER}
 			vcqi_log_comment $VCP 2 Warning "${VCQI_OUTPUT_FOLDER}/RI_COVG_03_${ANALYSIS_COUNTER}.dta does not exist. VCQI will make a copy of RI_COVG_03_1.dta and proceed."
 		}			
 		else {

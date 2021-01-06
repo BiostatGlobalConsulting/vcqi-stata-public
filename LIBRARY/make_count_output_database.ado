@@ -1,4 +1,4 @@
-*! make_count_output_database version 1.05 - Biostat Global Consulting - 2017-08-26
+*! make_count_output_database version 1.07 - Biostat Global Consulting - 2020-12-12
 *******************************************************************************
 * Change log
 * 				Updated
@@ -11,6 +11,8 @@
 *										VCQI_LEVEL4_SET_VARLIST & 
 *										VCQI_LEVEL4_SET_LAYOUT
 * 2017-08-26	1.05	Mary Prier		Added version 14.1 line
+* 2020-12-09	1.06	Dale Rhoda		Tostring the level1-4 names at the end
+* 2020-12-12	1.07	Dale Rhoda		Allow user to SHOW_LEVEL_4_ALONE
 *******************************************************************************
 
 program define make_count_output_database
@@ -34,25 +36,37 @@ program define make_count_output_database
 					"${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}_`vid'_database", replace
 
 		global VCQI_DATABASES $VCQI_DATABASES `measureid'_${ANALYSIS_COUNTER}_`vid'_database
-							
-		forvalues l = 1/3 {
+
+		local lastl 3
+		if $VCQI_SHOW1 == 0 & $VCQI_SHOW2 == 0 & $VCQI_SHOW3 == 0 & $VCQI_SHOW4 == 1 local lastl 4		
+		
+		forvalues l = 1/`lastl' {
+			
+			* Take over l temporarily if l is 4 and set back to 1
+			* to make the output come out right
+			if `l' != 4 local l_was_4 0
+			else {
+				local l_was_4 1
+				local l 1
+			}
+		    
 			quietly levelsof level`l'id, local(llist)
-			if "${VCQI_SHOW`l'}" == "1" & "`llist'" != "" {
+			if ("${VCQI_SHOW`l'}" == "1" & "`llist'" != "") | (`l_was_4') {
 				foreach i in `llist' {
 					summarize `denominator' if level`l'id == `i', detail
 					scalar den = r(sum)
 					summarize `numerator'   if level`l'id == `i', detail
 					scalar num = r(sum)
 					if den > 0 scalar estimate = num/den
-					if den > 0 post go (`l') (`i') ("") ("") ("`numerator' / `denominator'") (estimate) (den)
-					if den ==0 post go (`l') (`i') ("") ("") ("`numerator' / `denominator'") (0) (0)
+					if den > 0 & `l_was_4' == 0 post go (`l') (`i') ("") ("") ("`numerator' / `denominator'") (estimate) (den)
+					if den ==0 & `l_was_4' == 0 post go (`l') (`i') ("") ("") ("`numerator' / `denominator'") (0) (0)
 
 					* if the user has asked for a stratified analysis, either by
 					* urban/rural or some other stratifier, then calculate the 
 					* coverage results for each sub-stratum within the third
 					* level strata
 							
-					if "$VCQI_LEVEL4_STRATIFIER" != "" & ( "${SHOW_LEVELS_`l'_4_TOGETHER}" == "1"  | ( inlist(`l',2,3) & "$SHOW_LEVELS_2_3_4_TOGETHER" == "1"  )) {
+					if "$VCQI_LEVEL4_STRATIFIER" != "" & ( "$SHOW_LEVEL_4_ALONE" == "1" | "${SHOW_LEVELS_`l'_4_TOGETHER}" == "1"  | ( inlist(`l',2,3) & "$SHOW_LEVELS_2_3_4_TOGETHER" == "1"  )) {
 					
 						levelsof $VCQI_LEVEL4_STRATIFIER, local(llist4)
 						
@@ -82,7 +96,7 @@ program define make_count_output_database
 							}
 						}
 					}		
-					if "$VCQI_LEVEL4_SET_VARLIST" != "" & ( "${SHOW_LEVELS_`l'_4_TOGETHER}" == "1"  | ( inlist(`l',2,3) & "$SHOW_LEVELS_2_3_4_TOGETHER" == "1"  )) {
+					if "$VCQI_LEVEL4_SET_VARLIST" != "" & ( "$SHOW_LEVEL_4_ALONE" == "1" | "${SHOW_LEVELS_`l'_4_TOGETHER}" == "1"  | ( inlist(`l',2,3) & "$SHOW_LEVELS_2_3_4_TOGETHER" == "1"  )) {
 						
 						forvalues j = 1/$LEVEL4_SET_NROWS {
 						
@@ -122,6 +136,10 @@ program define make_count_output_database
 					}		
 				}
 			}
+			
+			* Now set l back to 4 if that's its value at the top of the 
+			* loop so we exit the loop gracefully
+			if `l_was_4' local l 4			
 		}
 
 		capture postclose go
@@ -199,8 +217,27 @@ program define make_count_output_database
 		
 		destring _all, replace
 		
+		capture tostring level1name, replace
+		capture tostring level2name, replace
+		capture tostring level3name, replace
+		capture tostring level4name, replace		
+
 		qui compress
 
+		capture label variable level1name  "Level1 name"
+		capture label variable level2id    "Level2 ID"
+		capture label variable level2name  "Level2 stratum name"
+		capture label variable level3id    "Level3 ID"
+		capture label variable level3name  "Level3 stratum name"
+		
+		label variable level       "Stratum geographic level"
+		label variable id          "Stratum ID (at its level)"
+		label variable level4id    "Sub-stratum ID"
+		label variable level4name  "Sub-stratum name"
+		label variable outcome     "Outcome variable"
+		label variable estimate    "Estimated count"
+		label variable n           "Sample size (unweighted)"	
+		
 		save, replace
 	}
 	

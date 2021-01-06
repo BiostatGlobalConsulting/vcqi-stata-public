@@ -1,4 +1,4 @@
-*! make_DESC_0203_output_database version 1.09 - Biostat Global Consulting - 2017-08-26
+*! make_DESC_0203_output_database version 1.17 - Biostat Global Consulting - 2020-12-12
 *******************************************************************************
 * Change log
 * 				Updated
@@ -19,12 +19,22 @@
 *										b) put sub-total AFTER  a variable or response
 *										c) show sub-totals only
 * 2017-08-26	1.09	Mary Prier		Added version 14.1 line
+* 2017-01-03	1.10	MK & Dale		Added valuematch so BEFORE/AFTER works
+*                                       with both DESC_02 and DESC_03
+* 2018-01-17	1.11	Dale Rhoda		Switched to VCQI_SVYSET_SYNTAX
+* 2018-01-17	1.12	Dale Rhoda		Make PCT a double precision variable
+* 2018-01-23	1.13	MK Trimner		Made label an optional option to deftly
+*										handle cases with no table title
+* 2018-06-10	1.14	Dale Rhoda		Enforce BLANK_ROW
+* 2020-12-09	1.15	Dale Rhoda		Tostring the level1-4 names at the end
+* 2020-12-11	1.16	Dale Rhoda		Add truncate to every svypd call
+* 2020-12-12	1.17	Dale Rhoda		Allow user to SHOW_LEVEL_4_ALONE
 *******************************************************************************
 
 program define make_DESC_0203_output_database
 	version 14.1
 	
-	syntax , VARiable(string) LABel(string asis) VID(string) MEASureid(string)
+	syntax , VARiable(string) VID(string) MEASureid(string) [LABel(string asis)]
 
 	local oldvcp $VCP
 	global VCP make_DESC_0203_output_database
@@ -50,7 +60,7 @@ program define make_DESC_0203_output_database
 		use "${VCQI_OUTPUT_FOLDER}/DESC_`mid'_${ANALYSIS_COUNTER}_${DESC_`mid'_COUNTER}", clear
 		
 		if "`=upper("${DESC_`mid'_WEIGHTED}")'" == "YES" {
-			svyset clusterid, weight(psweight) strata(stratumid)
+			$VCQI_SVYSET_SYNTAX
 			local wtd 1
 		}
 		if "`=upper("${DESC_`mid'_WEIGHTED}")'" == "NO" {
@@ -67,20 +77,22 @@ program define make_DESC_0203_output_database
 		
 		local level_count_without_subtotals = ${DESC_`mid'_LVL_COUNT_`vid'}
 		
-				
 		* Skip this section of code if the user has asked for subtotals only to be listed
-		if "${DESC_`mid'_SHOW_SUBTOTALS_ONLY"}" == "" {
+		if "${DESC_`mid'_SHOW_SUBTOTALS_ONLY}" == "" {
 		
 			forvalues i = 1/${DESC_`mid'_LVL_COUNT_`vid'} {
+			
+				if "`mid'"=="03" local valuematch `=word("${DESC_`mid'_VARIABLES}",`i')'
+				if "`mid'"=="02" local valuematch ${DESC02_VALUE_LEVEL_`i'}
 			
 				* If a subtotal is supposed to be listed *before* this individual response...add it here
 				forvalues k = 1/${DESC_`mid'_ST_COUNT_`vid'} {
 					if "${DESC_`mid'_SUBTOTAL_LIST_`k'}" != "" {
-						if upper(word("${DESC_`mid'_SUBTOTAL_LIST_`k'}",1)) == "BEFORE" & word("${DESC_`mid'_SUBTOTAL_LIST_`k'}",2) == word("${DESC_`mid'_VARIABLES}",`i') {
+						if upper(word("${DESC_`mid'_SUBTOTAL_LIST_`k'}",1)) == "BEFORE" & word("${DESC_`mid'_SUBTOTAL_LIST_`k'}",2) == "`valuematch'" {
 							global DESC_`mid'_VORDER ${DESC_`mid'_VORDER} `=`level_count_without_subtotals' + `k''
 							local j `=${DESC_`mid'_LVL_COUNT_`vid'}+`k''
 							local vlist `vlist' desc`mid'_`vid'_st`k'
-							local plist `plist' pct`j'
+							local plist `plist' double pct`j'
 							local blist `blist' (.)
 							if `wtd' local plist `plist' cill`j' ciul`j'
 							if `wtd' local blist `blist' (.) (.)
@@ -103,11 +115,11 @@ program define make_DESC_0203_output_database
 				
 				forvalues k = 1/${DESC_`mid'_ST_COUNT_`vid'} {
 					if "${DESC_`mid'_SUBTOTAL_LIST_`k'}" != "" {
-						if upper(word("${DESC_`mid'_SUBTOTAL_LIST_`k'}",1)) == "AFTER" & word("${DESC_`mid'_SUBTOTAL_LIST_`k'}",2) == word("${DESC_`mid'_VARIABLES}",`i') {
+						if upper(word("${DESC_`mid'_SUBTOTAL_LIST_`k'}",1)) == "AFTER" & word("${DESC_`mid'_SUBTOTAL_LIST_`k'}",2) == "`valuematch'" {
 							global DESC_`mid'_VORDER ${DESC_`mid'_VORDER} `=`level_count_without_subtotals' + `k''
 							local j `=${DESC_`mid'_LVL_COUNT_`vid'}+`k''
 							local vlist `vlist' desc`mid'_`vid'_st`k'
-							local plist `plist' pct`j'
+							local plist `plist' double pct`j'
 							local blist `blist' (.)
 							if `wtd' local plist `plist' cill`j' ciul`j'
 							if `wtd' local blist `blist' (.) (.)
@@ -124,7 +136,7 @@ program define make_DESC_0203_output_database
 				global DESC_`mid'_VORDER ${DESC_`mid'_VORDER} `=`level_count_without_subtotals' + `k''
 				local j `=${DESC_`mid'_LVL_COUNT_`vid'}+`k''
 				local vlist `vlist' desc`mid'_`vid'_st`k'
-				local plist `plist' pct`j'
+				local plist `plist' double pct`j'
 				local blist `blist' (.)
 				if `wtd' local plist `plist' cill`j' ciul`j'
 				if `wtd' local blist `blist' (.) (.)
@@ -146,11 +158,22 @@ program define make_DESC_0203_output_database
 		  "${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}_`vid'_database", replace			
 
 		global VCQI_DATABASES $VCQI_DATABASES `measureid'_${ANALYSIS_COUNTER}_`vid'_database
-							
-		forvalues l = 1/3 {
+
+		local lastl 3
+		if $VCQI_SHOW1 == 0 & $VCQI_SHOW2 == 0 & $VCQI_SHOW3 == 0 & $VCQI_SHOW4 == 1 local lastl 4		
+		
+		forvalues l = 1/`lastl' {
+			
+			* Take over l temporarily if l is 4 and set back to 1
+			* to make the output come out right
+			if `l' != 4 local l_was_4 0
+			else {
+				local l_was_4 1
+				local l 1
+			}			
 			
 			quietly levelsof level`l'id, local(llist)
-			if "${VCQI_SHOW`l'}" == "1" & "`llist'" != "" {	
+			if ("${VCQI_SHOW`l'}" == "1" & "`llist'" != "") | (`l_was_4') {
 			
 				foreach i in `llist' {
 				
@@ -158,7 +181,7 @@ program define make_DESC_0203_output_database
 					forvalues k = 1/`=wordcount("`vlist'")' {
 						count if !missing(`=word("`vlist'",`k')') & level`l' == `i' 
 						if r(N) > 0 {
-							svypd `=word("`vlist'",`k')' if level`l'id == `i', method($VCQI_CI_METHOD) adjust 
+							svypd `=word("`vlist'",`k')' if level`l'id == `i', method($VCQI_CI_METHOD) adjust truncate 
 							local postlist `postlist' (`=scalar(r(svyp))') 
 							if `wtd' local postlist `postlist' (`=scalar(r(lb_alpha))') (`=scalar(r(ub_alpha))')
 						}
@@ -170,14 +193,15 @@ program define make_DESC_0203_output_database
 					local postlist `postlist' (`=scalar(r(N))')
 					if `wtd' local postlist `postlist' (`=scalar(r(Nwtd))')
 
-					post go (`l') (`i') ("") ("") ("`variable'") `postlist'
+					// Post if l was 1 or 2 or 3, but skip if l was 4
+					if `l_was_4' == 0 post go (`l') (`i') ("") ("") ("`variable'") `postlist'
 				
 					* if the user has asked for a stratified analysis, either by
 					* urban/rural or some other stratifier, then calculate the 
 					* coverage results for each sub-stratum within the third
 					* level strata
 							
-					if "$VCQI_LEVEL4_STRATIFIER" != "" & ( "${SHOW_LEVELS_`l'_4_TOGETHER}" == "1"  | ( inlist(`l',2,3) & "$SHOW_LEVELS_2_3_4_TOGETHER" == "1"  )) {
+					if "$VCQI_LEVEL4_STRATIFIER" != "" & ( "$SHOW_LEVEL_4_ALONE" == "1" | "${SHOW_LEVELS_`l'_4_TOGETHER}" == "1"  | ( inlist(`l',2,3) & "$SHOW_LEVELS_2_3_4_TOGETHER" == "1"  )) {
 					
 						levelsof $VCQI_LEVEL4_STRATIFIER, local(llist4)
 						
@@ -188,7 +212,7 @@ program define make_DESC_0203_output_database
 								count if !missing(`=word("`vlist'",`k')') & level`l'id == `i' & $VCQI_LEVEL4_STRATIFIER == `j'
 								if r(N) > 0 {
 									svypd `=word("`vlist'",`k')' if level`l'id == `i' & ///
-										$VCQI_LEVEL4_STRATIFIER == `j', method($VCQI_CI_METHOD) adjust
+										$VCQI_LEVEL4_STRATIFIER == `j', method($VCQI_CI_METHOD) adjust truncate
 									local postlist `postlist' (`=scalar(r(svyp))') 
 									if `wtd' local postlist `postlist' (`=scalar(r(lb_alpha))') (`=scalar(r(ub_alpha))')
 								}
@@ -211,7 +235,7 @@ program define make_DESC_0203_output_database
 						}
 					}			
 					
-					if "$VCQI_LEVEL4_SET_VARLIST" != "" & ( "${SHOW_LEVELS_`l'_4_TOGETHER}" == "1"  | ( inlist(`l',2,3) & "$SHOW_LEVELS_2_3_4_TOGETHER" == "1"  )) {
+					if "$VCQI_LEVEL4_SET_VARLIST" != "" & ( "$SHOW_LEVEL_4_ALONE" == "1" | "${SHOW_LEVELS_`l'_4_TOGETHER}" == "1"  | ( inlist(`l',2,3) & "$SHOW_LEVELS_2_3_4_TOGETHER" == "1"  )) {
 						
 						forvalues j = 1/$LEVEL4_SET_NROWS {
 						
@@ -224,7 +248,7 @@ program define make_DESC_0203_output_database
 									count if !missing(`=word("`vlist'",`k')') & level`l'id == `i' & ${LEVEL4_SET_CONDITION_`j'}
 									if r(N) > 0 {
 										svypd `=word("`vlist'",`k')' if level`l'id == `i' & ///
-											${LEVEL4_SET_CONDITION_`j'}, method($VCQI_CI_METHOD) adjust
+											${LEVEL4_SET_CONDITION_`j'}, method($VCQI_CI_METHOD) adjust truncate
 										local postlist `postlist' (`=scalar(r(svyp))') 
 										if `wtd' local postlist `postlist' (`=scalar(r(lb_alpha))') (`=scalar(r(ub_alpha))')
 									}
@@ -240,7 +264,7 @@ program define make_DESC_0203_output_database
 							}
 							
 							if "${LEVEL4_SET_ROWTYPE_`j'}" == "BLANK_ROW" ///
-								post go (`l') (`i') ("`j'") ("") ("") `blist'
+								post go (`l') (`i') ("`j'") ("BLANK_ROW") ("") `blist'
 
 							if "${LEVEL4_SET_ROWTYPE_`j'}" == "LABEL_ONLY" ///
 								post go (`l') (`i') ("`j'") ("`l4name'") ("") `blist'
@@ -249,6 +273,10 @@ program define make_DESC_0203_output_database
 					}						
 				}
 			}
+			
+			* Now set l back to 4 if that's its value at the top of the 
+			* loop so we exit the loop gracefully
+			if `l_was_4' local l 4
 		}
 
 		capture postclose go
@@ -268,8 +296,13 @@ program define make_DESC_0203_output_database
 		use "${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}_`vid'_database", clear
 		qui compress
 		
-		label variable outcome `"`label'"'
 		
+		if ustrlen("`label'") <= 80 label variable outcome `"`label'"'
+		else {
+			char _dta[table_title] `label'
+			label variable outcome "Table title is very long so it is stored in char _dta[table_title]"
+		}
+			
 		if "${DESC_`mid'_SHOW_SUBTOTALS_ONLY"}" == "" {
 
 			forvalues i = 1/${DESC_`mid'_LVL_COUNT_`vid'} {
@@ -326,6 +359,7 @@ program define make_DESC_0203_output_database
 		*replace name = name + " - " + level4name if !missing(level4name) & "$VCQI_LEVEL4_STRATIFIER"  != ""
 		replace name =                level4name if !missing(level4name) & "$VCQI_LEVEL4_SET_VARLIST" != ""
 		label variable name "Survey name for table output"
+		replace name = "" if level4name == "BLANK_ROW"
 
 		order name level1id level1name level2id level2name level3id level3name ///
 			  level4id level4name, after(level)
@@ -337,6 +371,11 @@ program define make_DESC_0203_output_database
 		sort level id name
 		
 		destring _all, replace
+		
+		capture tostring level1name, replace
+		capture tostring level2name, replace
+		capture tostring level3name, replace
+		capture tostring level4name, replace
 		
 		* Save these variables to the database for future reference...
 		gen weighted = "${DESC_`mid'_WEIGHTED}"

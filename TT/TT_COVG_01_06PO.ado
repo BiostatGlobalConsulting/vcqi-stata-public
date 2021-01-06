@@ -1,4 +1,4 @@
-*! TT_COVG_01_06PO version 1.07 - Biostat Global Consulting - 2017-08-26
+*! TT_COVG_01_06PO version 1.08 - Biostat Global Consulting - 2018-05-25
 *******************************************************************************
 * Change log
 * 				Updated
@@ -13,6 +13,7 @@
 * 2016-05-16	1.06	Dale Rhoda		Tell user how many inchworm plots
 *										will be made
 * 2017-08-26	1.07	Mary Prier		Added version 14.1 line
+* 2018-05-25	1.08	Dale Rhoda		Fix typo in graph drop _all
 *******************************************************************************
 
 program define TT_COVG_01_06PO
@@ -30,7 +31,7 @@ program define TT_COVG_01_06PO
 			
 		if "$VCQI_MAKE_OP_PLOTS" == "1" {
 		
-			noi di _col(5) "Organ pipe plots"
+			noi di as text _col(5) "Organ pipe plots"
 
 			capture mkdir Plots_OP
 			
@@ -69,16 +70,16 @@ program define TT_COVG_01_06PO
 				if $VCQI_SAVE_OP_PLOT_DATA ///
 					local savedata savedata(Plots_OP/TT_COVG_01_${ANALYSIS_COUNTER}_opplot_`opp_stratum_id_`i''_`opp_stratum_name_`i'')			
 
-				opplot protected_at_birth_to_analyze  , clustvar(clusterid) weightvar(psweight) ///
+				opplot protected_at_birth_to_analyze  , clustvar(clusterid) plotn  weightvar(psweight) ///
 					   stratvar(stratumid) stratum(`=int(`opp_stratum_id_`i'')') ///
 					   title("`opp_stratum_id_`i'' - `opp_stratum_name_`i''") ///
 					   subtitle(`quote'"`subtitle'"`quote') ///
-					   barcolor1(ltblue) `savegph' `savedata' ///
-					   export (Plots_OP/TT_COVG_01_${ANALYSIS_COUNTER}_`opp_stratum_id_`i''_`opp_stratum_name_`i''.png)
+					   barcolor1(vcqi_level3) barcolor2(gs15) `savegph' `savedata' ///
+					   export(Plots_OP/TT_COVG_01_${ANALYSIS_COUNTER}_`opp_stratum_id_`i''_`opp_stratum_name_`i''.png)
 				
 				vcqi_log_comment $VCP 3 Comment "Graphic file: TT_COVG_01_${ANALYSIS_COUNTER}_`opp_stratum_id_`i''_`opp_stratum_name_`i''.png was created and saved."
 
-				graph drop all
+				graph drop _all
 			}
 		}
 		
@@ -105,7 +106,7 @@ program define TT_COVG_01_06PO
 				clear
 			}		
 			
-			noi di _col(5) "Inchworm plots (`ppd' plots)"		
+			noi di as text _col(5) "Inchworm plots (`ppd' plots)"		
 
 			capture mkdir Plots_IW_UW
 			

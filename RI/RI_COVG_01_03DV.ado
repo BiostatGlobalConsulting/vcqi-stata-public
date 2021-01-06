@@ -1,4 +1,4 @@
-*! RI_COVG_01_03DV version 1.03 - Biostat Global Consulting - 2017-08-26
+*! RI_COVG_01_03DV version 1.04 - Biostat Global Consulting - 2019-07-17
 *******************************************************************************
 * Change log
 * 				Updated
@@ -11,6 +11,7 @@
 *										of the respondent is not clearly >
 *										the dose eligibility age
 * 2017-08-26	1.03	Mary Prier		Added version 14.1 line
+* 2019-07-17	1.04	Dale Rhoda		Make outcomes missing if psweight == 0 | missing(psweight)
 *******************************************************************************
 
 program define RI_COVG_01_03DV
@@ -85,6 +86,25 @@ program define RI_COVG_01_03DV
 			capture replace got_crude_`d'_c_or_h_or_r 	= . if `d'_min_age_days > $VCQI_RI_MIN_AGE_OF_ELIGIBILITY & ( missing(age_at_interview) | age_at_interview < `d'_min_age_days) 
 			capture replace got_crude_`d'_to_analyze 	= . if `d'_min_age_days > $VCQI_RI_MIN_AGE_OF_ELIGIBILITY & ( missing(age_at_interview) | age_at_interview < `d'_min_age_days) 
 
+			if "`d'" == "bcg"	capture replace got_crude_`d'_by_scar = . if `d'_min_age_days > $VCQI_RI_MIN_AGE_OF_ELIGIBILITY & ( missing(age_at_interview) | age_at_interview < `d'_min_age_days)
+
+			
+			* Sometimes there will be rows in the dataset with all empty input variables, and a value of 0 for psweight
+			* 
+			* These are placeholders for clusters that did not yield any kids
+			*
+			* They do not represent actual children, so the outcome should be missing for any row where the weight is 0.
+			*
+			
+			capture replace got_crude_`d'_by_card 		= . if psweight == 0 | missing(psweight)
+			capture replace got_crude_`d'_by_history 	= . if psweight == 0 | missing(psweight)   
+			capture replace got_crude_`d'_by_register 	= . if psweight == 0 | missing(psweight)
+			capture replace got_crude_`d'_c_or_h	 	= . if psweight == 0 | missing(psweight)
+			capture replace got_crude_`d'_c_or_r 		= . if psweight == 0 | missing(psweight)
+			capture replace got_crude_`d'_c_or_h_or_r 	= . if psweight == 0 | missing(psweight)
+			capture replace got_crude_`d'_to_analyze 	= . if psweight == 0 | missing(psweight)
+			
+			if "`d'" == "bcg" replace got_crude_bcg_by_scar = . if psweight == 0  | missing(psweight)
 		}
 
 		save, replace

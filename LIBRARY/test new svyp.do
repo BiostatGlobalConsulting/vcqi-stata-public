@@ -1,3 +1,12 @@
+*! test new svyp version 1.00 - Biostat Global Consulting - 2017-05-09
+*******************************************************************************
+* Change log
+* 				Updated
+*				version
+* Date 			number 	Name			What Changed
+* 2017-05-09	1.00	Dale Rhoda		Original version								
+*******************************************************************************
+
 set seed 199
 
 clear
@@ -20,7 +29,7 @@ svyp_with_levellist y, method(wald) adjust truncate cilevellist(0.01 50 95 99.99
 return list
 matrix list r(ci_alpha)
 matrix list r(ci_list)
-*/
+
 di .5-invnormal(.975)*sqrt(.25/209)
 di .5+invnormal(.975)*sqrt(.25/209)
 

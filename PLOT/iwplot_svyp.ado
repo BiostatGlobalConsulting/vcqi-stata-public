@@ -1,4 +1,4 @@
-*! iwplot_svyp version 1.23 - Biostat Global Consulting - 2017-08-26
+*! iwplot_svyp version 1.25 - Biostat Global Consulting - 2019-10-17
 *******************************************************************************
 * Change log
 * 				Updated
@@ -115,6 +115,15 @@
 *										.0 from 100.0 in cistring
 *										
 * 2017-08-26	1.23	Mary Prier		Added version 14.1 line
+*
+* 2019-10-10  	1.24  	Dale Rhoda  	Allow flexible number of decimal places and
+*                               		allow the user to request bars instead of
+*										inchworm distributions via the 
+*                               		$IWPLOT_SHOWBARS global macro (0 for 
+*										inchworms and 1 for bars)
+*
+* 2019-10-17	1.25	Dale Rhoda		Set default decimal digits to 1
+
 *********************************************************************************
 * All datasets which are called into this program should be stored in 
 * the working directory; the plot will also be saved in the working directory
@@ -318,6 +327,8 @@ program define iwplot_svyp
 	if "$VCQI_DEBUG" == "1" local q noisily
 	
 	`q' {
+	
+		if "$VCQI_NUM_DECIMAL_DIGITS" == "" global VCQI_NUM_DECIMAL_DIGITS 1
 	
 		* read in input data with distribution parameters	
 		use `inputdata', clear
@@ -839,7 +850,7 @@ program define iwplot_svyp
 
 		forvalues i = 1/`bign' {
 		
-			noisily di "Calculating outline for distribution # `i': `rowname`rownumber`i'''"
+			noisily di as text "Calculating outline for distribution # `i': `rowname`rownumber`i'''"
 			***************************************************************	
 			
 			* Data for this distribution will be simulated using 
@@ -1247,6 +1258,8 @@ program define iwplot_svyp
 			* macro variables to plot tick marks of CIs
 			local lcbpct`i' = lcbpct[`i']
 			local ucbpct`i' = ucbpct[`i']
+			local lb95`i' =  lb_95pct[`i']
+			local ub95`i' =  ub_95pct[`i']			
 		}
 
 
@@ -1256,26 +1269,27 @@ program define iwplot_svyp
 		use `tempfile2', clear
 		
 		* lower limit of traditional 95% CI
-		gen     lb_str1 = string(lb_95pct, "%4.1f")
+		gen     lb_str1 = string(lb_95pct, "%4.${VCQI_NUM_DECIMAL_DIGITS}f")
 		replace lb_str1 = "100" if lb_str1=="100.0"
 		* upper limit of traditional 95% CI
-		gen     ub_str1 = string(ub_95pct, "%4.1f")
+		gen     ub_str1 = string(ub_95pct, "%4.${VCQI_NUM_DECIMAL_DIGITS}f")
 		replace ub_str1 = "100" if ub_str1=="100.0"
 
 		gen     lb_str2 = "0"
 		* 95% upper confidence bound (UCB)
-		gen     ub_str2 = string(ub_90pct, "%4.1f")
+		gen     ub_str2 = string(ucbpct, "%4.${VCQI_NUM_DECIMAL_DIGITS}f")
 		replace ub_str2 = "100" if ub_str2=="100.0"
 		
 		* 95% lower confidence bound (LCB)
-		gen     lb_str3 = string(lb_90pct, "%4.1f")
+		gen     lb_str3 = string(lcbpct, "%4.${VCQI_NUM_DECIMAL_DIGITS}f")
 		replace lb_str3 = "100" if lb_str3=="100.0"
 		gen ub_str3 = "100"
 		
 		gen cistring0 = ""
 		
-		gen pstring = strtrim(string(p, "%4.1f"))
+		gen pstring = strtrim(string(p, "%4.${VCQI_NUM_DECIMAL_DIGITS}f"))
 		replace pstring = "100" if pstring == "100.0"
+		replace pstring = pstring + "%"
 
 		*   cistring1 contains lower 95% confidence bound (LCB), p, and 95% upper confidence bound
 		gen cistring1 =  strtrim(lb_str3) + " | " + pstring + " | " + ub_str2 
@@ -1372,7 +1386,7 @@ program define iwplot_svyp
 			else local xtextstart = `xlabelmax' + 1
 			local xtextscale = max(0.3,`=1.1*(`xtextstart' - `xrangemin')/100')
 			local xrangemax = ceil(`=`xtextstart' + `lencitext'*`xtextscale'')
-			noi di "lencitext: `lencitext' and xtextscale `xtextscale'"
+
 			local xaxisrange  `xrangemin' `xrangemax'
 		}
 		else if `xaxisdesign' == 3 {  // user specified max and min
@@ -1462,6 +1476,19 @@ program define iwplot_svyp
 				local plotit `plotit' ( area yshade xshade if rownumber == `i', color(`shadebehind`i'') fcolor(`shadebehind`i'') base(`=`i'-0.45') )
 			}
 		}	
+				
+		* syntax to add bars to the plot
+
+		if !inlist("$IWPLOT_SHOWBARS","", "0") {
+			gen ybar = .
+			gen xbar = .
+			forvalues i = 1/`nplotrows' {
+				replace ybar = `i'+0.20 			if rownumber == `i' & inlist(j,1,2)
+				replace xbar = `xrangemin' 			if rownumber == `i' & j == 1
+				replace xbar = `=min(`=table[`i', 1]',100)'	if rownumber == `i' & j == 2
+				local plotit `plotit' ( area ybar xbar if rownumber == `i', color(`outlinecolor`i'') lwidth(vthin) fcolor(`areacolor`i'')  fi(`areaintensity`i'') base(`=`i'-0.20') )
+			}	
+		}
 		
 		* Build macros to plot vertical reference lines that the user requested
 		*
@@ -1540,14 +1567,19 @@ program define iwplot_svyp
 			
 			if `polygon`i'' == 3 local plotit `plotit' (line sbyy sbx if dn==`i', connect(direct) lc(`outlinecolor`i'') ///
 			                                         lw(`outlinewidth`i'') lp(`outlinepattern`i'') ls(`outlinestyle`i'') ) 
-			
-			if `polygon`i'' == 2 local plotit `plotit' (area sbyy sbx if dn==`i', fc(`areacolor`i'') fi(`areaintensity`i'') ///
+						
+			* Plot inchworm shape if the user has not asked for bars 
+			if inlist("$IWPLOT_SHOWBARS","", "0") & `polygon`i'' == 2 local plotit `plotit' (area sbyy sbx if dn==`i', fc(`areacolor`i'') fi(`areaintensity`i'') ///
 			                                                lc(`outlinecolor`i'') lw(`outlinewidth`i'') lp(`outlinepattern`i'') ///
 															ls(`outlinestyle`i'') nodropbase)  
-
-			* Plot reference line inside the distribution at the point estimate
+															
+			* Plot the 2-sided CI instead of inchworm shape if user specifies they want to see bars
 			
-			local plotit `plotit' (rspike ymin ymax p if dn==`i' & j==1,  lc(`outlinecolor`i'') lw(thin)) 
+			if !inlist("$IWPLOT_SHOWBARS","", "0") & `polygon`i'' == 2 local plotit `plotit' (scatteri `rownumber`i'' `lb95`i'' `rownumber`i'' `ub95`i'', c(direct) m(i) lw(*0.95) lc(black))
+
+			* Plot reference line inside the distribution at the point estimate (but not if the user requested bars instead of distributions)
+			
+			if inlist("$IWPLOT_SHOWBARS","", "0") local plotit `plotit' (rspike ymin ymax p if dn==`i' & j==1,  lc(`outlinecolor`i'') lw(thin)) 
 			
 			* The user can ask to see a vertical reference line at a point that they specify
 			if `markvalue`i'' != . {
@@ -1612,7 +1644,7 @@ program define iwplot_svyp
 		* export graph in chosen format
 		if `"`export'"'. != "" {
 			graph export `export'
-			noi di "Exported inchworm plot:"
+			noi di as text "Exported inchworm plot:"
 			noi di `"`export'"'
 		}
 

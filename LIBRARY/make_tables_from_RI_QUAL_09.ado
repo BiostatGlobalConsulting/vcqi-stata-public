@@ -1,4 +1,4 @@
-*! make_tables_from_RI_QUAL_09 version 1.06 - Biostat Global Consulting - 2017-08-26
+*! make_tables_from_RI_QUAL_09 version 1.09 - Biostat Global Consulting - 2020-12-12
 *******************************************************************************
 * Change log
 * 				Updated
@@ -14,6 +14,10 @@
 *										VCQI_LEVEL4_SET_VARLIST & 
 *										VCQI_LEVEL4_SET_LAYOUT
 * 2017-08-26	1.06	Mary Prier		Added version 14.1 line
+* 2018-05-30	1.07	Dale Rhoda		Remove comment about noomitpriorn
+* 2019-11-13 	1.08	Dale Rhoda		Fix an old bug that was replacing pct
+*										with zero in the category title rows
+* 2020-12-12	1.09	Dale Rhoda		Allow user to SHOW_LEVEL_4_ALONE
 *******************************************************************************
 
 program define make_tables_from_RI_QUAL_09
@@ -92,7 +96,7 @@ program define make_tables_from_RI_QUAL_09
 	gen pct_cor   = n_cor_mov   / n_mov * 100 if n_mov > 0
 	
 	foreach v in pct_mov pct_uncor pct_cor {
-		replace `v' = 0 if missing(`v')
+		replace `v' = 0 if missing(`v') & !missing(n_eligible)
 	}
 	
 	* calculate the number and pct who had some but not all MOVs 
@@ -208,7 +212,6 @@ program define make_tables_from_RI_QUAL_09
 		if $SHOW_BLANKS_BETWEEN_LEVELS == 1 `postblankrow' 
 	}
 
-		
 	* Only show the sub-sub-national level (3) without aggregating upward	
 	if $SHOW_LEVEL_3_ALONE == 1 {
 		preserve
@@ -219,6 +222,23 @@ program define make_tables_from_RI_QUAL_09
 		        (n_uncor_mov[`i']) (pct_uncor[`i']) ///
 				(n_cor_mov[`i'])   (pct_cor[`i']) `x3' (n_eligible[`i']) ///
 				(3) (level[`i']) (substratum[`i'])
+		}
+		restore
+		if $SHOW_BLANKS_BETWEEN_LEVELS == 1 `postblankrow' 
+	}
+	
+	* Only show the sub-strata (e.g., urban/rural)	
+	* (Note that the value of block here is 9 because this capability 
+	*  was added after that for blocks 1-8.)
+	if $SHOW_LEVEL_4_ALONE == 1 {
+		preserve
+		keep if level == 1 & !missing(level4id)
+		sort level4order
+		forvalues i = 1/`=_N' {
+			post to_dataset (name[`i']) (n_mov[`i']) (pct_mov[`i']) ///
+		        (n_uncor_mov[`i']) (pct_uncor[`i']) ///
+				(n_cor_mov[`i'])   (pct_cor[`i']) `x3' (n_eligible[`i']) ///
+				(9) (level[`i']) (substratum[`i'])
 		}
 		restore
 		if $SHOW_BLANKS_BETWEEN_LEVELS == 1 `postblankrow' 
@@ -380,17 +400,7 @@ program define make_tables_from_RI_QUAL_09
 	* If we have already written something to this tab, then we do not
 	* need to repeat the stratum names;  
 	*
-	* If the option noomitpriorn is set, then we move over one column from
-	* where we last left off, so the N column from the last call will 
-	* still show up in the output
-	* 
-	* If the option noomitpriorn is not set, then we overwrite the previous 
-	* value of N with the new value of % (by starting in the same column
-	* where we last left off).  But of course the value of N is written out
-	* again by this operation, so if it is the last, the N will show, or if
-	* the next call to this program does not specify omitpriorn then this
-	* N column will also show in the final worksheet
-	
+
 	else {
 		if "`dose'" != "anydose" {
 			local vlist n_mov pct_mov n_uncor_mov pct_uncor n_cor_mov pct_cor n 

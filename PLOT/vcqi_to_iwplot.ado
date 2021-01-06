@@ -1,4 +1,4 @@
-*! vcqi_to_iwplot version 1.15 - Biostat Global Consulting - 2017-08-26
+*! vcqi_to_iwplot version 1.20 - Biostat Global Consulting - 2020-12-12
 *******************************************************************************
 * Change log
 * 				Updated
@@ -27,6 +27,15 @@
 * 2017-05-26	1.14	Dale Rhoda		Handle vertical lines when national 
 *										results are at the top or bottom row
 * 2017-08-26	1.15	Mary Prier		Added version 14.1 line
+* 2018-01-16	1.16	MK Trimner 		Added $VCQI_SVYSET_SYNTAX
+* 2019-03-18	1.17	Mary Prier		Added user option/global "SORT_PLOT_LOW_TO_HIGH";
+*										  Option high to low (global=1) requires gsort;
+* 										  Default is sorting low to high and using sort
+* 2020-04-18	1.18	Dale Rhoda		Added VCQI_IWPLOT_CITEXT option; takes
+*                                       values 1, 2, 3, 4 or 5 in accorance with
+*                                       iwplot_svyp.  Adjust the note accordingly.
+* 2020-12-09	1.19	Dale Rhoda		Allow the user to plot strata in table order
+* 2020-12-12	1.20	Dale Rhoda		Allow the user to SHOW_LEVEL_4_ALONE
 *******************************************************************************
 
 program define vcqi_to_iwplot
@@ -53,11 +62,12 @@ program define vcqi_to_iwplot
 	}
 
 	use "`database'", clear
-
+	
 	* Drop Level 4 labels if using the SET nomenclature
 	if "$VCQI_LEVEL4_SET_VARLIST" != "" & "$LEVEL4_SET_CONDITION_1" == "" drop if level4id == 1
 	
-	local show4 = $SHOW_LEVELS_1_4_TOGETHER   + ///
+	local show4 = $SHOW_LEVEL_4_ALONE         + ///
+				  $SHOW_LEVELS_1_4_TOGETHER   + ///
 				  $SHOW_LEVELS_2_4_TOGETHER   + ///
 				  $SHOW_LEVELS_3_4_TOGETHER   + ///
 				  $SHOW_LEVELS_2_3_4_TOGETHER > 0
@@ -72,7 +82,7 @@ program define vcqi_to_iwplot
 				  $SHOW_LEVELS_2_4_TOGETHER   + ///
 				  $SHOW_LEVELS_2_3_4_TOGETHER > 0 
 				   
-	local show1 = $SHOW_LEVEL_1_ALONE + $SHOW_LEVELS_1_4_TOGETHER > 0			   
+	local show1 = $SHOW_LEVEL_1_ALONE + $SHOW_LEVEL_4_ALONE + $SHOW_LEVELS_1_4_TOGETHER > 0			   
 
 	if `show4' == 0 drop if level4id != .
 
@@ -125,12 +135,63 @@ program define vcqi_to_iwplot
 	if `show1' == 1 & `show2' == 0 & `show3' == 1 replace level3_estimate = level1_estimate if level3_estimate == .
 	if `show2' == 1 & `show3' == 1 replace level3_estimate = level2_estimate if level3_estimate == .
 
-	sort `l2est' `l3est' estimate
-
-	if `show4' == 1 sort `l2est' `l3est' estimate level4id
-
-	keep name n deff estimate level level*id outcome
+	* Sort proportions based on user request 
+	*  Default is sorting proportions low at bottom of plot to high at top of plot
+	if("$SORT_PLOT_LOW_TO_HIGH"=="0") {  // meaning, sort prop high to low
+		* Expand locals so that each element gets a negative sign;
+		* This code doesn't assign minus sign to empty locals, because don't 
+		*   want a floating minus sign
+		* First, l2est
+		local gsort_l2est 
+		local n_l2est : word count `l2est'
+		if(`n_l2est'>0) {
+			forvalues i=1/`n_l2est' {
+				local gsort_l2est `gsort_l2est' -`: word `i' of `l2est''  // add the minus to the element
+			} 
+		}  
 	
+		* Now, l3est
+		local gsort_l3est 
+		local n_l3est : word count `l3est'
+		if(`n_l3est'>0) {
+			forvalues i=1/`n_l3est' {
+				local gsort_l3est `gsort_l3est' -`: word `i' of `l3est''  // add the minus to the element
+			} 
+		}  
+
+		* Finally, do the gsort
+		gsort `gsort_l2est' `gsort_l3est' -estimate 
+		if `show4' == 1 gsort `gsort_l2est' `gsort_l3est' -estimate -level4id
+	}
+	else {
+		sort `l2est' `l3est' estimate 
+		if `show4' == 1 sort `l2est' `l3est' estimate level4id
+	}
+	
+	* If user wants strata plotted in table order, merge the table order
+	* and sort accordingly
+	
+	if "$PLOT_OUTCOMES_IN_TABLE_ORDER" == "1" {
+
+		vcqi_log_comment $VCP 3 Comment "User has requested that outcomes be plotted in table order instead of sorting by indicator outcome."
+		preserve
+		make_table_order_database
+		make_table_order_dataset
+		restore
+			
+		replace level2id = 0 if missing(level2id)
+		replace level3id = 0 if missing(level3id)
+		replace level4id = 0 if missing(level4id)		
+		merge 1:m level1id level2id level3id level4id using "${VCQI_OUTPUT_FOLDER}/table_order_TO"
+		keep if _merge == 1 | _merge == 3
+		drop _merge
+		sort table_bottom_to_top_row_order
+	}
+	
+	keep if !missing(estimate)
+		
+	keep name n deff estimate level level*id outcome
+		
 	* populate param4, 5, 6, and 7 in case the user decides to plot distributions from the data later
 	gen rightid = .
 	replace rightid = level3id if level == 3
@@ -144,7 +205,7 @@ program define vcqi_to_iwplot
 		}
 	}
 
-	gen param6 = "svyset clusterid, weight(psweight) strata(stratumid)"
+	gen param6 = "$VCQI_SVYSET_SYNTAX"
 	gen param5 = outcome
 	gen param4 = "`datafile'"
 
@@ -179,6 +240,8 @@ program define vcqi_to_iwplot
 	gen shadebehind = "gs15" if level == 1 & (`show2' + `show3' > 0)
 
 	gen rowname = name
+	
+	keep if !missing(estimate)
 
 	save "Plots_IW_UW/iwplot_params_base", replace
 	save "Plots_IW_UW/iwplot_params_`filetag'_`show1'`show2'`show3'`show4'", replace
@@ -270,8 +333,19 @@ program define inchworm_plotit
 	* override the user-specified note because we are using citext 1 and have
 	* a particular note to go with that
 	
-	local note Text at right: 1-sided 95% LCB | Point Estimate | 1-sided 95% UCB, size(vsmall) span
+	* Default to point estimate and 2-sided 95% CI
+	if "$VCQI_IWPLOT_CITEXT" == "" vcqi_global VCQI_IWPLOT_CITEXT 2
 	
+	if "$VCQI_IWPLOT_CITEXT" == "1" ///
+	local note Text at right: 1-sided 95% LCB | Point Estimate | 1-sided 95% UCB, size(vsmall) span
+	if "$VCQI_IWPLOT_CITEXT" == "2" ///
+	local note Text at right: Point Estimate (2-sided 95% Confidence Interval), size(vsmall) span
+	if "$VCQI_IWPLOT_CITEXT" == "3" ///
+	local note Text at right: Point Estimate (2-sided 95% Confidence Interval) (0, 1-sided 95% UCB], size(vsmall) span
+	if "$VCQI_IWPLOT_CITEXT" == "4" ///
+	local note Text at right: Point Estimate (2-sided 95% Confidence Interval) [1-sided 95% LCB, 100), size(vsmall) span
+	if "$VCQI_IWPLOT_CITEXT" == "5" local note Text at right: Point Estimate (2-sided 95% CI) (0, 1-sided 95% UCB] [1-sided 95% LCB, 100), size(vsmall) span 
+
 	local saving
 	if $SAVE_VCQI_GPH_FILES ///
 		local saving saving(Plots_IW_UW/`name'_`show1'`show2'`show3'`show4', replace)
@@ -291,7 +365,7 @@ program define inchworm_plotit
 		inputdata("Plots_IW_UW/iwplot_params_`filetag'_`show1'`show2'`show3'`show4'") ///
 		nl($VCQI_IWPLOT_NL) ///
 		xtitle("Estimated Coverage %") ///
-		citext(1) ///
+		citext($VCQI_IWPLOT_CITEXT) ///
 		horlinesdata("`horlines'") ///
 		note(`note') ///
 		caption(`caption') ///

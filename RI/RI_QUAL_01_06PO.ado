@@ -1,4 +1,4 @@
-*! RI_QUAL_01_06PO version 1.07 - Biostat Global Consulting - 2017-08-26
+*! RI_QUAL_01_06PO version 1.12 - Biostat Global Consulting - 2020-12-16
 *******************************************************************************
 * Change log
 * 				Updated
@@ -13,6 +13,16 @@
 * 2016-05-16	1.06	Dale Rhoda		Tell user how many inchworm plots
 *										will be made
 * 2017-08-26	1.07	Mary Prier		Added version 14.1 line
+* 2018-08-15	1.08	MK Trimner		Added code to create op and iw plots for 
+*										new card availabilty variable as well as
+*										double iw plot to show card plus register
+*										availability 
+* 2018-10-04	1.09	MK Trimner		Changed "has" to "had"
+* 2018-10-24	1.10	Dale Rhoda		Only make organ pipes for 
+*											had_card_or_register
+* 2019-10-13	1.11	Dale Rhoda		Supress double-inchworms if user requests bars
+* 2020-12-16	1.12	Cait Clary		Allow double inchworms when showbars=1 then 
+* 										reset IWPLOT_SHOWBARS global
 *******************************************************************************
 
 program define RI_QUAL_01_06PO
@@ -25,11 +35,11 @@ program define RI_QUAL_01_06PO
 	quietly {
 	
 		********************************
-		* Make organ pipe plots
-		
+		* Make organ pipe plots for card or register availability
+
 		if "$VCQI_MAKE_OP_PLOTS" == "1" {
 		
-			noi di _col(5) "Organ pipe plots"
+			noi di as text _col(5) "Organ pipe plots (card or register availability)"
 				
 			capture mkdir Plots_OP
 			
@@ -51,7 +61,7 @@ program define RI_QUAL_01_06PO
 
 			* Now make the plots themselves - one for each stratum
 				
-			local subtitle RI_QUAL_01: RI Card Availability
+			local subtitle RI_QUAL_01: RI Card or Register Availability
 
 			forvalues i = 1/`opp_nstrata' {
 
@@ -64,13 +74,13 @@ program define RI_QUAL_01_06PO
 				local savedata
 				if $VCQI_SAVE_OP_PLOT_DATA ///
 					local savedata savedata(Plots_OP/RI_QUAL_01_${ANALYSIS_COUNTER}_opplot_`opp_stratum_id_`i''_`opp_stratum_name_`i'')			
-
-				opplot showed_card_with_dates , clustvar(clusterid) weightvar(psweight) ///
+				
+				opplot had_card_or_register , clustvar(clusterid) plotn  weightvar(psweight) ///
 					   stratvar(stratumid) stratum(`=int(`opp_stratum_id_`i'')') ///
 					   title("`opp_stratum_id_`i'' - `opp_stratum_name_`i''") ///
 					   subtitle(`quote'"`subtitle'"`quote') ///
-					   barcolor1(ltblue) `savegph' `savedata' ///
-					   export (Plots_OP/RI_QUAL_01_${ANALYSIS_COUNTER}_opplot_`opp_stratum_id_`i''_`opp_stratum_name_`i''.png)
+					   barcolor1(vcqi_level3) barcolor2(gs15) `savegph' `savedata' ///
+					   export(Plots_OP/RI_QUAL_01_${ANALYSIS_COUNTER}_opplot_`opp_stratum_id_`i''_`opp_stratum_name_`i''.png)
 				
 				vcqi_log_comment $VCP 3 Comment "Graphic file: RI_QUAL_01_${ANALYSIS_COUNTER}_`opp_stratum_id_`i''_`opp_stratum_name_`i''.png was created and saved."
 
@@ -99,20 +109,49 @@ program define RI_QUAL_01_06PO
 				clear
 			}		
 			
-			noi di _col(5) "Inchworm plots (`ppd' plots)"		
+			if ($RI_RECORDS_SOUGHT_FOR_ALL == 1 | $RI_RECORDS_SOUGHT_IF_NO_CARD == 1 ) local ppd = `ppd' * 2
+			
+			noi di as text _col(5) "Inchworm plots for card availability (`ppd' plots)"		
 			
 			capture mkdir Plots_IW_UW
 
 			graph drop _all
 
-			vcqi_to_iwplot , database(${VCQI_OUTPUT_FOLDER}/RI_QUAL_01_${ANALYSIS_COUNTER}_ca_database) ///
+			vcqi_to_iwplot , database(${VCQI_OUTPUT_FOLDER}/RI_QUAL_01_${ANALYSIS_COUNTER}_card_database) ///
 				filetag(RI_QUAL_01_${ANALYSIS_COUNTER}) ///
 				datafile(${VCQI_OUTPUT_FOLDER}/RI_QUAL_01_${ANALYSIS_COUNTER}) ///
 				title(RI - Card Availability) name(RI_QUAL_01_${ANALYSIS_COUNTER}_iwplot)
 				
 			vcqi_log_comment $VCP 3 Comment "Inchworm plot was created and exported."
 		}
+	
+
+		if "$VCQI_MAKE_IW_PLOTS" == "1" & ($RI_RECORDS_SOUGHT_FOR_ALL == 1 | $RI_RECORDS_SOUGHT_IF_NO_CARD == 1 ) {
+		
+			* Double inchworm plot that shows card availability in gray and card plus register in color
+
+			* Temporarily set IWPLOT_SHOWBARS to 0 so that the double inchworm plot is generated
+			vcqi_global IWPLOT_SHOWBARS 0
+
+			graph drop _all
+
+			vcqi_to_double_iwplot , database(${VCQI_OUTPUT_FOLDER}/RI_QUAL_01_${ANALYSIS_COUNTER}_card_or_register_database) ///
+				filetag(RI_QUAL_01_${ANALYSIS_COUNTER}_double) ///
+				datafile(${VCQI_OUTPUT_FOLDER}/RI_QUAL_01_${ANALYSIS_COUNTER}) ///
+				title(RI - Card and Register Availability) /// 
+				name(RI_QUAL_01_${ANALYSIS_COUNTER}_iwplot_double) ///
+				database2(${VCQI_OUTPUT_FOLDER}/RI_QUAL_01_${ANALYSIS_COUNTER}_card_database) ///
+				datafile2(${VCQI_OUTPUT_FOLDER}/RI_QUAL_01_${ANALYSIS_COUNTER}) ///
+				caption(Gray hollow shape is card availability; colored shape is card plus register availability, size(vsmall) span) 				
+
+			vcqi_log_comment $VCP 3 Comment "Card & Register Availability double inchworm plot was created and exported."
+
+			* Revert IWPLOT_SHOWBARS back to the user's selection
+			vcqi_global IWPLOT_SHOWBARS $IWPLOT_SHOWBARS_SAVEOPT
+			
+		}
 	}
+	
 	vcqi_log_comment $VCP 5 Flow "Exiting"
 	global VCP `oldvcp'
 

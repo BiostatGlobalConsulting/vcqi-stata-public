@@ -1,4 +1,4 @@
-*! COVG_DIFF_02_01PP version 1.06 - Biostat Global Consulting - 2017-08-26
+*! COVG_DIFF_02_01PP version 1.07 - Biostat Global Consulting - 2018-08-16
 *******************************************************************************
 * Change log
 * 				Updated
@@ -11,6 +11,7 @@
 * 2017-02-09	1.05	Dale Rhoda		Obtain value label from variable name 
 *										directly
 * 2017-08-26	1.06	Mary Prier		Added version 14.1 line
+* 2018-08-16	1.07	Mary Prier		Deleted keep if inlist() line
 *******************************************************************************
 
 program define COVG_DIFF_02_01PP
@@ -100,8 +101,6 @@ program define COVG_DIFF_02_01PP
 		if "$VCQI_ERROR" == "1" vcqi_halt_immediately
 		}
 		
-		* only keep observations that have the subpopulation(s) of interest
-		keep if inlist($COVG_DIFF_02_SUBPOP_VARIABLE,$COVG_DIFF_02_SUBPOP_LEVEL1,$COVG_DIFF_02_SUBPOP_LEVEL2)
 		save "${VCQI_OUTPUT_FOLDER}/COVG_DIFF_02_${COVG_DIFF_02_INDICATOR}_${COVG_DIFF_02_ANALYSIS_COUNTER}", replace
 
 		* Grab the label of the variable that defines the subpopulations, so we can put it in Excel

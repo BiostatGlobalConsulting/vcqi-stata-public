@@ -18,6 +18,12 @@ program define SIA_COVG_03_05TO
 	vcqi_log_comment $VCP 5 Flow "Starting"
 
 	quietly {
+
+		noi di _continue _col(3) "All ages "
+		make_tables_from_svyp_output, measureid(SIA_COVG_03) vid(all0d) sheet(SIA_COVG_03 ${ANALYSIS_COUNTER}) var(estimate)   estlabel(All ages: 0 doses (%))
+		make_tables_from_svyp_output, measureid(SIA_COVG_03) vid(all1d) sheet(SIA_COVG_03 ${ANALYSIS_COUNTER}) var(estimate)   estlabel(All ages: 1 doses (%))
+		make_tables_from_svyp_output, measureid(SIA_COVG_03) vid(all2d) sheet(SIA_COVG_03 ${ANALYSIS_COUNTER}) var(estimate n) estlabel(All ages: 2+ doses (%))
+	
 		local d0 0
 		local d1 1
 		local d2 2+
@@ -34,7 +40,7 @@ program define SIA_COVG_03_05TO
 				local ++k
 			}
 		}
-		noi di ""
+		noi di as text ""
 	}
 	
 	vcqi_log_comment $VCP 5 Flow "Exiting"

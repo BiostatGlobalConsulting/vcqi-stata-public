@@ -1,4 +1,4 @@
-*! RI_QUAL_09_03DV version 1.03 - Biostat Global Consulting - 2017-08-26
+*! RI_QUAL_09_03DV version 1.05 - Biostat Global Consulting - 2019-11-10
 *******************************************************************************
 * Change log
 * 				Updated
@@ -10,6 +10,8 @@
 *										(because missing DOB or dose dates so
 *										MOV flags are not calculable)
 * 2017-08-26	1.03	Mary Prier		Added version 14.1 line
+* 2019-11-09	1.04	Dale Rhoda		Introduced MOV_OUTPUT_DOSE_LIST
+* 2019-11-10	1.05	Dale Rhoda		Add _`vc' to names of DVs
 *******************************************************************************
 
 program define RI_QUAL_09_03DV
@@ -25,56 +27,54 @@ program define RI_QUAL_09_03DV
 
 		use "${VCQI_OUTPUT_FOLDER}/RI_QUAL_09_${ANALYSIS_COUNTER}", clear
 
-		gen doses_with_mov = 0
-		label variable doses_with_mov "Number of doses with MOVs"
+		gen doses_with_mov_`vc' = 0
+		label variable doses_with_mov_`vc' "Number of doses with MOVs"
 		
-		gen doses_with_uncor_mov = 0
-		label variable doses_with_uncor_mov "Number of uncorrected MOVs"
+		gen doses_with_uncor_mov_`vc' = 0
+		label variable doses_with_uncor_mov_`vc' "Number of uncorrected MOVs"
 
-		gen doses_with_cor_mov = 0
-		label variable doses_with_cor_mov "Number of corrected MOVs"
+		gen doses_with_cor_mov_`vc' = 0
+		label variable doses_with_cor_mov_`vc' "Number of corrected MOVs"
 
-		foreach d in $RI_DOSE_LIST {
+		foreach d in $MOV_OUTPUT_DOSE_LIST {
 		
 			noi di _continue _col(5) "`d' "
 			
-			gen child_had_mov_`d' = flag_had_mov_`d'_`vc' if !missing(total_elig_`d'_`vc') & total_elig_`d'_`vc' > 0 
-			label variable child_had_mov_`d' "Child had a MOV on dose `d'"
+			gen child_had_mov_`d'_`vc' = flag_had_mov_`d'_`vc' if !missing(total_elig_`d'_`vc') & total_elig_`d'_`vc' > 0 
+			label variable child_had_mov_`d'_`vc' "Child had a MOV on dose `d'"
 			
-			gen child_had_uncor_mov_`d' = flag_uncor_mov_`d'_`vc' if ///
-				child_had_mov_`d' == 1
-			label variable child_had_uncor_mov_`d' "Child had an uncorrected MOV on dose `d'"
+			gen child_had_uncor_mov_`d'_`vc' = flag_uncor_mov_`d'_`vc' if child_had_mov_`d'_`vc' == 1
+			label variable child_had_uncor_mov_`d'_`vc' "Child had an uncorrected MOV on dose `d'"
 			
-			gen child_had_cor_mov_`d' = flag_cor_mov_`d'_`vc' if ///
-				child_had_mov_`d' == 1
-			label variable child_had_cor_mov_`d' "Child had a corrected MOV on dose `d'"
+			gen child_had_cor_mov_`d'_`vc' = flag_cor_mov_`d'_`vc' if child_had_mov_`d'_`vc' == 1
+			label variable child_had_cor_mov_`d'_`vc' "Child had a corrected MOV on dose `d'"
 
-			replace doses_with_mov = doses_with_mov + 1 if child_had_mov_`d' == 1
-			replace doses_with_uncor_mov = doses_with_uncor_mov + 1 if child_had_uncor_mov_`d' == 1
-			replace doses_with_cor_mov = doses_with_cor_mov + 1 if child_had_cor_mov_`d' == 1
+			replace doses_with_mov_`vc'       = doses_with_mov_`vc'       + 1 if child_had_mov_`d'_`vc' == 1
+			replace doses_with_uncor_mov_`vc' = doses_with_uncor_mov_`vc' + 1 if child_had_uncor_mov_`d'_`vc' == 1
+			replace doses_with_cor_mov_`vc'   = doses_with_cor_mov_`vc'   + 1 if child_had_cor_mov_`d'_`vc' == 1
 		}
 		
-		noi di _col(5) "Totals..."
+		noi di as text _col(5) "Totals..."
 
 		* had 1+ MOVs over all doses
-		gen child_had_mov = doses_with_mov > 0
-		replace child_had_mov = .  if missing(total_elig_visits_`vc') | total_elig_visits_`vc' == 0
-		label variable child_had_mov "Child had 1+ MOVs over all doses"
+		gen child_had_mov_`vc' = doses_with_mov_`vc' > 0
+		replace child_had_mov_`vc' = .  if missing(total_elig_visits_`vc') | total_elig_visits_`vc' == 0
+		label variable child_had_mov_`vc' "Child had 1+ MOVs over all doses"
 		
 		* had only uncorrected MOVs
-		gen child_had_only_uncor_mov = doses_with_mov > 0 & doses_with_cor_mov == 0
-		replace child_had_only_uncor_mov = .  if missing(total_elig_visits_`vc') | total_elig_visits_`vc' == 0
-		label variable child_had_only_uncor_mov "Child only had uncorrected MOVs"
+		gen child_had_only_uncor_mov_`vc' = doses_with_mov_`vc' > 0 & doses_with_cor_mov_`vc' == 0
+		replace child_had_only_uncor_mov_`vc' = .  if missing(total_elig_visits_`vc') | total_elig_visits_`vc' == 0
+		label variable child_had_only_uncor_mov_`vc' "Child only had uncorrected MOVs"
 		
 		* had only corrected MOVs
-		gen child_had_only_cor_mov   = doses_with_mov > 0 & doses_with_uncor_mov == 0
-		replace child_had_only_cor_mov = .  if missing(total_elig_visits_`vc') | total_elig_visits_`vc' == 0
-		label variable child_had_only_cor_mov "Child only had corrected MOVs"
+		gen child_had_only_cor_mov_`vc'   = doses_with_mov_`vc' > 0 & doses_with_uncor_mov_`vc' == 0
+		replace child_had_only_cor_mov_`vc' = .  if missing(total_elig_visits_`vc') | total_elig_visits_`vc' == 0
+		label variable child_had_only_cor_mov_`vc' "Child only had corrected MOVs"
 
 		* had both uncorrected and corrected MOVs
-		gen child_had_cor_and_uncor_mov = doses_with_cor_mov > 0 & doses_with_uncor_mov > 0
-		replace child_had_cor_and_uncor_mov = .  if missing(total_elig_visits_`vc') | total_elig_visits_`vc' == 0
-		label variable child_had_cor_and_uncor_mov "Child had both corrected and uncorrected MOVs"
+		gen child_had_cor_n_uncor_mov_`vc' = doses_with_cor_mov_`vc' > 0 & doses_with_uncor_mov_`vc' > 0
+		replace child_had_cor_n_uncor_mov_`vc' = .  if missing(total_elig_visits_`vc') | total_elig_visits_`vc' == 0
+		label variable child_had_cor_n_uncor_mov_`vc' "Child had both corrected and uncorrected MOVs"
 		
 		save, replace
 	

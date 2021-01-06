@@ -1,5 +1,18 @@
 {smcl}
-{* *! version 1.0 18 Feb 2016}{...}
+{...}
+{...}
+{* *! svypd.sthlp version 1.03 - Biostat Global Consulting - 2020-09-23}{...}
+{* Change log: }{...}
+{* 				Updated}{...}
+{*				version}{...}
+{* Date 		number 	Name			What Changed}{...}
+{* 2016-02-18	1.00	Dale Rhoda		Original version}{...}
+{* 2018-04-11	1.01	Dale Rhoda		Updated info on what program returns}{...}
+{* 2020-04-22   1.02    Dale Rhoda      Allow Exact as synonym for Clopper}
+{* 2020-04-22                           Also always call CLopper if stderr is 0}
+{* 2020-09-23   1.03    Dale Rhoda      Clean up to send to StataCorp}
+{...}
+{...}
 {vieweralsosee "" "--"}{...}
 {vieweralsosee "Help svy" "help svy"}{...}
 {vieweralsosee "Help proportion" "help proportion"}{...}
@@ -24,14 +37,17 @@
 {pstd} It estimates the proportion of the population represented by respondents coded 1.{p_end}
 
 {pstd} Its features include options to calculate not only the logit 
-confidence interval (CI), but also modified Agresti-Coull, Anscombe, Clopper-Pearson, Fleiss (Wilson with continuity correction), Jeffreys, Wald and Wilson
+confidence interval (CI), but also modified Agresti-Coull, Clopper-Pearson, Fleiss (Wilson with continuity correction), Jeffreys, Wald and Wilson
 CIs.{p_end}
 
 {pstd} For CI calculation, the user can specify whether or not to adjust for design degrees-of-freedom.{p_end}
 
-{pstd} The user can also specify that the design effect (DEFF) should be no smaller than 0.{p_end}
+{pstd} The user can also specify that the design effect (DEFF) should be no smaller than 1.{p_end}
 
-{pstd} If the sample proportion is 0% or 100% and the user has requested Wald, Arcsine, Logit or Wilson intervals, the program ignores the complex sampling design and returns a Clopper-Pearson interval calculated using the full sample size (assumes the design effect is 1).{p_end}
+{pstd} If the standard error is 0, meaning that all clusters have the same observed coverage, 
+       and the user has requested Wald or Logit intervals, the program ignores the complex sampling design and 
+	   returns a Clopper-Pearson interval calculated using the full sample size (assumes 
+	   the design effect is 1 and degrees of freedom = N-1).{p_end}
  
 {marker syntax}{...}
 {title:Syntax}
@@ -63,18 +79,13 @@ CI or an upper or lower 1-sided confidence limit.{p_end}
 
 {pstd}This command is meant to address some of the limitations of Stata's svy: proportion command.{p_end}
 
-{pstd}The svy: proportion command does not report a CI when the sample proportion is 0 or 1; this command does.{p_end}
+{pstd}For several choices of citype(), the svy: proportion command does not report a meaningful CI when the sample proportion is 0 or 1 or when the standard error is 0; this command does.{p_end}
 
 {pstd}The svy: proportion command doesn't allow values of the level() option to fall between 0 and 10; this command does.{p_end}
 
-{pstd}The svy: proportion command uses the logit method of estimating CIs.
-This command also calculates several other types of CI, as suggested in Korn and 
-Graubard ({help svypd##1998:1998}) and Dean and Pagano ({help svypd##2015:2015}).  
-{p_end}
+{pstd}The svy: proportion command calculates a CI for a single level() at a time; this command returns CIs for a vector of levels if requested (using the option cilevellist()).{p_end}
 
-{pstd} To run this program, you will need to install the svypd.ado and svyp_ci_calc.ado commands.  Visit the 
-{browse "http://www.biostatglobal.com": Biostat Global Consulting website} 
-to find a link to a GitHub repository.{p_end}
+{pstd}This command allows the user to calculate several types of CI, as suggested in {help svypd##references:Korn and Graubard} and {help svypd##references:Dean and Pagano}.{p_end}
 	
 {hline}
 {marker options}{...}
@@ -84,84 +95,93 @@ to find a link to a GitHub repository.{p_end}
 {marker level}
 {dlgtab:level} 
 {pstd} {bf:level} - confidence interval (CI) level is a single numeric value between 00.01 and 99.99.  
-The program will calculate 2-sided limits for that level of confidence and, if level is > 50, it will also calculate 1-sided limits for that level of confidence.  All confidence limits are returned in a matrix named r(ci_list).{p_end}
+       The program will calculate 2-sided limits for that level of confidence and, if level is > 50, 
+	   it will also calculate 1-sided limits for that level of confidence.  All confidence limits are 
+	   returned in a matrix named r(ci_list).{p_end}
 
-{pmore}{bf: NOTE} The default value is 95 which will return the limits of the 2-sided 95% CI and the 1-sided upper- and lower-95% confidence bounds.  (Recall that the 1-sided 95% lower confidence bound is the lower limit of a 2-sided 90% CI and the 1-sided 95% upper confidence bound is the upper limit of the 2-sided 90% CI.){p_end}
+{pmore}{bf: NOTE} The default value is 95 which will return the limits of the 2-sided 95% CI and the 
+       1-sided upper- and lower-95% confidence bounds.  (Recall that the 1-sided 95% lower confidence bound 
+       is the lower limit of a 2-sided 90% CI and the 1-sided 95% upper confidence bound is the upper limit 
+       of the 2-sided 90% CI.){p_end}
 
 {marker cilevellist}
 {dlgtab:cilevellist} 
 {pstd} {bf:cilevellist} - confidence interval (CI) level list is a list of numeric values between 00.01 and 99.99.  
-The program will calculate 2-sided limits for as many levels as you specify in the list and will return them in a matrix named r(ci_list).{p_end}
+       The program will calculate 2-sided limits for as many levels as you specify in the list and will return them 
+       in a matrix named r(ci_list).{p_end}
 
-{pmore}{bf: NOTE} The user may specify the level option or the cilevellist option, but not both.  The default is level(95) which is the same as cilevellist(95 90).{p_end}
+{pmore}{bf: NOTE} The user may specify the level option or the cilevellist option, but not both.  
+       The default is level(95) which is the same as cilevellist(95 90).{p_end}
 
 {marker method}
 {dlgtab:method} 
 {pstd} {bf:method} - indicates the method by which the confidence interval(s) will be calculated. Valid options include: {p_end}
 
-{pmore3} 1. Logit (default){p_end}
-{pmore3} 2. Agresti-Coull {p_end}
-{pmore3} 3. Anscombe {p_end}
-{pmore3} 4. Clopper-Pearson {p_end}
-{pmore3} 5. Fleiss (Wilson with continuity correction) {p_end}
-{pmore3} 6. Jeffreys {p_end}
-{pmore3} 7. Wald {p_end}
-{pmore3} 8. Wilson {p_end}
-{pmore3} 9. Arcsine {p_end}
+{pmore3} - Logit (default){p_end}
+{pmore3} - Agresti-Coull (may be abbreviated to Agresti) {p_end}
+{pmore3} - Clopper-Pearson (may be abbreviated to Clopper or to Exact){p_end}
+{pmore3} - Fleiss (may be abbreviated to Wilsoncc which stands for Wilson with continuity correction){p_end}
+{pmore3} - Jeffreys {p_end}
+{pmore3} - Wald {p_end}
+{pmore3} - Wilson {p_end}
 
 {pmore} {bf:NOTE} The formulae for calculating most of these limits are described 
-in Dean & Pagano ({help svypd##2015:2015}).  (This command corrects a typographical 
-error in Dean & Pagano's arcsine formula.)  The formulae for the Anscombe limits 
-comes from Feng ({help svypd##2006:2006}), page 8.  The formula for the Fleiss 
-interval comes from Fleiss et al, ({help svypd##2003:2003}), pages 28-29.
+in {help svypd##references:Dean and Pagano}.  The formula for the Fleiss 
+interval comes from {help svypd##references:Fleiss et al}, pages 28-29.
 
 {marker adjust}
 {dlgtab:adjust} 
-{pstd} {bf:adjust} - If the user specifies the adjust option then the effective sample size for CI calculations will be adjusted (diminished) to account for the design degrees of freedom in the manner discussed in D&P ({help svypd##2015:2015}) K&G ({help svypd##1998:1998}).{p_end}
+{pstd} {bf:adjust} - If the user specifies the adjust option then the effective sample size for CI calculations will be 
+        adjusted (diminished) to account for the design degrees of freedom in the manner discussed in 
+		D&P ({help svypd##references:references}) K&G ({help svypd##references:references}).{p_end}
 
 {marker truncate}
 {dlgtab:truncate} 
-{pstd} {bf:truncate} - If the user specifies the truncate option then the design effect is not allowed to go below 1.0 and the effective sample size is not allowed to be larger than the actual sample size.{p_end}
+{pstd} {bf:truncate} - If the user specifies the truncate option then the design effect is not allowed to go 
+       below 1.0 and the effective sample size is not allowed to be larger than the actual sample size.{p_end}
 
 {pmore}{bf: NOTE} The default is to allow the design effect to take on values below 1.0.{p_end}
-
 
 {hline}
 {marker results}{...}
 {title:Stored Results} 
 {p 150 0 0}({it:{back:back to previous section}}) {p_end}
 
-{pstd}The program returns 21 scalar values: {p_end}
+{pstd}The program returns the following scalar values: {p_end}
 {p2colset 16 35 75 2}
 {p2col:r(svyp)}the estimated population proportion of 1s {p_end}
-{p2col:r(lb95)}95% CI lower bound using the requested method (default=logit) {p_end}
-{p2col:r(ub95)}95% CI upper bound using the requested method {p_end}
-{p2col:r(lb90)}90% CI lower bound using the requested method {p_end}
-{p2col:r(ub90)}90% CI upper bound using the requested method {p_end}
-{p2col:r(lblvl)}lower bound of user-specified% CI (specify level(##.##)) {p_end}
-{p2col:r(ublvl)}upper bound of user-specified% CI {p_end}
-
+{p2col:r(stderr)}the standard error of the estimated proportion {p_end}
+{p2col:r(lb_alpha)}level% (default=95%) 2-sided CI lower bound {p_end}
+{p2col:r(ub_alpha)}level% (default=95%) 2-sided CI upper bound {p_end}
+{p2col:r(lb_2alpha)}level% (default=95%) 1-sided lower confidence bound {p_end}
+{p2col:r(ub_2alpha)}level% (default=95%) 1-sided upper confidence bound {p_end}
 
 {p2colset 16 35 75 2}	
-{p2col:r(level)}The value of level that the user specified {p_end}
 {p2col:r(df)}Degrees of freedom {p_end}
 {p2col:r(deff)}Design Effect {p_end}
+{p2col:r(neff)}Effective sample size {p_end}
 {p2col:r(N)}Number of 0s & 1s in the sample proportion calculation {p_end}
-{p2col:r(clusters)}Number of clusters {p_end}
 {p2col:r(Nwtd)}Sum of weights for observations used in the calculation {p_end}
+{p2col:r(clusters)}Number of clusters {p_end}
 
-{pstd} The program returns one macro, listing the method used to populate lb95, ub95, lb90, ub90, lblvl and ublvl {p_end}
+{pstd} The program returns two macros:{p_end}
 {p2colset 16 35 75 2}
-{p2col:r(method)}Logit or Wilson or Clopper, if the sample proportion is between 0 and 1 {p_end}
-{p2col:r(method)}Clopper-Pearson assuming DEFF=1; ignoring sample design , if the sample proportion is 0 or 1{p_end}
+{p2col:r(cilevellist)}List of 'level' values for which CI bounds were calculated {p_end}
+{p2col:r(method)}Method used to calculate the CI bounds {p_end}
 
-{pstd} {bf:NOTE If the user does not specify level, it is set to 95 and r(lblvl)=r(lb95) and r(ublvl)=r(ub95) r(lb95_wilson)=r(lblvl_wilson), and so on.}
+{pstd} {bf:NOTE} If the user does not specify level, it is set to 95 and r(cilevellist)= "95 90"{p_end}
+
+{pstd} {bf:NOTE} If the sample proportion is 0% or 100% or if the standard error is 0, 
+        and if the user has requested a CI type that is not defined under those conditions, 
+		svypd will calculate a Clopper-Pearson interval and return a value of 
+		r(method) that says "Clopper-Pearson" instead of the method that the user asked for.{p_end}
+
+{pstd} The program returns one matrix:{p_end}
+{p2colset 16 35 75 2}
+{p2col:r(cilist)}List of the values in r(cilevellist) and the lower and upper {p_end}
+{p2col: }confidence bounds for 2-sided intervals for those values of 'level' {p_end}
 
 {hline}
-
-{marker examples}{...}
-{title:Examples}
-{p 150 0 0}({it:{back:back to previous section}}) {p_end}
 {marker author}
 {title:Author}
 {p}
@@ -177,12 +197,15 @@ Website: {browse "http://biostatglobal.com": http://biostatglobal.com}
 {marker references}{...}
 {title:References}
 {p 150 0 0}({it:{back:back to previous section}}) {p_end}
-{marker 1998}{...}
 {pmore}Korn, E. L. and Graubard, B. I. (1998), "Confidence Intervals for Proportions With Small Expected Number of Positive Counts Estimated From Survey Data," Survey Methodology, 24, 193-201.
 
 {pmore}Curtin, L. R., Kruszon-Moran, D., Carroll, M., and Li, X. (2006), "Estimation and Analytic Issues for Rare Events in NHANES," Proceedings of the Survey Research Methods Section, ASA, 2893-2903.  
 
 {pmore}http://support.sas.com/documentation/cdl/en/statug/63962/HTML/default/viewer.htm#statug_surveyfreq_a0000000252.htm
+
+{pmore}Dean, Natalie, and Marcello Pagano. (2015), "Evaluating confidence interval methods for binomial proportions in clustered surveys." Journal of Survey Statistics and Methodology 3, no. 4 : 484-503.
+
+{pmore}Fleiss, Joseph L., Bruce Levin, and Myunghee Cho Paik. Statistical Mehods for Rates and Proportions. John Wiley & Sons, 2013.
 
 {marker related}{...}
 {title:Related commands}

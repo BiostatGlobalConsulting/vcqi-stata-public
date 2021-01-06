@@ -1,4 +1,4 @@
-*! make_RI_augmented_dataset version 1.08 - Biostat Global Consulting - 2017-08-26
+*! make_RI_augmented_dataset version 1.13 - Biostat Global Consulting - 2018-12-10
 *******************************************************************************
 * Change log
 * 				Updated
@@ -17,6 +17,17 @@
 * 2017-08-22	1.07	Dale Rhoda		Removed VCQI billboard at end of run
 *										(because we usually run this within VCQI)
 * 2017-08-26	1.08	Mary Prier		Added version 14.1 line
+* 2018-06-27	1.09	MK Trimner		Removed DS_TYPE as not used to show indicator
+* 2018-07-31	1.10	MK Trimner		Added code to include levels of variables
+* 2018-10-04	1.11	Dale Rhoda		Cleaned up ${LEVEL`v'_NAME_DATASET} merge
+* 2018-11-26	1.12	MK Trimner		Added code to include Indicator datasets 
+*										that have more than 1 line per person
+*										corrected by making these wide RI_QUAL_05
+* 2018-12-10	1.13	MK Trimner		Removed RI_COVG_05 as this Indicator
+*										is completed at the Cluster level and not
+*										Individual
+*										Corrected file name and local names so i
+* 										is not wiped out incase multiple analysis counters used
 *******************************************************************************
 
 * This program creates one RI dataset containing the original RI dataset provided in VCQI 
@@ -62,7 +73,7 @@
 * 2. Separate from VCQI Control Program. This requires that vcqi_global DELETE_TEMP_VCQI_DATASETS be set to 0 to save the temp datasets.
 *
 * This program can only be ran on RI Indicators that result in a dataset with a single line per person. 
-* RI_COVG_05  and RI_QUAL_05 will not be included.
+* RI_COVG_05 will not be included.
 *
 ********************************************************************************
 
@@ -89,11 +100,12 @@ program define make_RI_augmented_dataset
 		* Setup global RILIST to contain all indicators that could have been run...
 		* Note: Anytime a new RI indicator is created it will need to be added to this list
 		* Note: This program will only work for indicators where the dataset has 1 row per person
-		* RI_COVG_05 and RI_QUAL_05 have more than 1 row per person so this program will not include those datasets
+		* RI_COVG_05 is an indicator completed at the Cluster level and 
+		* is not included in the augmented dataset
 		
 		global RILIST RI_COVG_01 RI_COVG_02 RI_COVG_03 RI_COVG_04 ///
 					  RI_ACC_01  RI_CONT_01 RI_QUAL_01 RI_QUAL_02 ///
-					  RI_QUAL_03 RI_QUAL_04 RI_QUAL_06 RI_QUAL_07 ///
+					  RI_QUAL_03 RI_QUAL_04 RI_QUAL_06 RI_QUAL_07 RI_QUAL_07B ///
 					  RI_QUAL_08 RI_QUAL_09 RI_QUAL_12 RI_QUAL_13 
 							
 		******************************************************************************** 
@@ -117,7 +129,11 @@ program define make_RI_augmented_dataset
 				if !_rc local filelist `filelist' `v'_`i'
 			}
 		}
-			
+		
+		* Now we will check to see if the Indicators that create multiple rows per
+		* person were ran.
+		* If they were, reshape so there is only 1 row per person
+		check_multi_row_indicators, analysiscounter(`analysiscounter') filelist(`filelist')
 				
 		* For all datasets, create a local with the varlist and with dataset name to be used later on
 		forvalues i = 1/`=wordcount("`filelist'")' {
@@ -166,7 +182,32 @@ program define make_RI_augmented_dataset
 		}
 		
 		save "RI_augmented_dataset", replace
-
+		
+		* If the levels of datasets are defined, add the variables to the dataset
+		* Do this from the RI_with_ids dataset
+		* create a keep list first
+		local keep
+		if $SHOW_LEVEL_1_ALONE == 1 | $SHOW_LEVELS_1_4_TOGETHER == 1 local keep level1id
+		if $SHOW_LEVEL_2_ALONE == 1 | $SHOW_LEVELS_2_4_TOGETHER == 1 | $SHOW_LEVELS_2_3_4_TOGETHER == 1 local keep `keep' level2id
+		if $SHOW_LEVEL_3_ALONE == 1 | $SHOW_LEVELS_2_3_TOGETHER == 1 | $SHOW_LEVELS_3_4_TOGETHER == 1 | $SHOW_LEVELS_2_3_4_TOGETHER == 1 local keep `keep' level3id
+		if "$VCQI_LEVEL4_SET_VARLIST" != "" local keep `keep' $VCQI_LEVEL4_SET_VARLIST
+		
+		merge 1:1 RI01 RI03 RI11 RI12 using "RI_with_ids", keepusing(`keep') nogen
+		save "RI_augmented_dataset", replace
+		
+		* Now pull in all the names associated with them for levels 1/3
+		* Remove the level4 variables and the word "level" and "id"
+		local keep `=subinstr("`keep'","$VCQI_LEVEL4_SET_VARLIST","",.)'
+		local keep `=subinstr("`keep'","level","",.)'
+		local keep `=subinstr("`keep'","id","",.)'
+	
+		* For any levels 1-3, we need to pull in the names that go with the id
+		foreach v in `keep' {
+			merge m:1 level`v'id using "${LEVEL`v'_NAME_DATASET}", nogen
+			order level`v'name, after(level`v'id)
+			save "RI_augmented_dataset", replace
+		}
+				
 		*Merge together with the first file in RI_LIST
 		merge 1:1 RI01 RI03 RI11 RI12 using "VCQI_ADS_`=word("`filelist'",1)'", update nogen
 	
@@ -174,16 +215,10 @@ program define make_RI_augmented_dataset
 		save "RI_augmented_dataset", replace
 
 		* Next compare the varlists for each dataset and create one large varlist  
-		* Also create a DS_TYPE list to show where the variables came from
-
 		* Set the variables as the varlist and dstype from first dataset	
 		local VARLIST `VARLIST_`=word("`filelist'",1)''
 
-		foreach v in `VARLIST' {
-			local DS_TYPE `DS_TYPE' `DS_TYPE_`=word("`filelist'",1)''
-		}
-				
-		* Foreach variable, post the variable, DS_TYPE and message about variable to log
+		* Foreach variable, post the variable and message about variable to log
 		capture postclose vcqiadsvarlist
 		postfile vcqiadsvarlist str500 (variable dataset analysis_counter message new_var_name) using vcqi_ads_logfile, replace
 
@@ -198,7 +233,7 @@ program define make_RI_augmented_dataset
 			foreach u in `VARLIST_`fn'' {
 				if strpos("`VARLIST'","`u' ") >= 1 {
 				
-					noi di "`fn': Match for `u'..." _continue
+					noi di as text "`fn': Match for `u'..." _continue
 				
 					* Create two small datasets with specified variable and the identifiers to compare values
 					use "RI_augmented_dataset", clear
@@ -231,7 +266,7 @@ program define make_RI_augmented_dataset
 					* If the values match, no action is needed other than to post in the log...
 					if _rc!=9 {
 					
-						noi di "found identical values."
+						noi di as text "found identical values."
 
 						* Increase the local dup by 1 for first dup variable found
 						if `dup'==0 local dup 1
@@ -265,7 +300,7 @@ program define make_RI_augmented_dataset
 					* If values differ, then the new variable will need to be renamed and added to the varlist
 					if _rc==9 {
 
-						noi di "found some differences."
+						noi di as text "found some differences."
 					
 						* Increase the local dup by 1 for first dup variable found
 						if `dup'==0 local dup 1
@@ -278,7 +313,7 @@ program define make_RI_augmented_dataset
 							clonevar ADS_DUPVAR_`dup'_`=substr("`fn'",1,length("`fn'")-2)'=`u'
 							char ADS_DUPVAR_`dup'_`=substr("`fn'",1,length("`fn'")-2)'[Unique] "Duplicate with different values"
 							
-							* Add variable to VARLIST local and indicator to DS_TYPE local
+							* Add variable to VARLIST local 
 							local VARLIST `VARLIST' ADS_DUPVAR_`dup'_`=substr("`fn'",1,length("`fn'")-2)'
 
 							save, replace
@@ -288,7 +323,7 @@ program define make_RI_augmented_dataset
 							rename `u' ADS_DUPVAR_`dup'_`=substr("`fn'",1,length("`fn'")-2)'
 							char ADS_DUPVAR_`dup'_`=substr("`fn'",1,length("`fn'")-2)'[Unique] "Duplicate with different values"
 
-							* Add variable to VARLIST local and indicator to DS_TYPE local
+							* Add variable to VARLIST local 
 							local VARLIST `VARLIST' ADS_DUPVAR_`dup'_`=substr("`fn'",1,length("`fn'")-2)'
 
 							save, replace
@@ -312,7 +347,7 @@ program define make_RI_augmented_dataset
 				* If the variable does not exist in any previous datasets, add it to the augmented log and post
 				else if strpos("`VARLIST'","`u' ") == 0 {
 
-					noi di "`fn': `u' is unique so far."
+					noi di as text "`fn': `u' is unique so far."
 				
 					local VARLIST `VARLIST' `u'
 						
@@ -338,7 +373,7 @@ program define make_RI_augmented_dataset
 		* drop any variables that are not unique per user's instructions
 		if "`identicaldups'"!="" {
 		
-			noi di "Dropping variables that are duplicates with identical values, per user's instruction."
+			noi di as text "Dropping variables that are duplicates with identical values, per user's instruction."
 			
 			use RI_augmented_dataset, clear
 			local droplist 
@@ -348,11 +383,11 @@ program define make_RI_augmented_dataset
 			}
 			
 			if "`droplist'"!="" {
-				noi di "Dropping `droplist'"
+				noi di as text "Dropping `droplist'"
 				drop `droplist'
 			}
 			else {
-				noi di "No duplicate variables to drop"
+				noi di as text "No duplicate variables to drop"
 			}
 			save, replace
 		}
@@ -368,15 +403,76 @@ program define make_RI_augmented_dataset
 	
 	}
 	
-	di ""
-	di "VCQI Augmented Dataset Program identified `dup' variables that had conflicting values between the VCQI indicator datasets."
-	di "Please reference the log: vcqi_ads_logfile.dta for details."
-	di ""
+	di as text ""
+	di as text "VCQI Augmented Dataset Program identified `dup' variables that had conflicting values between the VCQI indicator datasets."
+	di as text "Please reference the log: vcqi_ads_logfile.dta for details."
+	di as text ""
 	
-	di "VCQI Augmented Dataset was saved as RI_augmented_dataset.dta".
+	di as text "VCQI Augmented Dataset was saved as RI_augmented_dataset.dta".
 
-	di ""
+	di as text ""
 
 
 end
-	
+
+capture program drop check_multi_row_indicators
+program define check_multi_row_indicators
+
+	syntax , analysiscounter(int) filelist(string asis)
+
+	* Check to see if there are files with multiple analysis counters
+	forvalues i =1/`analysiscounter' {
+	* Confirm which datasets exist and add them to the filelist
+		quietly capture confirm file RI_QUAL_05_`i'.dta
+			if !_rc {
+									
+				* Open dataset
+				use RI_QUAL_05_`i', clear
+				
+				if "${RI_QUAL_05_DOSE_NAME}"=="" ///
+				global RI_QUAL_05_DOSE_NAME `=lower("`=substr(early_dose[1],1,length(early_dose[1])-1)'")'
+				
+				if "${RI_QUAL_05_INTERVAL_THRESHOLD}"=="" {
+					local z 0
+					foreach v of varlist * {
+						if "`z'" == "0" {
+							if `=strpos("`v'","short_interval")' > 0 local z "`v'"
+						}
+					}
+					global RI_QUAL_05_INTERVAL_THRESHOLD `=substr("`z'",length("`z'")-3,2)' 
+					global RI_QUAL_05_INTERVAL_THRESHOLD `=subinstr("$RI_QUAL_05_INTERVAL_THRESHOLD","_","",.)'
+				}
+				
+				* Set local with first letter of dose name
+				local p `=lower("`=substr("${RI_QUAL_05_DOSE_NAME}",1,1)'")'
+				
+				* Create variable that combines early and later dose
+				gen dose_combo = ""
+				forvalues n = 1/`=_N' {
+					replace dose_combo = "_`p'`=substr(early_dose[`n'], -1,1)'_`p'`=substr(later_dose[`n'], -1,1)'" in `n'
+				}
+				
+				* Drop early and later doses as these throw off reshape
+				drop early_dose later_dose
+				
+				* Reshape so there is one row per person
+				* pull the dose name in lower case
+				local p `=lower("${RI_QUAL_05_DOSE_NAME}")'
+			
+				reshape wide card_interval_days register_interval_days ///
+				short_interval_`p'_${RI_QUAL_05_INTERVAL_THRESHOLD}_c ///
+				short_interval_`p'_${RI_QUAL_05_INTERVAL_THRESHOLD}_r ///
+				short_interval_`p'_${RI_QUAL_05_INTERVAL_THRESHOLD}, ///
+				i(respid) j(dose_combo) string
+				
+				save "RI_QUAL_05_wide_`i'", replace
+				
+				* Add to file list
+				local filelist `filelist' RI_QUAL_05_wide_`i'
+				global RILIST $RILIST RI_QUAL_05_wide
+				
+				c_local filelist `filelist'	
+		}
+	}
+
+end

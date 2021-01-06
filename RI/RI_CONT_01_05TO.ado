@@ -1,4 +1,4 @@
-*! RI_CONT_01_05TO version 1.03 - Biostat Global Consulting - 2017-08-26
+*! RI_CONT_01_05TO version 1.04 - Biostat Global Consulting - 2018-01-16
 *******************************************************************************
 * Change log
 * 				Updated
@@ -7,6 +7,7 @@
 * 2016-01-18	1.01	Dale Rhoda		Changed to vcqi_global
 * 2016-03-08	1.02	Dale Rhoda		Moved titles & footnotes to control pgm
 * 2017-08-26	1.03	Mary Prier		Added version 14.1 line
+* 2018-01-16	1.04	Dale Rhoda		Remove noomitpriorn and update var option
 *******************************************************************************
 
 program define RI_CONT_01_05TO
@@ -25,10 +26,10 @@ program define RI_CONT_01_05TO
 			local ++j
 			noi di _continue _col(5) "`d1' to `d2' "
 
-			make_tables_from_unwtd_output, measureid(RI_CONT_01) sheet(RI_CONT_01 ${ANALYSIS_COUNTER}) noomitpriorn vid(`d1'_`d2') var(dropout_`d1'_`d2') estlabel(`=upper("`d1'")'-`=upper("`d2'")' Dropout (%))
+			make_tables_from_unwtd_output, measureid(RI_CONT_01) sheet(RI_CONT_01 ${ANALYSIS_COUNTER}) vid(`d1'_`d2') var(estimate n) estlabel(`=upper("`d1'")'-`=upper("`d2'")' Dropout (%))
 
 		}
-		noi di ""
+		noi di as text ""
 	}
 	
 	vcqi_log_comment $VCP 5 Flow "Exiting"

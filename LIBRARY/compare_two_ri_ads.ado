@@ -1,4 +1,4 @@
-*! compare_two_ri_ads version 1.05 - Biostat Global Consulting - 2017-08-26
+*! compare_two_ri_ads version 1.06 - Biostat Global Consulting - 2020-11-18
 *******************************************************************************
 * Change log
 * 				Updated
@@ -17,7 +17,9 @@
 * 										Added footnotes and note about disconcordance after each table
 *										Hard coded Indicator name in cell A1
 * 2017-04-25	1.04	MK Trimner		Added comments about syntax to align with User's guide
-* 2017-08-26	1.05	Mary Prier		Added version 14.1 line										
+* 2017-08-26	1.05	Mary Prier		Added version 14.1 line				
+* 2020-11-18	1.06	MK Trimner		Added code to account for "valid" or "crude" being added to RI_QUAL_09 derived variables		
+*										Added code to allow for RI_QUAL_01 variable changes				
 *******************************************************************************
 *
 * This program allows the user to compare the results of two augmented datasets created by the make_RI_augmented_dataset program.
@@ -72,7 +74,7 @@ program define compare_two_ri_ads
 	
 	quietly {
 
-		nois di "cd to Output location..."
+		nois di as text "cd to Output location..."
 		* CD to location for output
 		if "`outputpath'" != "" cd  `"`outputpath'"'
 
@@ -101,17 +103,23 @@ program define compare_two_ri_ads
 		}
 
 		*********************************************************************************
-		nois di "Determine which doses exist in both Augmented datasets..."
+		nois di as text "Determine which doses exist in both Augmented datasets..."
 
 		* Create 4 lists of all variables that will be used in the program
 		* First list are dose specific and contain a values of 1,0,.
+		
+		* We need to determine if RI_QUAL_09 was ran as valid or crude
+		
+		capture confirm var child_had_mov_crude
+		if _rc == 0 local vc crude
+		else local vc valid
 		
 		local dlist1 
 		foreach v in `vlist' {
 			foreach n in got_crude_*_by_* got_crude_*_to_analyze got_valid_*_by_* got_valid_*_to_analyze  ///
 						valid_*_age1_* valid_*_age1_to_analyze ///
 						got_invalid_*_by* got_invalid_*  valid_*_before_age1 ///
-						valid_*_if_no_movs child_had_mov_* child_had_uncor_mov_* child_had_cor_mov_* { 
+						valid_*_if_no_movs child_had_mov_*_`vc' child_had_uncor_mov_*_`vc' child_had_cor_mov_*_`vc' { 
 						
 				* Variable will only be added if it exists in the dataset		
 				capture confirm variable `=subinstr("`n'","*","`v'",1)' 
@@ -127,9 +135,9 @@ program define compare_two_ri_ads
 		local dlist2
 		foreach n in fully_vaccinated_crude fully_vaccinated_valid ///
 						fully_vaccinated_by_age1 not_vaccinated_crude not_vaccinated_valid not_vaccinated_by_age1  ///
-						showed_card_with_dates ever_had_an_ri_card ///
-						child_had_mov child_had_only_uncor_mov  ///
-						child_had_only_cor_mov child_had_cor_and_uncor_mov {
+						 ever_had_an_ri_card /// //showed_card_with_dates
+						child_had_mov_`vc' child_had_only_uncor_mov_`vc'  ///
+						child_had_only_cor_mov_`vc' child_had_cor_n_uncor_mov_`vc' {
 
 				* Variable will only be added if it exists in the dataset		
 				capture confirm variable `n' 
@@ -175,8 +183,8 @@ program define compare_two_ri_ads
 		* Create fourth list by grabbing the non dose specific variables that do not have a value of 1,0,.
 		local dlist4
 		foreach n in total_elig_visits_valid /// //RI_QUAL_08
-					card_date_count /// //RI_QUAL_01
-					doses_with_mov doses_with_uncor_mov doses_with_cor_mov /// //RI_QUAL_09  
+					///card_date_count /// //RI_QUAL_01
+					doses_with_mov_`vc' doses_with_uncor_mov_`vc' doses_with_cor_mov_`vc' /// //RI_QUAL_09  
 					total_mov_visits_valid total_movs_valid { //RI_QUAL_08
 		
 			capture confirm variable `n' 
@@ -184,6 +192,20 @@ program define compare_two_ri_ads
 				local dlist4 `dlist4' `n'
 			}
 		}
+		
+		* Create a fifth list for the new RI_QUAL_01 variables
+		local dlist5
+		foreach n in had_card had_card_with_dates had_card_with_dates_or_ticks had_card_with_flawless_dates ///
+					had_register had_register_with_dates had_register_with_dates_or_ticks had_register_with_flawless_dates ///
+					had_card_or_register {
+						
+			capture confirm variable `n'
+			if !_rc {
+				local dlist5 `dlist5' `n'
+			}
+		}
+		
+		
 				
 		*********************************************************************************
 		
@@ -193,7 +215,7 @@ program define compare_two_ri_ads
 		* Create new variable list to show which of the above variables exist in both datasets... all others are dropped
 		local dlistf
 		foreach v of varlist * {
-			if strpos("`dlist1' `dlist2' `dlist3' `dlist4'","`v'")>=1 {
+			if strpos("`dlist1' `dlist2' `dlist3' `dlist4' `dlist5'","`v'")>=1 {
 				local dlistf `dlistf' `v'
 			}
 		}
@@ -202,9 +224,17 @@ program define compare_two_ri_ads
 		keep RI01 RI03 RI11 RI12 `dlistf'
 		
 		* Rename to indicate second file
+		* Create local with varname to use in output
+		local shortname 
 		foreach v of varlist * {
 			if !inlist("`v'","RI01", "RI03", "RI11", "RI12") {
-				rename `v' `v'_2
+				local `=substr("`v'",1,31)' `v'
+				
+				if `=strlen("`v'")' > 29 {
+					local shortname `shortname' `v'
+					rename `v' `=substr("`v'",1,29)'_2
+				}
+				else rename `v' `v'_2
 			}
 		}
 
@@ -215,8 +245,24 @@ program define compare_two_ri_ads
 		 
 		* Only keep the relevant variables
 		keep RI01 RI03 RI11 RI12 `dlistf' 
+		
+		* We need to rename the variables that were too long to align with other dataset
+		foreach v in `shortname' {
+			clonevar `=substr("`v'",1,29)' = `v'
+		}
 		 
 		save "ADS_COMPDS_1", replace
+
+		* Now we must do the same for the locals
+		* We also want to set local for the shortnames with the original varname to be used in output
+		foreach v in dlist1 dlist2 dlist3 dlist4 dlist5 dlistf {
+			foreach d in `shortname' {
+				if strpos("``v'''","`d'") > 0 {
+					local `=substr("`d'",1,29)' `d'
+					local `v' "`=subinstr("``v''","`d'","`=substr("`d'",1,29)'",.)'"
+				}
+			}
+		}
 
 		* Merge in second dataset to have one large dataset...
 		merge 1:1 RI01 RI03 RI11 RI12 using "ADS_COMPDS_2"
@@ -241,14 +287,14 @@ program define compare_two_ri_ads
 		save, replace
 		
 	********************************************************************************
-		nois di "Create matrixes for each variable to show concordance between both datasets..."
+		nois di as text "Create matrixes for each variable to show concordance between both datasets..."
 
 		* Create summary page for non 1, 0, . valued variables
 		 use "ADS_COMPDS_1_and_2_COMBINED", clear	
 		
 		* use the below to create the matrix and determine the values for variables with 0,1,. values
 		* Those in `dlist1' and `dlist2'
-		forvalues i = 1/2 {
+		foreach i in 1 2 5 {
 			foreach v in `dlist`i'' { 
 				matrix `v' = J(3,3,.) 
 				matrix rownames `v'= 0 1 Missing
@@ -377,7 +423,7 @@ program define compare_two_ri_ads
 		
 		local r 3 
 		putexcel set ADS_COMPARISON_REPORT.xlsx, modify sheet("Summary")
-		nois di "Creating Summary page to show Concordance, Disconcordance and Total for each Indicator..."
+		nois di as text "Creating Summary page to show Concordance, Disconcordance and Total for each Indicator..."
 
 			
 		* Add indicator, discordance total, concordance total and total to summary page
@@ -401,24 +447,45 @@ program define compare_two_ri_ads
 		putexcel B3:B`=`r'-1', border(left thick)
 		putexcel E3:E`=`r'-1', border(right thick)
 		
-	********************************************************************************		
+	********************************************************************************	
+	
+	
+
+		* Set up locals for column letter value
+		local i 1
+		foreach g in A B C D E F G H I J K L M N O P Q R S T U V W X Y Z {
+			local c`i' `g'
+			
+			local i `=`i'+1'
+		}
+			
+		foreach g in A B C D E F G H I J K L M N O P Q R S T U V W X Y Z {
+			foreach n in A B C D E F G H I J K L M N O P Q R S T U V W X Y Z {
+		
+				local c`i' `g'`n'
+				
+				local i `=`i'+1'
+			}
+		}
 		
 		
+		********************************************************************************
+	
 		* Export each matrix	
 		foreach i in $RILIST2 {
 			if `i'_t!=0 {
 				local r 1
-				foreach v in `dlist1' `dlist2' {
+				foreach v in `dlist1' `dlist2' `dlist5' {
 					if "``v'[Indicator]'"=="`i'" {
 
-						nois di "Creating table for `v' in `i'..."
+						nois di as text "Creating table for `v' in `i'..."
 
 						* Add Message explaning what sheet entails
 						putexcel set ADS_COMPARISON_REPORT.xlsx, modify sheet("`i'")
 						putexcel A1= "Variables derived during Indicator `i'", bold 
 						
 						* Add matrix to spreadsheet
-						putexcel A`=`r'+ 2' = "`v'", vcenter bold italic
+						putexcel A`=`r'+ 2' = "``=substr("`v'",1,31)''", vcenter bold italic
 						putexcel B`=`r'+ 3' = matrix(`v'), right names
 
 						putexcel A`=`r'+ 3':A`=`r'+ 6' = "File 2", merge right bold	
@@ -449,36 +516,17 @@ program define compare_two_ri_ads
 					
 					}	
 				}
-				
+								
 				* Add footnote with filenames
 				putexcel set ADS_COMPARISON_REPORT.xlsx, modify sheet("`i'")
 				putexcel A`r`i''= "Footnote1: File 1 is `file1name'", bold
 				putexcel A`=`r`i''+1'= "Footnote2: File 2 is `file2name'", bold
 			}	
 		}
-********************************************************************************
-	
-
-		* Do the same process for the MOV indicators.. but set them up so the summary variables are first
-		local i 1
-		foreach g in A B C D E F G H I J K L M N O P Q R S T U V W X Y Z {
-			local c`i' `g'
-			
-			local i `=`i'+1'
-		}
-			
-		foreach g in A B C D E F G H I J K L M N O P Q R S T U V W X Y Z {
-			foreach n in A B C D E F G H I J K L M N O P Q R S T U V W X Y Z {
 		
-				local c`i' `g'`n'
-				
-				local i `=`i'+1'
-			}
-		}
-	
-	
 	
 ********************************************************************************
+* Do the same process for the MOV indicators.. but set them up so the summary variables are first	
 	* Complete for RI_QUAL_08 per dose
 		foreach i in RI_QUAL_08 {
 			if `i'_t!=0 {
@@ -487,14 +535,14 @@ program define compare_two_ri_ads
 				foreach v in total_elig_visits_valid total_mov_visits_valid total_movs_valid `dlist3a' {
 					local n 1
 					if "``v'[Indicator]'"=="`i'" {
-						nois di "Creating table for `v' in RI_QUAL_08..."
+						nois di as text "Creating table for `v' in RI_QUAL_08..."
 
 						* Add Message explaning what sheet entails
 						putexcel set ADS_COMPARISON_REPORT.xlsx, modify sheet("`i'")
 						putexcel A1 = "Variables derived during Indicator `i'", bold 
 
 						* Add matrix to spreadsheet
-						putexcel A`=`r'+ 2' = "`v'", vcenter bold italic
+						putexcel A`=`r'+ 2' = "``=substr("`v'",1,31)''", vcenter bold italic
 						putexcel B`=`r'+ 3' = matrix(`v'), right names		
 						
 						* Add file titles to page
@@ -549,10 +597,10 @@ program define compare_two_ri_ads
 				}
 				
 				local p `=subinstr("`p'"," ",",",.)'
-				di "`p'"
+				di as text "`p'"
 				
 				local k `=max(`p')'
-				di "`k'"
+				di as text "`k'"
 				
 				
 				foreach v in `dlist3b' {
@@ -561,10 +609,10 @@ program define compare_two_ri_ads
 					if "``v'[Indicator]'"=="`i'" {
 						putexcel set ADS_COMPARISON_REPORT.xlsx, modify sheet("`i'")
 						
-						nois di "Creating table for `v' in RI_QUAL_08..."
+						nois di as text "Creating table for `v' in RI_QUAL_08..."
 				
 						* Add matrix to spreadsheet
-						putexcel `c`n''`=`r'+ 2' = "`v'", vcenter bold italic
+						putexcel `c`n''`=`r'+ 2' = "``=substr("`v'",1,31)''", vcenter bold italic
 						putexcel `c`=`n' + 1''`=`r'+ 3' = matrix(`v'), right names
 
 						putexcel `c`n''`=`r'+ 3':`c`n''`=`r'+ 4 + `max_`v''' = "File 2", merge right bold	
@@ -601,6 +649,7 @@ program define compare_two_ri_ads
 					}
 				}	 
 				
+			noi di "`r`i''"
 			
 			* Add footnote with filenames
 			putexcel set ADS_COMPARISON_REPORT.xlsx, modify sheet("`i'")
@@ -610,22 +659,21 @@ program define compare_two_ri_ads
 			}
 		}
 ********************************************************************************
-	
 		foreach i in RI_QUAL_09 {
 			if `i'_t!=0 {
 				local r 1
-				foreach v in child_had_mov child_had_only_uncor_mov {
+				foreach v in child_had_mov_`vc' child_had_only_uncor_mov_`vc' {
 					if "``v'[Indicator]'"=="`i'" {
 
-						nois di "Creating table for `v' in RI_QUAL_09..."
+						nois di as text "Creating table for `v' in RI_QUAL_09..."
 
 						* Add Message explaning what sheet entails
 						putexcel set ADS_COMPARISON_REPORT.xlsx, modify sheet("`i'")
 						putexcel A1= "Variables derived during Indicator `i'", bold 
 						
 						* Add matrix to spreadsheet
-						putexcel A`=`r'+ 2' = "`v'", vcenter bold italic
-						putexcel B`=`r'+ 3' = matrix(`v'), right names
+						putexcel A`=`r'+ 2' = "``=substr("`v'",1,31)''", vcenter bold italic
+						putexcel B`=`r'+ 3' = matrix(`=substr("`v'",1,29)'), right names
 
 						putexcel A`=`r'+ 3':A`=`r'+ 6' = "File 2", merge right bold	
 						putexcel A`=`r'+ 3':A`=`r'+ 6', border (right "vvthick")
@@ -637,14 +685,14 @@ program define compare_two_ri_ads
 						
 						
 						* Add pink shading
-						if matrix(`v'[2,1])>0 putexcel C`=`r'+5', fpattern("solid", "pink")  
-						if matrix(`v'[3,1])>0 putexcel C`=`r'+6', fpattern("solid", "pink")
+						if matrix(`=substr("`v'",1,29)'[2,1])>0 putexcel C`=`r'+5', fpattern("solid", "pink")  
+						if matrix(`=substr("`v'",1,29)'[3,1])>0 putexcel C`=`r'+6', fpattern("solid", "pink")
 					
-						if matrix(`v'[1,2])>0 putexcel D`=`r'+4', fpattern("solid", "pink")
-						if matrix(`v'[3,2])>0 putexcel D`=`r'+6', fpattern("solid", "pink")
+						if matrix(`=substr("`v'",1,29)'[1,2])>0 putexcel D`=`r'+4', fpattern("solid", "pink")
+						if matrix(`=substr("`v'",1,29)'[3,2])>0 putexcel D`=`r'+6', fpattern("solid", "pink")
 					
-						if matrix(`v'[1,3])>0 putexcel E`=`r'+4', fpattern("solid", "pink")
-						if matrix(`v'[2,3])>0 putexcel E`=`r'+5', fpattern("solid", "pink")
+						if matrix(`=substr("`v'",1,29)'[1,3])>0 putexcel E`=`r'+4', fpattern("solid", "pink")
+						if matrix(`=substr("`v'",1,29)'[2,3])>0 putexcel E`=`r'+5', fpattern("solid", "pink")
 						
 						* Add note about discordance
 						putexcel A`=`r' + 7' = "Note: Any cells highlighted in pink indicate discordance between file 1 and file 2", bold			
@@ -655,14 +703,14 @@ program define compare_two_ri_ads
 				}
 				
 				local r 1
-				foreach v in child_had_cor_and_uncor_mov child_had_only_cor_mov {
+				foreach v in child_had_cor_n_uncor_mov_`vc' child_had_only_cor_mov_`vc' {
 					if "``v'[Indicator]'"=="`i'" {
 
-						nois di "Creating table for `v' in RI_QUAL_09..."
+						nois di as text "Creating table for `v' in RI_QUAL_09..."
 
 						* Add matrix to spreadsheet
-						putexcel G`=`r'+ 2' = "`v'", vcenter bold italic
-						putexcel H`=`r'+ 3' = matrix(`v'), right names
+						putexcel G`=`r'+ 2' = "``=substr("`v'",1,31)''", vcenter bold italic
+						putexcel H`=`r'+ 3' = matrix(`=substr("`v'",1,29)'), right names
 
 						putexcel G`=`r'+ 3':G`=`r'+ 6' = "File 2", merge right bold	
 						putexcel G`=`r'+ 3':G`=`r'+ 6', border (right "vvthick")
@@ -673,14 +721,14 @@ program define compare_two_ri_ads
 						putexcel I`=`r'+3':K`=`r'+3', border (bottom "vvthick")					
 						
 						* Add pink shading
-						if matrix(`v'[2,1])>0 putexcel I`=`r'+5', fpattern("solid", "pink")
-						if matrix(`v'[3,1])>0 putexcel I`=`r'+6', fpattern("solid", "pink")
+						if matrix(`=substr("`v'",1,29)'[2,1])>0 putexcel I`=`r'+5', fpattern("solid", "pink")
+						if matrix(`=substr("`v'",1,29)'[3,1])>0 putexcel I`=`r'+6', fpattern("solid", "pink")
 					
-						if matrix(`v'[1,2])>0 putexcel J`=`r'+4', fpattern("solid", "pink")
-						if matrix(`v'[3,2])>0 putexcel J`=`r'+6', fpattern("solid", "pink")
+						if matrix(`=substr("`v'",1,29)'[1,2])>0 putexcel J`=`r'+4', fpattern("solid", "pink")
+						if matrix(`=substr("`v'",1,29)'[3,2])>0 putexcel J`=`r'+6', fpattern("solid", "pink")
 					
-						if matrix(`v'[1,3])>0 putexcel K`=`r'+4', fpattern("solid", "pink")
-						if matrix(`v'[2,3])>0 putexcel K`=`r'+5', fpattern("solid", "pink")
+						if matrix(`=substr("`v'",1,29)'[1,3])>0 putexcel K`=`r'+4', fpattern("solid", "pink")
+						if matrix(`=substr("`v'",1,29)'[2,3])>0 putexcel K`=`r'+5', fpattern("solid", "pink")
 						
 						* Add note about discordance
 						putexcel G`=`r' + 7'= "Note: Any cells highlighted in pink indicate discordance between file 1 and file 2", bold			
@@ -701,7 +749,7 @@ program define compare_two_ri_ads
 	}
 	****************************************************************************
 	* Format each tab
-	noisily di "Formatting worksheets..."
+	noisily di as text "Formatting worksheets..."
 	
 	quietly {
 		*Use mata to populate table formatting
@@ -761,7 +809,7 @@ program define compare_two_ri_ads
 
 		mata b.close_book()
 	}
-	nois di "Comparison of Augmented datasets complete"
+	nois di as text "Comparison of Augmented datasets complete"
 	
 			
 end

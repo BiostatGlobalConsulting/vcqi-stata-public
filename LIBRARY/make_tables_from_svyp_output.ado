@@ -1,4 +1,4 @@
-*! make_tables_from_svyp_output version 1.08 - Biostat Global Consulting - 2017-08-26
+*! make_tables_from_svyp_output version 1.12 - Biostat Global Consulting - 2020-12-09
 *******************************************************************************
 * Change log
 * 				Updated
@@ -15,6 +15,10 @@
 *										VCQI_LEVEL4_SET_VARLIST & VCQI_LEVEL4_SET_LAYOUT
 * 2017-05-16	1.07	Dale Rhoda		Allow user to put stderr in the table
 * 2017-08-26	1.08	Mary Prier		Added version 14.1 line
+* 2019-01-01	1.09	Dale Rhoda		Added option to output wtdn_est
+* 2019-01-03	1.10	Dale Rhoda		Fixed a typo in the row-shading code
+* 2019-10-10  	1.11  	Dale Rhoda  	Added flexible VCQI_NUM_DECIMAL_DIGITS
+* 2020-12-09	1.12	Dale Rhoda		DEFF should always have 1 decimal digit
 *******************************************************************************
 
 program define make_tables_from_svyp_output
@@ -60,9 +64,9 @@ program define make_tables_from_svyp_output
 		*
 		capture postclose to_dataset
 
-		postfile to_dataset str50 stratum  estimate stderr str15 ci ///
+		postfile to_dataset str255 stratum estimate stderr str15 ci ///
 					lcb  ucb  deff ///
-					icc  n  nwtd ///
+					icc  n  nwtd nwtd_est ///
 					block  level substratum ///
 					using ///
 					"${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}_`vid'_TO", replace
@@ -86,6 +90,7 @@ program define make_tables_from_svyp_output
 		
 		replace nwtd = round(nwtd,1)
 		replace n = round(n,1)
+		replace nwtd_est = round(nwtd_est,1)
 		
 		* generate a new 0/1 flag that indicates which rows in the output 
 		* are showing results for sub-strata defined by level 4
@@ -93,7 +98,7 @@ program define make_tables_from_svyp_output
 		gen substratum = !missing(level4id)
 		
 		* generate the confidence interval string
-		gen ci = "(" + strofreal(cill,"%03.1f") + ", " + strofreal(ciul,"%04.1f") + ")"
+		gen ci = "(" + strofreal(cill,"%4.${VCQI_NUM_DECIMAL_DIGITS}f") + ", " + strofreal(ciul,"%4.${VCQI_NUM_DECIMAL_DIGITS}f") + ")"
 		replace ci = subinstr(ci,"100.0","100",1)
 		replace ci = subinstr(ci,", 00.",", 0.",1)
 		replace ci = "" if missing(cill)
@@ -163,20 +168,19 @@ program define make_tables_from_svyp_output
 		* simply saying `postblankrow'.
 		
 		if $SHOW_BLANKS_BETWEEN_LEVELS == 1 {
-			local postblankrow post to_dataset ("") (.) (.) ("") (.) (.) (.) (.) (.) (.) (.) (.) (.)
+			local postblankrow post to_dataset ("") (.) (.) ("") (.) (.) (.) (.) (.) (.) (.) (.) (.) (.)
 		}
 		if $SHOW_BLANKS_BETWEEN_LEVELS == 0 {
 			local postblankrow local noblankrows
 		}
 			
-
 		* Only show results that are aggregated up to the national level (1)
 		if $SHOW_LEVEL_1_ALONE == 1 {
 			preserve 
 			keep if level == 1 & missing(level4id)
 			local i 1
 			post to_dataset (name[`i']) (estimate[`i']) (stderr[`i']) (ci[`i']) (lcb[`i']) (ucb[`i']) ///
-					(deff[`i']) (icc[`i']) (n[`i']) (nwtd[`i']) ///
+					(deff[`i']) (icc[`i']) (n[`i']) (nwtd[`i']) (nwtd_est[`i']) ///
 					(1) (1) (0)
 			restore
 			if $SHOW_BLANKS_BETWEEN_LEVELS == 1 `postblankrow' 
@@ -189,14 +193,13 @@ program define make_tables_from_svyp_output
 			sort level2order
 			forvalues i = 1/`=_N' {
 				post to_dataset (name[`i']) (estimate[`i']) (stderr[`i']) (ci[`i']) (lcb[`i']) (ucb[`i']) ///
-						(deff[`i']) (icc[`i']) (n[`i']) (nwtd[`i']) ///
+					(deff[`i']) (icc[`i']) (n[`i']) (nwtd[`i']) (nwtd_est[`i']) ///
 						(2) (level[`i']) (substratum[`i'])
 			}
 			restore
 			if $SHOW_BLANKS_BETWEEN_LEVELS == 1 `postblankrow' 
 		}
 
-			
 		* Only show the sub-sub-national level (3) without aggregating upward	
 		if $SHOW_LEVEL_3_ALONE == 1 {
 			preserve
@@ -204,12 +207,28 @@ program define make_tables_from_svyp_output
 			sort level3order
 			forvalues i = 1/`=_N' {
 				post to_dataset (name[`i']) (estimate[`i']) (stderr[`i']) (ci[`i']) (lcb[`i']) (ucb[`i']) ///
-						(deff[`i']) (icc[`i']) (n[`i']) (nwtd[`i']) ///
+					(deff[`i']) (icc[`i']) (n[`i']) (nwtd[`i']) (nwtd_est[`i']) ///
 						(3) (level[`i']) (substratum[`i'])
 			}
 			restore
 			if $SHOW_BLANKS_BETWEEN_LEVELS == 1 `postblankrow' 
 		}
+		
+		* Only show the sub-strata (e.g., urban/rural)	
+		* (Note that the value of block here is 9 because this capability 
+		*  was added after that for blocks 1-8.)
+		if $SHOW_LEVEL_4_ALONE == 1 {
+			preserve
+			keep if level == 1 & !missing(level4id)
+			sort level4order
+			forvalues i = 1/`=_N' {
+				post to_dataset (name[`i']) (estimate[`i']) (stderr[`i']) (ci[`i']) (lcb[`i']) (ucb[`i']) ///
+					(deff[`i']) (icc[`i']) (n[`i']) (nwtd[`i']) (nwtd_est[`i']) ///
+						(9) (level[`i']) (substratum[`i'])
+			}
+			restore
+			if $SHOW_BLANKS_BETWEEN_LEVELS == 1 `postblankrow' 
+		}		
 		
 		* Show each level 2 stratum (sorted in the order the user asked for)
 		* and underneath the level 2 row, list one row for each of the level 3
@@ -226,7 +245,7 @@ program define make_tables_from_svyp_output
 				if `i' > 1 & level3order[`i'] == 0 `postblankrow'
 
 				post to_dataset (name[`i']) (estimate[`i']) (stderr[`i']) (ci[`i']) (lcb[`i']) (ucb[`i']) ///
-						(deff[`i']) (icc[`i']) (n[`i']) (nwtd[`i']) ///
+					(deff[`i']) (icc[`i']) (n[`i']) (nwtd[`i']) (nwtd_est[`i']) ///
 						(4) (level[`i']) (substratum[`i'])
 			}
 			restore
@@ -242,7 +261,7 @@ program define make_tables_from_svyp_output
 				if `i' > 1 & level4order[`i'] == 0 `postblankrow'
 
 				post to_dataset (name[`i']) (estimate[`i']) (stderr[`i']) (ci[`i']) (lcb[`i']) (ucb[`i']) ///
-						(deff[`i']) (icc[`i']) (n[`i']) (nwtd[`i']) ///
+					(deff[`i']) (icc[`i']) (n[`i']) (nwtd[`i']) (nwtd_est[`i']) ///
 						(5) (level[`i']) (substratum[`i'])
 			}
 			restore
@@ -260,7 +279,7 @@ program define make_tables_from_svyp_output
 				if `i' > 1 & level4order[`i'] == 0 `postblankrow'
 
 				post to_dataset (name[`i']) (estimate[`i']) (stderr[`i']) (ci[`i']) (lcb[`i']) (ucb[`i']) ///
-						(deff[`i']) (icc[`i']) (n[`i']) (nwtd[`i']) ///
+					(deff[`i']) (icc[`i']) (n[`i']) (nwtd[`i']) (nwtd_est[`i']) ///
 						(6) (level[`i']) (substratum[`i'])
 			}
 			restore
@@ -278,7 +297,7 @@ program define make_tables_from_svyp_output
 				if `i' > 1 & level4order[`i'] == 0 `postblankrow'
 
 				post to_dataset (name[`i']) (estimate[`i']) (stderr[`i']) (ci[`i']) (lcb[`i']) (ucb[`i']) ///
-						(deff[`i']) (icc[`i']) (n[`i']) (nwtd[`i']) ///
+					(deff[`i']) (icc[`i']) (n[`i']) (nwtd[`i']) (nwtd_est[`i']) ///
 						(7) (level[`i']) (substratum[`i'])
 			}
 			restore
@@ -296,9 +315,10 @@ program define make_tables_from_svyp_output
 			sort level2order level3order level4order
 			forvalues i = 1/`=_N' {
 				if `i' > 1 & level[`i'] == 2 & level4order[`i'] == 0 `postblankrow'
+				if `i' > 1 & level[`i'] == 3 & level4order[`i'] == 0 `postblankrow'
 
 				post to_dataset (name[`i']) (estimate[`i']) (stderr[`i']) (ci[`i']) (lcb[`i']) (ucb[`i']) ///
-						(deff[`i']) (icc[`i']) (n[`i']) (nwtd[`i']) ///
+					(deff[`i']) (icc[`i']) (n[`i']) (nwtd[`i']) (nwtd_est[`i']) ///
 						(8) (level[`i']) (substratum[`i'])
 			}
 			restore
@@ -345,9 +365,9 @@ program define make_tables_from_svyp_output
 		* check for a valid list of variables
 		foreach v in `variables' {
 			if !inlist("`v'","stratum","estimate","stderr","ci") & ///
-			   !inlist("`v'","lcb","ucb","deff","icc","n","nwtd") {
+			   !inlist("`v'","lcb","ucb","deff","icc","n","nwtd","nwtd_est") {
 				di as error "make_tables_from_svyp_output.ado: The variable `v' is not one of the output options."
-				di as error "Options include: stratum, estimate, stderr, ci, lcb, ucb, deff, icc, n, nwtd"
+				di as error "Options include: stratum, estimate, stderr, ci, lcb, ucb, deff, icc, n, nwtd, nwtd_est"
 				vcqi_halt_immediately
 			}
 		}
@@ -407,6 +427,7 @@ program define make_tables_from_svyp_output
 			if word("`variables'",`i') == "icc" 	 mata: b.put_string(`startrow',`col',"ICC")
 			if word("`variables'",`i') == "n" 		 mata: b.put_string(`startrow',`col',"N")
 			if word("`variables'",`i') == "nwtd"  	 mata: b.put_string(`startrow',`col',"Weighted N")
+			if word("`variables'",`i') == "nwtd_est" mata: b.put_string(`startrow',`col',"`=subinstr("`estlabel'","(%)","",1)'(Weighted N)")
 
 		}
 		
@@ -435,6 +456,14 @@ program define make_tables_from_svyp_output
 		* so give an option to turn that off during testing of the code
 		if "$FORMAT_EXCEL" == "1" {
 		
+			if $VCQI_NUM_DECIMAL_DIGITS == 0 local dp 
+			if $VCQI_NUM_DECIMAL_DIGITS > 0 {
+				local dp .
+				forvalues i = 1/$VCQI_NUM_DECIMAL_DIGITS {
+					local dp `dp'0
+				}
+			}
+			if $VCQI_NUM_DECIMAL_DIGITS < 0 local dp .0
 			* format individual fields to look good
 			
 			forvalues i = 1/`nvars' {
@@ -448,7 +477,7 @@ program define make_tables_from_svyp_output
 				
 				if word("`variables'",`i') == "estimate" {
 					mata: b.set_column_width(`col',`col', `=max(5,length("`estlabel'")+1)')
-					mata: b.set_number_format((`rows'),`col',"##0.0;;0.0;")
+					mata: b.set_number_format((`rows'),`col',"##0`dp';;0`dp';")
 				}
 				
 				if word("`variables'",`i') == "ci" {
@@ -458,7 +487,7 @@ program define make_tables_from_svyp_output
 				
 				if word("`variables'",`i') == "lcb" | word("`variables'",`i') == "ucb" | word("`variables'",`i') == "stderr" {
 					mata: b.set_column_width(`col',`col', 12)
-					mata: b.set_number_format((`rows'),`col',"##0.0;;0.0;")
+					mata: b.set_number_format((`rows'),`col',"##0`dp';;0`dp';")
 				}
 				
 				if word("`variables'",`i') == "deff" {
@@ -467,6 +496,7 @@ program define make_tables_from_svyp_output
 				}
 
 				if word("`variables'",`i') == "icc" {
+					mata: b.set_column_width(`col',`col', 8)			
 					mata: b.set_number_format((`rows'),`col',"0.###0;-0.###0;0;")
 				}
 				
@@ -477,6 +507,11 @@ program define make_tables_from_svyp_output
 				
 				if word("`variables'",`i') == "nwtd" {
 					mata: b.set_column_width(`col',`col', 12)
+					mata: b.set_number_format((`rows'),`col',"number_sep")
+				}
+				
+				if word("`variables'",`i') == "nwtd_est" {
+					mata: b.set_column_width(`col',`col', `=max(5,length("`estlabel'")+15)')
 					mata: b.set_number_format((`rows'),`col',"number_sep")
 				}
 			}
@@ -495,7 +530,7 @@ program define make_tables_from_svyp_output
 				
 				if block[`j'] == 8 & ///
 				   level[`j'] == 2 & ///
-				   substratum[`i'] == 0 ///
+				   substratum[`j'] == 0 ///
 				   mata: b.set_fill_pattern(`i',(`cols'),"solid","lightgray")
 				
 				* Indent level 4 stratum names unless they are headings (LABEL_ONLY) with no estimate

@@ -1,4 +1,4 @@
-*! RI_COVG_02_03DV version 1.07 - Biostat Global Consulting - 2017-08-26
+*! RI_COVG_02_03DV version 1.08 - Biostat Global Consulting - 2019-07-17
 *******************************************************************************
 * Change log
 * 				Updated
@@ -34,6 +34,7 @@
 * 2017-01-30	1.05	Dale Rhoda		Fixed a typo in a variable label
 * 2017-02-01	1.06	Dale Rhoda		Edited comment
 * 2017-08-26	1.07	Mary Prier		Added version 14.1 line
+* 2019-07-17	1.08	Dale Rhoda		Set outcomes to . if psweight == 0 | missing(psweight)
 *******************************************************************************
 
 program define RI_COVG_02_03DV
@@ -75,6 +76,7 @@ program define RI_COVG_02_03DV
 				* not clearly age-eligible for the dose		
 				
 				capture replace  got_valid_`d'_by_`s' = . if `d'_min_age_days > $VCQI_RI_MIN_AGE_OF_ELIGIBILITY & ( missing(age_at_interview) | age_at_interview < `d'_min_age_days)
+				capture replace  got_valid_`d'_by_`s' = . if psweight == 0 | missing(psweight)
 			}
 		}
 
@@ -105,7 +107,7 @@ program define RI_COVG_02_03DV
 				* not clearly age-eligible for the dose		
 				
 				capture replace  got_valid_`d'1_by_`s' = . if `d'1_min_age_days > $VCQI_RI_MIN_AGE_OF_ELIGIBILITY & ( missing(age_at_interview) | age_at_interview < `d'1_min_age_days)
-					
+				capture replace  got_valid_`d'1_by_`s' = . if psweight == 0 | missing(psweight)					
 			}
 		}
 				
@@ -132,7 +134,7 @@ program define RI_COVG_02_03DV
 				* not clearly age-eligible for the dose		
 				
 				capture replace  got_valid_`d'2_by_`s' = . if `d'2_min_age_days > $VCQI_RI_MIN_AGE_OF_ELIGIBILITY & ( missing(age_at_interview) | age_at_interview < `d'2_min_age_days)
-
+				capture replace  got_valid_`d'2_by_`s' = . if psweight == 0 | missing(psweight)
 			}
 		}
 
@@ -218,7 +220,9 @@ program define RI_COVG_02_03DV
 				capture replace  got_valid_`d'1_by_`s' = . if `d'1_min_age_days > $VCQI_RI_MIN_AGE_OF_ELIGIBILITY & ( missing(age_at_interview) | age_at_interview < `d'1_min_age_days)
 				capture replace  got_valid_`d'2_by_`s' = . if `d'2_min_age_days > $VCQI_RI_MIN_AGE_OF_ELIGIBILITY & ( missing(age_at_interview) | age_at_interview < `d'2_min_age_days)
 				capture replace  got_valid_`d'3_by_`s' = . if `d'3_min_age_days > $VCQI_RI_MIN_AGE_OF_ELIGIBILITY & ( missing(age_at_interview) | age_at_interview < `d'3_min_age_days)
-				
+				capture replace  got_valid_`d'1_by_`s' = . if psweight == 0 | missing(psweight)
+				capture replace  got_valid_`d'2_by_`s' = . if psweight == 0 | missing(psweight)
+				capture replace  got_valid_`d'3_by_`s' = . if psweight == 0 | missing(psweight)				
 			}
 		}
 
@@ -236,6 +240,8 @@ program define RI_COVG_02_03DV
 				label variable age_at_valid_`d'_`s' "Age at valid `d' by `s'"	
 
 				capture replace  age_at_valid_`d'_`s' = . if `d'_min_age_days > $VCQI_RI_MIN_AGE_OF_ELIGIBILITY & ( missing(age_at_interview) | age_at_interview < `d'_min_age_days)
+				capture replace  age_at_valid_`d'_`s' = . if psweight == 0 | missing(psweight)
+				
 			}
 			
 			* Note that for multi-dose vaccines, early doses may have been invalid
@@ -251,6 +257,7 @@ program define RI_COVG_02_03DV
 						replace age_at_valid_`d'`i'_`s' = age_at_`d'`j'_`s' if which_valid_`d'`i'_by_`s' == `j'
 					}
 					capture replace  age_at_valid_`d'`i'_`s' = . if `d'`i'_min_age_days > $VCQI_RI_MIN_AGE_OF_ELIGIBILITY & ( missing(age_at_interview) | age_at_interview < `d'`i'_min_age_days)
+					capture replace  age_at_valid_`d'`i'_`s' = . if psweight == 0 | missing(psweight)
 				}
 			}
 			
@@ -262,6 +269,7 @@ program define RI_COVG_02_03DV
 						replace age_at_valid_`d'`i'_`s' = age_at_`d'`j'_`s' if which_valid_`d'`i'_by_`s' == `j'
 					}
 					capture replace  age_at_valid_`d'`i'_`s' = . if `d'`i'_min_age_days > $VCQI_RI_MIN_AGE_OF_ELIGIBILITY & ( missing(age_at_interview) | age_at_interview < `d'`i'_min_age_days)
+					capture replace  age_at_valid_`d'`i'_`s' = . if psweight == 0 | missing(psweight)
 				}
 			}
 		}
@@ -309,6 +317,9 @@ program define RI_COVG_02_03DV
 			capture replace  got_valid_`d'_c_or_r 		= . if `d'_min_age_days > $VCQI_RI_MIN_AGE_OF_ELIGIBILITY & ( missing(age_at_interview) | age_at_interview < `d'_min_age_days)
 			capture replace  got_valid_`d'_to_analyze 	= . if `d'_min_age_days > $VCQI_RI_MIN_AGE_OF_ELIGIBILITY & ( missing(age_at_interview) | age_at_interview < `d'_min_age_days)
 			capture replace  age_at_valid_`d'	 		= . if `d'_min_age_days > $VCQI_RI_MIN_AGE_OF_ELIGIBILITY & ( missing(age_at_interview) | age_at_interview < `d'_min_age_days)
+			capture replace  got_valid_`d'_c_or_r = . if psweight == 0 | missing(psweight)
+			capture replace  got_valid_`d'_to_analyze = . if psweight == 0 | missing(psweight)
+			capture replace  age_at_valid_`d' = . if psweight == 0 | missing(psweight)
 
 		}
 		
@@ -320,7 +331,7 @@ program define RI_COVG_02_03DV
 				label variable valid_`d'_age1_`s' "Received valid `d' by age 1, by `s'"
 
 				capture replace  valid_`d'_age1_`s'	= . if `d'_min_age_days > $VCQI_RI_MIN_AGE_OF_ELIGIBILITY & ( missing(age_at_interview) | age_at_interview < `d'_min_age_days)
-
+				capture replace  valid_`d'_age1_`s'	= . if psweight == 0 | missing(psweight)
 			}
 		}
 
@@ -349,6 +360,8 @@ program define RI_COVG_02_03DV
 			}
 			capture replace  valid_`d'_age1_c_or_r	    = . if `d'_min_age_days > $VCQI_RI_MIN_AGE_OF_ELIGIBILITY & ( missing(age_at_interview) | age_at_interview < `d'_min_age_days)
 			capture replace  valid_`d'_age1_to_analyze	= . if `d'_min_age_days > $VCQI_RI_MIN_AGE_OF_ELIGIBILITY & ( missing(age_at_interview) | age_at_interview < `d'_min_age_days)
+			capture replace  valid_`d'_age1_c_or_r	    = . if psweight == 0 | missing(psweight)
+			capture replace  valid_`d'_age1_to_analyze	= . if psweight == 0 | missing(psweight)
 		}	
 		
 		save, replace

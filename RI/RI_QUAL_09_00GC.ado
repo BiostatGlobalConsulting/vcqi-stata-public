@@ -1,10 +1,11 @@
-*! RI_QUAL_09_00GC version 1.01 - Biostat Global Consulting - 2017-08-26
+*! RI_QUAL_09_00GC version 1.02 - Biostat Global Consulting - 2019-11-09
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name			What Changed
 * 2017-08-26	1.01	Mary Prier		Added version 14.1 line
+* 2019-11-09	1.02 	Dale Rhoda		Introduced MOV_OUTPUT_DOSE_LIST
 *******************************************************************************
 
 program define RI_QUAL_09_00GC
@@ -15,7 +16,7 @@ program define RI_QUAL_09_00GC
 	vcqi_log_comment $VCP 5 Flow "Starting"
 	
 	vcqi_log_global RI_QUAL_09_VALID_OR_CRUDE
-	vcqi_log_global RI_DOSE_LIST
+	vcqi_log_global MOV_OUTPUT_DOSE_LIST
 	
 	local exitflag 0
 	

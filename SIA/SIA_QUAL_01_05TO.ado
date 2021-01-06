@@ -16,9 +16,9 @@ program define SIA_QUAL_01_05TO
 	global VCP SIA_QUAL_01_05TO
 	vcqi_log_comment $VCP 5 Flow "Starting"
 	
-	make_tables_from_unwtd_output, measureid(SIA_QUAL_01) vid(s) var(campaign_card_seen)   estlabel(Vaccinated Respondent Received SIA Card - Seen (%)) 	sheet(SIA_QUAL_01 ${ANALYSIS_COUNTER})
-	make_tables_from_unwtd_output, measureid(SIA_QUAL_01) vid(u) var(campaign_card_unseen) estlabel(Vaccinated Respondent Received SIA Card - Unseen (%)) 	sheet(SIA_QUAL_01 ${ANALYSIS_COUNTER})
-	make_tables_from_unwtd_output, measureid(SIA_QUAL_01) vid(a) var(got_campaign_card)    estlabel(Vaccinated Respondent Received SIA Card(%)) 			sheet(SIA_QUAL_01 ${ANALYSIS_COUNTER})
+	make_tables_from_unwtd_output, measureid(SIA_QUAL_01) vid(s) var(estimate)   estlabel(Vaccinated Respondent Received SIA Card - Seen (%)) 	sheet(SIA_QUAL_01 ${ANALYSIS_COUNTER})
+	make_tables_from_unwtd_output, measureid(SIA_QUAL_01) vid(u) var(estimate)   estlabel(Vaccinated Respondent Received SIA Card - Unseen (%)) sheet(SIA_QUAL_01 ${ANALYSIS_COUNTER})
+	make_tables_from_unwtd_output, measureid(SIA_QUAL_01) vid(a) var(estimate n) estlabel(Vaccinated Respondent Received SIA Card(%)) 			sheet(SIA_QUAL_01 ${ANALYSIS_COUNTER})
 
 	vcqi_log_comment $VCP 5 Flow "Exiting"
 	global VCP `oldvcp'

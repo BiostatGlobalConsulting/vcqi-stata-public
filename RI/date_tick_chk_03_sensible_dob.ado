@@ -14,7 +14,7 @@ program define date_tick_chk_03_sensible_dob
 	global VCP date_tick_chk_03_sensible_dob
 	vcqi_log_comment $VCP 5 Flow "Starting"
 	
-	noisily display "Checking dates of birth: sensible dates..."
+	noisily display as text "Checking dates of birth: sensible dates..."
 	
 	quietly {
 		postfile dt_dob_valid_dose_calculations str20(d type) str32(var) n_0 n_1 n_01 using dt_dob_sensible_dob_calculations , replace

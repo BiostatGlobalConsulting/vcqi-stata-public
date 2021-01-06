@@ -1,4 +1,4 @@
-*! COVG_DIFF_02_04GO version 1.04 - Biostat Global Consulting - 2017-08-26
+*! COVG_DIFF_02_04GO version 1.06 - Biostat Global Consulting - 2020-12-11
 *******************************************************************************
 * Change log
 * 				Updated
@@ -11,6 +11,8 @@
 *										level in svy tab statement
 * 2017-01-09	1.03	Dale Rhoda		Switch from svyp to svypd
 * 2017-08-26	1.04	Mary Prier		Added version 14.1 line
+* 2018-01-16	1.05	MK Trimner		Added $VCQI_SVYSET_SYNTAX
+* 2020-12-11	1.06	Dale Rhoda		Add truncate to svypd calls
 *******************************************************************************
 
 program define COVG_DIFF_02_04GO
@@ -24,18 +26,18 @@ program define COVG_DIFF_02_04GO
 
 		use "${VCQI_OUTPUT_FOLDER}/COVG_DIFF_02_${COVG_DIFF_02_INDICATOR}_${COVG_DIFF_02_ANALYSIS_COUNTER}", clear
 
-		svyset clusterid, weight(psweight) strata(stratumid)
+		$VCQI_SVYSET_SYNTAX
 		
 		local l $COVG_DIFF_02_STRATUM_LEVEL
 
-		svypd $COVG_DIFF_02_VARIABLE if level`l'id == $COVG_DIFF_02_STRATUM_ID & $COVG_DIFF_02_SUBPOP_VARIABLE == $COVG_DIFF_02_SUBPOP_LEVEL1, method($VCQI_CI_METHOD) adjust
+		svypd $COVG_DIFF_02_VARIABLE if level`l'id == $COVG_DIFF_02_STRATUM_ID & $COVG_DIFF_02_SUBPOP_VARIABLE == $COVG_DIFF_02_SUBPOP_LEVEL1, method($VCQI_CI_METHOD) adjust truncate
 		scalar p1    = r(svyp) * 100
 		scalar lb951 = r(lb_alpha) * 100
 		scalar ub951 = r(ub_alpha) * 100
 		scalar n1    = r(N)
 		scalar nwtd1 = r(Nwtd)
 		
-		svypd $COVG_DIFF_02_VARIABLE if level`l'id == $COVG_DIFF_02_STRATUM_ID & $COVG_DIFF_02_SUBPOP_VARIABLE == $COVG_DIFF_02_SUBPOP_LEVEL2, method($VCQI_CI_METHOD) adjust
+		svypd $COVG_DIFF_02_VARIABLE if level`l'id == $COVG_DIFF_02_STRATUM_ID & $COVG_DIFF_02_SUBPOP_VARIABLE == $COVG_DIFF_02_SUBPOP_LEVEL2, method($VCQI_CI_METHOD) adjust truncate
 		scalar p2    = r(svyp) * 100
 		scalar lb952 = r(lb_alpha) * 100
 		scalar ub952 = r(ub_alpha) * 100

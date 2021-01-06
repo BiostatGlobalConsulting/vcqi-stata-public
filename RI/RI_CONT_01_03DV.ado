@@ -40,7 +40,7 @@ program define RI_CONT_01_03DV
 			* Do not count if the child was not eligible for dose 2
 			replace dropout_`d1'_`d2' = . if missing(got_crude_`d2'_to_analyze)
 		}
-		noi di ""
+		noi di as text ""
 
 		save, replace
 	}

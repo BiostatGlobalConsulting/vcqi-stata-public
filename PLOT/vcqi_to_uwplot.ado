@@ -1,4 +1,4 @@
-*! vcqi_to_uwplot version 1.11 - Biostat Global Consulting - 2017-08-26
+*! vcqi_to_uwplot version 1.15 - Biostat Global Consulting - 2020-12-12
 *******************************************************************************
 * Change log
 * 				Updated
@@ -22,6 +22,19 @@
 *										results are at the top or bottom row
 * 2017-08-22	1.10	Dale Rhoda		Force level4name to be a string
 * 2017-08-26	1.11	Mary Prier		Added version 14.1 line
+* 2019-03-18	1.12	Mary Prier		Added user option/global "SORT_PLOT_LOW_TO_HIGH";
+*										  Option high to low (global=1) requires gsort;
+* 										  Default is sorting low to high and using sort
+* 2020-04-28	1.13	Dale Rhoda		Allow user to specify that right-side
+*                                       point estimate should be wrapped in ()
+*                                       if 25 <= N < 50 and that N should be
+*                                       followed by a double-dagger if N < 25.
+*                                       (Set global UWPLOT_ANNOTATE_LOW_MED = 1)
+*                                       (Also make the 25 and 50 programmable
+*                                        using globals UWPLOT_ANNOTATE_LOW_N 
+*                                        and UWPLOT_ANNOTATE_LOW_N.)
+* 2020-12-09	1.14	Dale Rhoda		Allow the user to plot strata in table order
+* 2020-12-12	1.15	Dale Rhoda		Allow the user to SHOW_LEVEL_4_ALONE
 *******************************************************************************
 
 program define vcqi_to_uwplot
@@ -52,7 +65,8 @@ program define vcqi_to_uwplot
 	* Drop Level 4 labels if using the SET nomenclature
 	if "$VCQI_LEVEL4_SET_VARLIST" != "" & "$LEVEL4_SET_CONDITION_1" == "" drop if level4id == 1
 
-	local show4 = $SHOW_LEVELS_1_4_TOGETHER   + ///
+	local show4 = $SHOW_LEVEL_4_ALONE         + ///
+				  $SHOW_LEVELS_1_4_TOGETHER   + ///
 				  $SHOW_LEVELS_2_4_TOGETHER   + ///
 				  $SHOW_LEVELS_3_4_TOGETHER   + ///
 				  $SHOW_LEVELS_2_3_4_TOGETHER > 0
@@ -67,7 +81,7 @@ program define vcqi_to_uwplot
 				  $SHOW_LEVELS_2_4_TOGETHER   + ///
 				  $SHOW_LEVELS_2_3_4_TOGETHER > 0 
 				   
-	local show1 = $SHOW_LEVEL_1_ALONE + $SHOW_LEVELS_1_4_TOGETHER > 0			   
+	local show1 = $SHOW_LEVEL_1_ALONE + $SHOW_LEVEL_4_ALONE + $SHOW_LEVELS_1_4_TOGETHER > 0			   
 
 	if `show4' == 0 drop if level4id != .
 
@@ -121,13 +135,62 @@ program define vcqi_to_uwplot
 	if `show1' == 1 & `show2' == 0 & `show3' == 1 replace level3_estimate = level1_estimate if level3_estimate == .
 	if `show2' == 1 & `show3' == 1 replace level3_estimate = level2_estimate if level3_estimate == .
 	
-	sort `l2est' `l3est' estimate 
+	* Sort proportions based on user request 
+	*  Default is sorting proportions low at bottom of plot to high at top of plot
+	if("$SORT_PLOT_LOW_TO_HIGH"=="0") {  // meaning, sort prop high to low
+		* Expand locals so that each element gets a negative sign;
+		* This code doesn't assign minus sign to empty locals, because don't 
+		*   want a floating minus sign
+		* First, l2est
+		local gsort_l2est 
+		local n_l2est : word count `l2est'
+		if(`n_l2est'>0) {
+			forvalues i=1/`n_l2est' {
+				local gsort_l2est `gsort_l2est' -`: word `i' of `l2est''  // add the minus to the element
+			} 
+		}  
 	
-	if `show4' == 1 sort `l2est' `l3est' estimate level4id
+		* Now, l3est
+		local gsort_l3est 
+		local n_l3est : word count `l3est'
+		if(`n_l3est'>0) {
+			forvalues i=1/`n_l3est' {
+				local gsort_l3est `gsort_l3est' -`: word `i' of `l3est''  // add the minus to the element
+			} 
+		}  
+
+		* Finally, do the gsort
+		gsort `gsort_l2est' `gsort_l3est' -estimate 
+		if `show4' == 1 gsort `gsort_l2est' `gsort_l3est' -estimate -level4id
+	}
+	else {
+		sort `l2est' `l3est' estimate 
+		if `show4' == 1 sort `l2est' `l3est' estimate level4id
+	}
 	
 	capture gen level4name = "" // in case it is not populated
 	capture tostring level4name, replace // in case it is not a string
 	replace name = level4name if `show4' & !missing(level4id)
+	
+	* If user wants strata plotted in table order, merge the table order
+	* and sort accordingly
+	
+	if "$PLOT_OUTCOMES_IN_TABLE_ORDER" == "1" {
+		
+		vcqi_log_comment $VCP 3 Comment "User has requested that outcomes be plotted in table order instead of sorting by indicator outcome."
+		preserve
+		make_table_order_database
+		make_table_order_dataset
+		restore
+			    
+		replace level2id = 0 if missing(level2id)
+		replace level3id = 0 if missing(level3id)
+		replace level4id = 0 if missing(level4id)		
+		merge 1:m level1id level2id level3id level4id using table_order_TO
+		keep if _merge == 1 | _merge == 3
+		drop _merge
+		sort table_bottom_to_top_row_order
+	}
 
 	keep name n estimate level level*id outcome
 		
@@ -259,6 +322,20 @@ program define unweighted_plotit
 	}	
 
 	local note Text at right: Unweighted sample proportion (%) and N, size(small) span
+	
+	
+	* If user says they want to annotate low and medium N, do three checks.
+	* If low is undefined, set it to 25; if medium is undefined set it to 50.
+	* If the user specified both, but low is > med, then over-ride their choice and use 25 and 50.
+	if "$UWPLOT_ANNOTATE_LOW_MED" != "" | "$UWPLOT_ANNOTATE_MED_N" < "UWPLOT_ANNOTATE_LOW_N" {
+		if "$UWPLOT_ANNOTATE_LOW_N" == "" vcqi_global UWPLOT_ANNOTATE_LOW_N 25
+		if "$UWPLOT_ANNOTATE_MED_N" == "" vcqi_global UWPLOT_ANNOTATE_MED_N 50
+	}	
+	
+	* By the way, this website has a nice list of unicode math symbols:
+	* https://www.w3schools.com/charsets/ref_utf_math.asp
+	
+	if "$UWPLOT_ANNOTATE_LOW_MED" != "" local note = `""Text at right: Unweighted sample proportion (%) and N" "Parentheses () mean ${UWPLOT_ANNOTATE_LOW_N} `=uchar(8804)' N < ${UWPLOT_ANNOTATE_MED_N} and `=uchar(8225)' means N < ${UWPLOT_ANNOTATE_LOW_N}.", size(small) span"'
 	
 	local saving
 	if $SAVE_VCQI_GPH_FILES ///

@@ -1,4 +1,4 @@
-*! DESC_01_04GO version 1.03 - Biostat Global Consulting - 2017-08-26
+*! DESC_01_04GO version 1.04 - Biostat Global Consulting - 2020-12-12
 *******************************************************************************
 * Change log
 * 				Updated
@@ -8,6 +8,7 @@
 *										label variable name "Survey name for table output"
 * 2017-01-31	1.02	Dale Rhoda		Incorporate VCQI_LEVEL4_SET
 * 2017-08-26	1.03	Mary Prier		Added version 14.1 line
+* 2020-12-12	1.04	Dale Rhoda		tostring the levelnames, to be safe
 *******************************************************************************
 
 program define DESC_01_04GO
@@ -158,7 +159,7 @@ program define DESC_01_04GO
 				}		
 				
 				
-				if "$VCQI_LEVEL4_SET_VARLIST" != "" & ( "${SHOW_LEVELS_`l'_4_TOGETHER}" == "1"  | ( inlist(`l',2,3) & "$SHOW_LEVELS_2_3_4_TOGETHER" == "1"  )) {
+				if "$VCQI_LEVEL4_SET_VARLIST" != "" & ( "$SHOW_LEVEL_4_ALONE" == "1" | "${SHOW_LEVELS_`l'_4_TOGETHER}" == "1"  | ( inlist(`l',2,3) & "$SHOW_LEVELS_2_3_4_TOGETHER" == "1"  )) {
 						
 					forvalues j = 1/$LEVEL4_SET_NROWS {
 						
@@ -551,6 +552,11 @@ program define DESC_01_04GO
 		sort level id name
 
 		destring _all, replace
+		
+		capture tostring level1name, replace
+		capture tostring level2name, replace
+		capture tostring level3name, replace
+		capture tostring level4name, replace		
 
 		save "$VCQI_OUTPUT_FOLDER/DESC_01_${DESC_01_DATASET}_${ANALYSIS_COUNTER}_database", replace
 

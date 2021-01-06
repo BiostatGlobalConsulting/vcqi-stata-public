@@ -1,5 +1,15 @@
 {smcl}
-{* *! version 1.0 18 Feb 2016}{...}
+{...}
+{...}
+{* *! excel_wrapper_for_iwplot_svyp.sthlp version 1.00 - Biostat Global Consulting - 2016-02-18}{...}
+{* Change log: }{...}
+{* 				Updated}{...}
+{*				version}{...}
+{* Date 		number 	Name			What Changed}{...}
+{* 2016-02-18	1.00	Dale Rhoda		Original version}{...}
+{* xxxx-xx-xx	1.0x	<name>			<comment>}{...}
+{...}
+{...}
 {vieweralsosee "" "--"}{...}
 {vieweralsosee "Install iwplot_svyp" "ssc install iwplot_svyp"}{...}
 {vieweralsosee "Help iwplot_svyp (if installed)" "iwplot_svyp"}{...}

@@ -1,4 +1,4 @@
-*! cleanup_RI_dates_and_ticks version 1.11 - Biostat Global Consulting - 2017-08-26
+*! cleanup_RI_dates_and_ticks version 1.15 - Biostat Global Consulting - 2020-02-19
 *******************************************************************************
 * Change log
 * 				Updated
@@ -26,6 +26,22 @@
 * 2017-05-12	1.10	Dale Rhoda		Fixed a typo
 *
 * 2017-08-26	1.11	Mary Prier		Added version 14.1 line
+*
+* 2018-06-26	1.12	MK Trimner		Added code for shift_RI_dates program
+*
+* 2018-10-10	1.13	Dale Rhoda		Replaced a hardcoded assumption in
+*										the dob code that 
+*										we would only analyze 1-year cohorts
+*										with flexible code that uses 
+*										LATEST_SVY_VACC_DATE minus
+*										and VCQI_RI_MIN_AGE_OF_ELIGIBILITY
+*
+* 2020-02-18	1.14	Mary Prier		Added code that creates variable 
+*										has_card_with_dob_and_dosedate
+*
+* 2020-02-19	1.15	MK Trimner		Replace ooo code to be >= to capture if the dates are the same
+* 										Changed flag 22 to look at childs own interview date first, then if 
+*										interview date missing the latest possible survey date.
 *******************************************************************************
 
 * This program accomplishes several things:
@@ -216,8 +232,8 @@ program define cleanup_RI_dates_and_ticks
 				replace dob_`s' = . if dob_`s' < ///
 					mdy($EARLIEST_SVY_VACC_DATE_M, $EARLIEST_SVY_VACC_DATE_D, ///
 						$EARLIEST_SVY_VACC_DATE_Y) | dob_`s' > ///
-					mdy($EARLIEST_SVY_VACC_DATE_M, $EARLIEST_SVY_VACC_DATE_D, ///
-						$EARLIEST_SVY_VACC_DATE_Y)+365
+					mdy($LATEST_SVY_VACC_DATE_M, $LATEST_SVY_VACC_DATE_D, ///
+						$LATEST_SVY_VACC_DATE_Y)-$VCQI_RI_MIN_AGE_OF_ELIGIBILITY
 			}
 			
 			gen plausible_birthdate=1 if missing(dob_for_valid_dose_calculations) & !missing(min(dob_card, dob_history, dob_register))
@@ -420,8 +436,10 @@ program define cleanup_RI_dates_and_ticks
 					gen `v'_`s'_date_dq_flag21=((`v'_`s'_date < dob_for_valid_dose_calculations) & (!missing(`v'_`s'_date) & !missing(dob_for_valid_dose_calculations)))
 					label variable `v'_`s'_date_dq_flag21 "`=substr("`l'",1,`=strpos("`l'","of vacc")'-1)' -Before DOB"
 							
-					gen `v'_`s'_date_dq_flag22 = (`v'_`s'_date>latest_svy_vacc_date) & !missing(`v'_`s'_date)
-					label variable `v'_`s'_date_dq_flag22 "`=substr("`l'",1,`=strpos("`l'","of vacc")'-1)' -After Latest Possible Vacc Date in Survey"
+					gen `v'_`s'_date_dq_flag22 = (`v'_`s'_date>date_of_interview) & !missing(`v'_`s'_date)
+					replace `v'_`s'_date_dq_flag22 = 1 if (`v'_`s'_date>latest_svy_vacc_date) & !missing(`v'_`s'_date) & missing(date_of_interview)
+
+					label variable `v'_`s'_date_dq_flag22 "`=substr("`l'",1,`=strpos("`l'","of vacc")'-1)' -After Interview Date or Latest Possible Vacc Date in Survey"
 
 				}
 			}
@@ -528,7 +546,7 @@ program define cleanup_RI_dates_and_ticks
 
 				foreach d in `=lower("$RI_MULTI_2_DOSE_LIST")' {
 					*flags to indicate that doses were given out of order (ooo)
-					gen `d'12_`s'_ooo = `d'1_`s'_date > `d'2_`s'_date & !missing(`d'1_`s'_date) & !missing(`d'2_`s'_date)
+					gen `d'12_`s'_ooo = `d'1_`s'_date >= `d'2_`s'_date & !missing(`d'1_`s'_date) & !missing(`d'2_`s'_date)
 					
 					count if `d'12_`s'_ooo == 1
 					if r(N) > 0 vcqi_log_comment $VCP 4 Data ///
@@ -546,9 +564,9 @@ program define cleanup_RI_dates_and_ticks
 			
 				foreach d in `=lower("$RI_MULTI_3_DOSE_LIST")' {
 					*flags to indicate that doses were given out of order (ooo)
-					gen `d'12_`s'_ooo = `d'1_`s'_date > `d'2_`s'_date & !missing(`d'1_`s'_date) & !missing(`d'2_`s'_date)
-					gen `d'23_`s'_ooo = `d'2_`s'_date > `d'3_`s'_date & !missing(`d'2_`s'_date) & !missing(`d'3_`s'_date)
-					gen `d'13_`s'_ooo = `d'1_`s'_date > `d'3_`s'_date & !missing(`d'1_`s'_date) & !missing(`d'3_`s'_date)
+					gen `d'12_`s'_ooo = `d'1_`s'_date >= `d'2_`s'_date & !missing(`d'1_`s'_date) & !missing(`d'2_`s'_date)
+					gen `d'23_`s'_ooo = `d'2_`s'_date >= `d'3_`s'_date & !missing(`d'2_`s'_date) & !missing(`d'3_`s'_date)
+					gen `d'13_`s'_ooo = `d'1_`s'_date >= `d'3_`s'_date & !missing(`d'1_`s'_date) & !missing(`d'3_`s'_date)
 					
 					count if `d'12_`s'_ooo == 1
 					if r(N) > 0 vcqi_log_comment $VCP 4 Data ///
@@ -649,7 +667,25 @@ program define cleanup_RI_dates_and_ticks
 			count if no_register == 1
 			vcqi_log_comment $VCP 4 Data ///
 			"`=scalar(r(N))' respondents did not have a register record with dates or ticks recorded on it."
-			
+		
+			* Create indicator variable for children who have a card, a valid dob 
+			*   & at least one dose date that occurs after dob (code added 2/18/2020 MLP)	
+			* First, generate variable "showed_card_with_dates_after_dob"
+			gen card_date_count = 0
+			gen flag_dob_before_dosedate = .
+			label variable card_date_count "Number of Dates on Card"
+			label variable flag_dob_before_dosedate "Dob before at least one dose date"	
+			foreach d in $RI_DOSE_LIST {
+					replace card_date_count = card_date_count + 1 if !missing(`d'_card_date)
+					replace flag_dob_before_dosedate = 1 if (`d'_card_date >= dob_for_valid_dose_calculations) & !missing(`d'_card_date) & !missing(dob_for_valid_dose_calculations)
+			}
+			gen showed_card_with_dates_after_dob = (card_date_count>0 & flag_dob_before_dosedate==1)
+			label variable showed_card_with_dates_after_dob "Card Seen & 1+ dates on card after dob"
+		
+			* Now generate has_card_with_dob_and_dosedate variable
+			gen has_card_with_dob_and_dosedate = 0
+			replace has_card_with_dob_and_dosedate = 1 if dob_for_valid_dose_calculations!=. & showed_card_with_dates_after_dob==1
+			label var has_card_with_dob_and_dosedate "Child had card with valid dob & 1+ dose date after dob (0=no; 1=yes)"
 
 			* save a file with flags
 			save "${VCQI_OUTPUT_FOLDER}/${VCQI_RI_DATASET}_dq_flags", replace
@@ -657,7 +693,9 @@ program define cleanup_RI_dates_and_ticks
 			
 			keep RI01 RI03 RI11 RI12 *card_date *card_tick no_card ///
 				no_register *register_date *register_tick ///
-				dob_for_valid_dose_calculations age_at_interview *history
+				dob_for_valid_dose_calculations age_at_interview *history  ///
+				has_card_with_dob_and_dosedate ///
+				card_date_count flag_dob_before_dosedate showed_card_with_dates_after_dob
 				
 			drop dob_history
 
@@ -689,6 +727,10 @@ program define cleanup_RI_dates_and_ticks
 				vcqi_global VCQI_NO_DOBS 1
 
 			}	
+			
+			* Check to see if dose shifting is requested and run program
+			if "$NUM_DOSE_SHIFTS"=="" global NUM_DOSE_SHIFTS 0
+			if $NUM_DOSE_SHIFTS >=  1 shift_RI_dates
 		}
 	}
 	

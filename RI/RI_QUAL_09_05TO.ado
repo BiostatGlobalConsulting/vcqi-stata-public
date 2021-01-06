@@ -1,4 +1,4 @@
-*! RI_QUAL_09_05TO version 1.05 - Biostat Global Consulting - 2017-08-26
+*! RI_QUAL_09_05TO version 1.06 - Biostat Global Consulting - 2019-11-09
 *******************************************************************************
 * Change log
 * 				Updated
@@ -9,6 +9,8 @@
 * 2016-03-08	1.03	Dale Rhoda		Moved titles & footnotes to control pgm
 * 2017-05-17	1.04	Dale Rhoda		Send progress to screen
 * 2017-08-26	1.05	Mary Prier		Added version 14.1 line
+* 2019-11-09	1.06 	Dale Rhoda		Introduced MOV_OUTPUT_DOSE_LIST
+*
 *******************************************************************************
 
 program define RI_QUAL_09_05TO
@@ -22,7 +24,7 @@ program define RI_QUAL_09_05TO
 	
 		local vc  `=lower("$RI_QUAL_09_VALID_OR_CRUDE")'
 		
-		foreach d in $RI_DOSE_LIST {
+		foreach d in $MOV_OUTPUT_DOSE_LIST {
 		
 			noi di _continue _col(5) "`d' "
 

@@ -1,4 +1,14 @@
-*! version 1.0
-label "VCQI Blue 3 (dark)"
+*! color-vcqi_level2 version 1.02 - Biostat Global Consulting - 2020-12-07
+* ******************************************************************************
+* Change log
+*             Updated
+*             version
+* Date        number   Name             What Changed
+* 2017-05-26  1.00     Dale Rhoda       Original version
+* 2020-03-23  1.01     Dale             Fixed comment block to suppress warnings
+* 2020-12-07	1.02		 Dale             Fix label
+* ******************************************************************************
+
+label resource "VCQI Blue 1 (dark)"
 
 set rgb "49 130 189"

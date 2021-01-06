@@ -14,15 +14,15 @@ program define COVG_DIFF_02
 	global VCP COVG_DIFF_02
 	vcqi_log_comment $VCP 5 Flow "Starting"
 	
-	noi di "Calculating $VCP ..."
+	noi di as text "Calculating $VCP ..."
 
-	noi di _col(3) "Checking global macros"
+	noi di as text _col(3) "Checking global macros"
 	COVG_DIFF_02_00GC
-	if "$VCQI_PREPROCESS_DATA" 		== "1" noi di _col(3) "Pre-processing dataset"
+	if "$VCQI_PREPROCESS_DATA" 		== "1" noi di as text _col(3) "Pre-processing dataset"
 	if "$VCQI_PREPROCESS_DATA" 		== "1" COVG_DIFF_02_01PP
 	*COVG_DIFF_02_02DQ 
 	*COVG_DIFF_02_03DV
-	if "$VCQI_GENERATE_DATABASES" 	== "1" noi di _col(3) "Generating output databases"
+	if "$VCQI_GENERATE_DATABASES" 	== "1" noi di as text _col(3) "Generating output databases"
 	if "$VCQI_GENERATE_DATABASES" 	== "1" COVG_DIFF_02_04GO
 	
 	* The program to export to excel is called 

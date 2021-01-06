@@ -1,4 +1,4 @@
-*! RI_QUAL_12_05TO version 1.04 - Biostat Global Consulting - 2017-08-26
+*! RI_QUAL_12_05TO version 1.05 - Biostat Global Consulting - 2018-01-17
 *******************************************************************************
 * Change log
 * 				Updated
@@ -8,6 +8,7 @@
 * 2016-03-08	1.02	Dale Rhoda		Moved titles & footnotes to control pgm
 * 2017-02-03	1.03	Dale Rhoda		Switched to _DOSE_PAIR_LIST
 * 2017-08-26	1.04	Mary Prier		Added version 14.1 line
+* 2018-01-17	1.05	Dale Rhoda		Updated var option
 *****************************************************************************
 
 program define RI_QUAL_12_05TO
@@ -29,7 +30,7 @@ program define RI_QUAL_12_05TO
 			local ++j
 			noi di _continue _col(5) "`d1' & `d2' "
 
-			make_tables_from_unwtd_output, measureid(RI_QUAL_12) sheet(RI_QUAL_12 ${ANALYSIS_COUNTER}) noomitpriorn vid(`d1'_`d2'_`t') var(igt_`d1'_`d2'_`t') estlabel(`=upper("`d1'")'-`=upper("`d2'")' Interval > `t' Days (%))
+			make_tables_from_unwtd_output, measureid(RI_QUAL_12) sheet(RI_QUAL_12 ${ANALYSIS_COUNTER}) vid(`d1'_`d2'_`t') var(estimate n) estlabel(`=upper("`d1'")'-`=upper("`d2'")' Interval > `t' Days (%))
 
 			local ++i
 		}

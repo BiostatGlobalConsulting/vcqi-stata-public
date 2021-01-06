@@ -1,4 +1,4 @@
-*! RI_QUAL_07_06PO version 1.04 - Biostat Global Consulting - 2017-08-26
+*! RI_QUAL_07_06PO version 1.07 - Biostat Global Consulting - 2020-12-16
 *******************************************************************************
 * Change log
 * 				Updated
@@ -11,6 +11,10 @@
 * 2016-05-16	1.03	Dale Rhoda		Tell user how many inchworm plots
 *										will be made
 * 2017-08-26	1.04	Mary Prier		Added version 14.1 line
+* 2019-10-13	1.05	Dale Rhoda		Supress double-inchworms if user requests bars
+* 2019-11-08	1.06	Dale Rhoda		Introduced MOV_OUTPUT_DOSE_LIST
+* 2020-12-16	1.07	Cait Clary		Allow double inchworms when showbars=1 then 
+* 										reset IWPLOT_SHOWBARS global
 *******************************************************************************
 
 program define RI_QUAL_07_06PO
@@ -42,13 +46,13 @@ program define RI_QUAL_07_06PO
 				clear
 			}			
 			
-			noi di _col(5) "Inchworm plots (`ppd' plots per dose)"
+			noi di as text _col(5) "Inchworm plots (`ppd' plots per dose)"
 			
 			capture mkdir Plots_IW_UW
 
 			local vc  `=lower("$RI_QUAL_07_VALID_OR_CRUDE")'
 
-			foreach d in $RI_DOSE_LIST {
+			foreach d in $MOV_OUTPUT_DOSE_LIST {
 			
 				noi di _continue _col(7) "`d' "
 				
@@ -62,8 +66,13 @@ program define RI_QUAL_07_06PO
 					title("RI - Would have Valid `=upper("`d'")'" "if no MOVs (%)") name(RI_QUAL_07_${ANALYSIS_COUNTER}_iwplot_`d'_`vc')
 					
 				vcqi_log_comment $VCP 3 Comment "Inchworm plot was created and exported."
+				
+				* Double inchworm to shoe coverage if no MOVs versus observed coverage (with MOVs)
 
 				graph drop _all
+
+				* Temporarily set IWPLOT_SHOWBARS to 0 so that the double inchworm plot is generated
+				vcqi_global IWPLOT_SHOWBARS 0
 
 				* Double inchworm plot that shows valid coverage in gray and 
 				* valid coverage if no MOVs in color
@@ -84,12 +93,11 @@ program define RI_QUAL_07_06PO
 						vcqi_log_comment $VCP 2 Warning "RI_QUAL_07 made a double inchworm plot using RI_COVG_02_1_`d'_a_database because RI_COVG_02_${ANALYSIS_COUNTER}_`d'_a_database did not exist."
 					}
 				}
-				
+
 				* Only make the double inchworm plot if we were able to find either
 				* RI_COVG_02_${ANALYSIS_COUNTER}_`d'_a_database or 
-				* RI_COVG_02_1_`d'_a_database
-				* otherwise, skip it
-				
+				* RI_COVG_02_1_`d'_a_database; otherwise, skip it
+
 				if "`double_ac'" != "" {
 				
 					vcqi_to_double_iwplot , database(${VCQI_OUTPUT_FOLDER}/RI_QUAL_07_${ANALYSIS_COUNTER}_`d'_`vc'_database) ///
@@ -105,8 +113,11 @@ program define RI_QUAL_07_06PO
 					graph drop _all
 
 				}
+
+				* Revert IWPLOT_SHOWBARS back to the user's selection
+				vcqi_global IWPLOT_SHOWBARS $IWPLOT_SHOWBARS_SAVEOPT
 			}
-			noi di ""
+			noi di as text ""
 		}
 	}
 	

@@ -1,3 +1,4 @@
+*! - Users Guide TT Control Program version 1.03 - Biostat Global Consulting - 2020-12-12
 ********************************************************************************
 * Vaccination Coverage Quality Indicators (VCQI) control program to analyze
 * data from a tetanus survey 
@@ -7,7 +8,7 @@
 *
 * Written by Biostat Global Consulting
 *
-* Updated 2017-07-18
+* See bottom of program for log of program updates
 *
 * The user might customize this program by changing items below in the
 * code blocks marked TT-B, TT-D, and TT-F below.  Those blocks are
@@ -32,8 +33,34 @@ macro drop _all
 *                  Specify input/output folders & analysis name
 *-------------------------------------------------------------------------------
 
+* Where have you saved the VCQI Stata source code?
+
+* global S_VCQI_SOURCE_CODE_FOLDER      C:/Users/Dale/Dropbox (Biostat Global)/DAR GitHub Repos/vcqi-stata-bgc
+
+* We recommend that VCQI Users establish the global S_VCQI_SOURCE_CODE_FOLDER
+* in the profile.do program that lives in your Stata personal folder.
+* (Type the command 'personal' to learn the location of what Stata calls 
+*  your personal folder.)
+*
+* Alternatively, you may uncomment the line of code above and set the 
+* global here.  Make its value the path to the folder that holds your 
+* current VCQI source folders.
+
+* Note that the S_VCQI_SOURCE_CODE_FOLDER global is used in the six 
+* lines of code below
+
+adopath + "${S_VCQI_SOURCE_CODE_FOLDER}/DESC"
+adopath + "${S_VCQI_SOURCE_CODE_FOLDER}/DIFF"
+adopath + "${S_VCQI_SOURCE_CODE_FOLDER}/LIBRARY"
+adopath + "${S_VCQI_SOURCE_CODE_FOLDER}/PLOT"
+adopath + "${S_VCQI_SOURCE_CODE_FOLDER}/RI"
+adopath + "${S_VCQI_SOURCE_CODE_FOLDER}/SIA"
+adopath + "${S_VCQI_SOURCE_CODE_FOLDER}/TT"
+
+vcqi_adopath_check
+
 * Where should the programs look for datasets?
-global VCQI_DATA_FOLDER    Q:/- Folders shared outside BGC/BGC Team - WHO Software/Test datasets/2016-02-24
+global VCQI_DATA_FOLDER    Q:/- Folders shared outside BGC/BGC Team - WHO Software/Test datasets/2020-10-16
 
 * Where should the programs put output?
 global VCQI_OUTPUT_FOLDER  Q:/- Folders shared outside BGC/BGC Team - WHO Software/Working folder - Dale/VCQI test output/TT test
@@ -51,9 +78,11 @@ global	VCQI_CHECK_INSTEAD_OF_RUN		0
 ********************************************************************************
 * Code Block: TT-C                                               (Do not change)
 *-------------------------------------------------------------------------------
-*                  CD to output folder & open VCQI log
+*                  Put VCQI in the Stata Path and
+*                CD to output folder & open VCQI log
 *-------------------------------------------------------------------------------
 
+* CD to the output folder and start the log 
 cd "${VCQI_OUTPUT_FOLDER}"
 
 * Start with a clean, empty Excel file for tabulated output (TO)
@@ -156,6 +185,7 @@ vcqi_global VCQI_LEVEL4_SET_LAYOUT ${VCQI_DATA_FOLDER}/VCQI_LEVEL4_SET_LAYOUT_ur
 vcqi_global SHOW_LEVEL_1_ALONE         0
 vcqi_global SHOW_LEVEL_2_ALONE         0
 vcqi_global SHOW_LEVEL_3_ALONE         0 
+vcqi_global SHOW_LEVEL_4_ALONE         0
 vcqi_global SHOW_LEVELS_2_3_TOGETHER   0
 
 vcqi_global SHOW_LEVELS_1_4_TOGETHER   1
@@ -164,6 +194,9 @@ vcqi_global SHOW_LEVELS_3_4_TOGETHER   0
 vcqi_global SHOW_LEVELS_2_3_4_TOGETHER 1
 
 vcqi_global SHOW_BLANKS_BETWEEN_LEVELS 1
+
+* User specifies the Stata svyset syntax to describe the complex sample
+vcqi_global VCQI_SVYSET_SYNTAX svyset clusterid, strata(stratumid) weight(psweight) singleunit(scaled)
 
 * User specifies the method for calculating confidence intervals
 * Valid choices are LOGIT, WILSON, JEFFREYS or CLOPPER; our default 
@@ -175,10 +208,14 @@ vcqi_global VCQI_CI_METHOD WILSON
 
 vcqi_global EXPORT_TO_EXCEL 				1
 
-* The code to format excel is a little slow, so give an option to turn it off
-* when debugging (usually 1)
+* Specify if you would like the excel columns to be narrow in Tabulated output
+* Set to 1 for yes - The code to do this is a little slow
+vcqi_global MAKE_EXCEL_COLUMNS_NARROW 		0
 
-vcqi_global FORMAT_EXCEL    				1
+* User specifies the number of digits after the decimal place in coverage
+* outcome tables and plots
+
+vcqi_global VCQI_NUM_DECIMAL_DIGITS			1
 
 * Specify whether the code should make plots, or not (usually 1)
 
@@ -188,6 +225,11 @@ vcqi_global MAKE_PLOTS      				1
 * Make inchworm plots? Set to 1 for yes.
 vcqi_global VCQI_MAKE_IW_PLOTS				1
 vcqi_global VCQI_MAKE_LEVEL2_IWPLOTS		0
+
+* IWPLOT_SHOWBARS = 0 means show inchworm distributions
+* IWPLOT_SHOWBARS = 1 means show horizontal bars instead of inchworms
+
+vcqi_global IWPLOT_SHOWBARS					0
 
 * Make unweighted sample proportion plots? Set to 1 for yes.
 vcqi_global VCQI_MAKE_UW_PLOTS				1
@@ -232,14 +274,11 @@ vcqi_global DELETE_VCQI_DATABASES_AT_END	1
 
 vcqi_global DELETE_TEMP_VCQI_DATASETS		1
 
-
 ********************************************************************************
 * Code Block: TT-E                                               (Do not change)
 *-------------------------------------------------------------------------------
 *                  Pre-process survey data
 *-------------------------------------------------------------------------------
-
-
 
 if "$VCQI_CHECK_INSTEAD_OF_RUN" == "1" {
 	vcqi_log_comment $VCP 3 Comment "The user has requested a check instead of a run."
@@ -283,7 +322,7 @@ vcqi_global DESC_01_DATASET TT
 		
 vcqi_global DESC_01_TO_TITLE    TT Survey Sample Summary
 vcqi_global DESC_01_TO_SUBTITLE
-vcqi_global DESC_01_FOOTNOTE_1  Abbreviations: HH = Households	
+vcqi_global DESC_01_TO_FOOTNOTE_1  Abbreviations: HH = Households	
 
 DESC_01 
 
@@ -298,81 +337,73 @@ vcqi_global DESC_02_WEIGHTED	YES
 vcqi_global DESC_02_DENOMINATOR	ALL
 
 vcqi_global DESC_02_TO_TITLE 	 Women Received Ante-Natal Care
-* Clear out the SUBTITLE in case it was previously used.
+* No subtitle
 vcqi_global DESC_02_TO_SUBTITLE
 * Remember that DESC_02 automatically assigns two footnotes, so if you
 * want to include another, start with the number 3.
 * We are not using it here, but clear it out in case it was used earlier.
 vcqi_global DESC_02_TO_FOOTNOTE_3 
-DESC_02
+DESC_02, cleanup
 
 * Who did they see for care?  (unweighted)
+vcqi_global DESC_02_DATASET 	TT
 vcqi_global DESC_02_VARIABLES 	TT19
 vcqi_global DESC_02_WEIGHTED	NO
 vcqi_global DESC_02_DENOMINATOR	RESPONDED
 
 vcqi_global DESC_02_TO_TITLE 	 Who Provided Ante-Natal Care?
-* Clear out the SUBTITLE in case it was previously used.
+*No subtitle or extra footnote
 vcqi_global DESC_02_TO_SUBTITLE
-* Remember that DESC_02 automatically assigns two footnotes, so if you
-* want to include another, start with the number 3.
-* We are not using it here, but clear it out in case it was used earlier.
 vcqi_global DESC_02_TO_FOOTNOTE_3 
-DESC_02
+DESC_02, cleanup
 
 * Where were the babies delivered?
+vcqi_global DESC_02_DATASET 	TT
 vcqi_global DESC_02_VARIABLES 	TT22
 vcqi_global DESC_02_WEIGHTED	YES
 vcqi_global DESC_02_DENOMINATOR	ALL
 
 vcqi_global DESC_02_TO_TITLE 	 Place of Delivery
-* Clear out the SUBTITLE in case it was previously used.
+*No subtitle or extra footnote
 vcqi_global DESC_02_TO_SUBTITLE
-* Remember that DESC_02 automatically assigns two footnotes, so if you
-* want to include another, start with the number 3.
-* We are not using it here, but clear it out in case it was used earlier.
 vcqi_global DESC_02_TO_FOOTNOTE_3 
-DESC_02
+DESC_02, cleanup
 
 * Who attended the delivery?
+vcqi_global DESC_02_DATASET 	TT
 vcqi_global DESC_02_VARIABLES 	TT24
 vcqi_global DESC_02_WEIGHTED	YES
 vcqi_global DESC_02_DENOMINATOR	ALL
 
 vcqi_global DESC_02_TO_TITLE 	 Who Attended the Birth?
-* Clear out the SUBTITLE in case it was previously used.
+*No subtitle or extra footnote
 vcqi_global DESC_02_TO_SUBTITLE
-* Remember that DESC_02 automatically assigns two footnotes, so if you
-* want to include another, start with the number 3.
-* We are not using it here, but clear it out in case it was used earlier.
 vcqi_global DESC_02_TO_FOOTNOTE_3 
-DESC_02
+DESC_02, cleanup
 
 * Rec'd a vaccination card (weighted)
+vcqi_global DESC_02_DATASET 	TT
 vcqi_global DESC_02_VARIABLES 	TT26
+vcqi_global DESC_02_WEIGHTED	YES
+vcqi_global DESC_02_DENOMINATOR	ALL
 
 vcqi_global DESC_02_TO_TITLE 	 Woman Received an Ante-Natal Vaccination Card
-* Clear out the SUBTITLE in case it was previously used.
+*No subtitle or extra footnote
 vcqi_global DESC_02_TO_SUBTITLE
-* Remember that DESC_02 automatically assigns two footnotes, so if you
-* want to include another, start with the number 3.
-* We are not using it here, but clear it out in case it was used earlier.
 vcqi_global DESC_02_TO_FOOTNOTE_3 
-DESC_02
+DESC_02, cleanup
 
 * If only 0 or 1 lifetime doses, why? (unweighted)
+vcqi_global DESC_02_DATASET 	TT
 vcqi_global DESC_02_VARIABLES 	TT43
 vcqi_global DESC_02_WEIGHTED	NO
 vcqi_global DESC_02_DENOMINATOR	RESPONDED
 
 vcqi_global DESC_02_TO_TITLE 	 Why Have You Received Fewer Than Two Lifetime TT Doses?
-* Clear out the SUBTITLE in case it was previously used.
+*No subtitle or extra footnote
 vcqi_global DESC_02_TO_SUBTITLE
-* Remember that DESC_02 automatically assigns two footnotes, so if you
-* want to include another, start with the number 3.
-* We are not using it here, but clear it out in case it was used earlier.
 vcqi_global DESC_02_TO_FOOTNOTE_3 
-DESC_02
+DESC_02, cleanup
 
 * -------------------------------------------------------------------
 * Estimate % protected at birth (PAB)
@@ -380,8 +411,9 @@ DESC_02
 
 vcqi_global TT_COVG_01_TO_TITLE    Protected at Birth from Neonatal Tetanus
 vcqi_global TT_COVG_01_TO_SUBTITLE
-vcqi_global TT_COVG_01_FOOTNOTE_1  Abbreviations: CI=Confidence Interval; LCB=Lower Confidence Bound; UCB=Upper Confidence Bound; DEFF=Design Effect; ICC=Intracluster Correlation Coefficient
-vcqi_global TT_COVG_01_FOOTNOTE_2  Note: This measure is a population estimate that incorporates survey weights.  The CI, LCB and UCB are calculated with software that take the complex survey design into account.
+vcqi_global TT_COVG_01_TO_FOOTNOTE_1  Abbreviations: CI=Confidence Interval; LCB=Lower Confidence Bound; UCB=Upper Confidence Bound; DEFF=Design Effect; ICC=Intracluster Correlation Coefficient
+vcqi_global TT_COVG_01_TO_FOOTNOTE_2  Note: This measure is a population estimate that incorporates survey weights.  The CI, LCB and UCB are calculated with software that take the complex survey design into account.
+vcqi_global SORT_PLOT_LOW_TO_HIGH 1 // 1=sort proportions on plot low at bottom to high at top; 0 is the opposite
 
 TT_COVG_01
 
@@ -399,7 +431,7 @@ TT_COVG_01
 * numbers; do not start at _1 again when you conduct a new test.
 *-------------------------------------------------------------------
 * The first hypothesis to test: 
-* Null: PAB Coverage is equal between the upper and lower province
+* Null: PAB Coverage is equal between the northern and southern province
 * Alt : PAB coverage differs between them
 
 * Because this is a test BETWEEN two strata, we will use COVG_DIFF_01
@@ -414,8 +446,8 @@ vcqi_global COVG_DIFF_01_ANALYSIS_COUNTER 1
 vcqi_global COVG_DIFF_01_ID_OR_NAME NAME
 
 * Names of the two strata to compare
-vcqi_global COVG_DIFF_01_STRATUM_NAME1 UPPER PROVINCE
-vcqi_global COVG_DIFF_01_STRATUM_NAME2 LOWER PROVINCE
+vcqi_global COVG_DIFF_01_STRATUM_NAME1 NORTHERN PROVINCE
+vcqi_global COVG_DIFF_01_STRATUM_NAME2 SOUTHERN PROVINCE
 
 * Name of the indicator that calculated the variable to compare
 vcqi_global COVG_DIFF_01_INDICATOR TT_COVG_01
@@ -435,7 +467,7 @@ COVG_DIFF_01
 
 * Here is a second hypothesis to test:
 * Null: PAB coverage is equal between two level 3 strata: 
-* Rosebud and Dongolocking
+* District 01 vs. District 09
 * Alt : PAB coverage differs between the two
 
 * Inputs to set up the test
@@ -443,8 +475,8 @@ vcqi_global COVG_DIFF_01_STRATUM_LEVEL 3
 
 vcqi_global COVG_DIFF_01_ID_OR_NAME NAME
 
-vcqi_global COVG_DIFF_01_STRATUM_NAME1 Rosebud
-vcqi_global COVG_DIFF_01_STRATUM_NAME2  Dongolocking
+vcqi_global COVG_DIFF_01_STRATUM_NAME1 District 01
+vcqi_global COVG_DIFF_01_STRATUM_NAME2 District 09
 
 vcqi_global COVG_DIFF_01_INDICATOR TT_COVG_01
 vcqi_global COVG_DIFF_01_VARIABLE protected_at_birth_to_analyze
@@ -483,14 +515,14 @@ COVG_DIFF_02
 
 * A fourth hypothesis
 * Null: PAB coverage is equal between women who did and did not have 
-*       ante-natal care in the Lower Province
+*       ante-natal care in the Southern Province
 * Alt:  PAB coverage differs between those two sub-groups
 
 vcqi_global COVG_DIFF_02_ID_OR_NAME name
 
 vcqi_global COVG_DIFF_02_STRATUM_LEVEL 2
 
-vcqi_global COVG_DIFF_02_STRATUM_NAME lower province
+vcqi_global COVG_DIFF_02_STRATUM_NAME Southern Province
 
 vcqi_global COVG_DIFF_02_INDICATOR TT_COVG_01
 
@@ -522,6 +554,33 @@ COVG_DIFF_02
 
 vcqi_cleanup
 
+********************************************************************************
 
+$VCQI____END_OF_PROGRAM
 
+* Output to the log window is suppressed by the command $VCQI____END_OF_PROGRAM
+* (which is an alias for "set output error")
 
+* So this change log in block H will not appear when the user runs VCQI
+
+********************************************************************************
+* Code Block: TT-H                                               (Do not change)
+*-------------------------------------------------------------------------------
+* Change log 
+* 				Updated 
+*				version 
+* Date 			number 	Name			What Changed 
+* 2020-01-16	1.00	Dale Rhoda		Version as of 2020-01-16
+* 2020-04-09	1.01	Dale Rhoda		Add VCQI____END_OF_PROGRAM to 
+*                                       suppress showing this change log
+*                                       in the VCQI log window after showing
+*                                       the VCQI ASCCI art.
+* 2020-12-09	1.02	Dale Rhoda		Allow the user to plot strata in table order
+* 2020-12-12	1.03	Dale Rhoda		Allow user to SHOW_LEVEL_4_ONLY
+*                                       and update test dataset to 2020-10-16
+*                                       which is Harmonia instead of 
+*                                       Sassafrippi
+******************************************************************************** 
+
+* turn on normal output to the log window again
+set output proc

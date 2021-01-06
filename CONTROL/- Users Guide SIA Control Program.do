@@ -1,3 +1,4 @@
+*! - Users Guide SIA Control Program version 1.03 - Biostat Global Consulting - 2020-12-12
 ********************************************************************************
 * Vaccination Coverage Quality Indicators (VCQI) control program to analyze
 * data from a supplemental immunization activity (SIA) survey 
@@ -7,12 +8,11 @@
 *
 * Written by Biostat Global Consulting
 *
-* Updated 2017-02-15
+* See bottom of program for log of program updates
 *
 * The user might customize this program by changing items below in the
 * code blocks marked SIA-B, SIA-D, and SIA-F below.  Those blocks are
 * marked "(User may change)".
-*
 *
 ********************************************************************************
 * Code Block: SIA-A                                              (Do not change)
@@ -32,11 +32,37 @@ macro drop _all
 *                  Specify input/output folders & analysis name
 *-------------------------------------------------------------------------------
 
+* Where have you saved the VCQI Stata source code?
+
+* global S_VCQI_SOURCE_CODE_FOLDER      C:/Users/Dale/Dropbox (Biostat Global)/DAR GitHub Repos/vcqi-stata-bgc
+
+* We recommend that VCQI Users establish the global S_VCQI_SOURCE_CODE_FOLDER
+* in the profile.do program that lives in your Stata personal folder.
+* (Type the command 'personal' to learn the location of what Stata calls 
+*  your personal folder.)
+*
+* Alternatively, you may uncomment the line of code above and set the 
+* global here.  Make its value the path to the folder that holds your 
+* current VCQI source folders.
+
+* Note that the S_VCQI_SOURCE_CODE_FOLDER global is used in the six 
+* lines of code below
+
+adopath + "${S_VCQI_SOURCE_CODE_FOLDER}/DESC"
+adopath + "${S_VCQI_SOURCE_CODE_FOLDER}/DIFF"
+adopath + "${S_VCQI_SOURCE_CODE_FOLDER}/LIBRARY"
+adopath + "${S_VCQI_SOURCE_CODE_FOLDER}/PLOT"
+adopath + "${S_VCQI_SOURCE_CODE_FOLDER}/RI"
+adopath + "${S_VCQI_SOURCE_CODE_FOLDER}/SIA"
+adopath + "${S_VCQI_SOURCE_CODE_FOLDER}/TT"
+
+vcqi_adopath_check
+
 * Where should the programs look for datasets?
-global VCQI_DATA_FOLDER    Q:/- Folders shared outside BGC/BGC Team - WHO Software/Test datasets/2016-02-24
+global VCQI_DATA_FOLDER    Q:/- Folders shared outside BGC/BGC Team - WHO Software/Test datasets/2020-10-16
 
 * Where should the programs put output?
-global VCQI_OUTPUT_FOLDER     Q:/- Folders shared outside BGC/BGC Team - WHO Software/Working folder - Dale/VCQI test output
+global VCQI_OUTPUT_FOLDER  Q:/- Folders shared outside BGC/BGC Team - WHO Software/Working folder - Dale/VCQI test output/SIA test
 
 * Establish analysis name (used in log file name and Excel file name)
 
@@ -51,9 +77,11 @@ global	VCQI_CHECK_INSTEAD_OF_RUN		0
 ********************************************************************************
 * Code Block: SIA-C                                              (Do not change)
 *-------------------------------------------------------------------------------
-*                  CD to output folder & open VCQI log
+*                  Put VCQI in the Stata Path and
+*                CD to output folder & open VCQI log
 *-------------------------------------------------------------------------------
 
+* CD to the output folder and start the log 
 cd "${VCQI_OUTPUT_FOLDER}"
 
 * Start with a clean, empty Excel file for tabulated output (TO)
@@ -142,6 +170,7 @@ vcqi_global VCQI_LEVEL4_SET_LAYOUT ${VCQI_DATA_FOLDER}/VCQI_LEVEL4_SET_LAYOUT_ur
 vcqi_global SHOW_LEVEL_1_ALONE         0
 vcqi_global SHOW_LEVEL_2_ALONE         0
 vcqi_global SHOW_LEVEL_3_ALONE         0 
+vcqi_global SHOW_LEVEL_4_ALONE         0
 vcqi_global SHOW_LEVELS_2_3_TOGETHER   0
 
 vcqi_global SHOW_LEVELS_1_4_TOGETHER   1
@@ -150,6 +179,9 @@ vcqi_global SHOW_LEVELS_3_4_TOGETHER   0
 vcqi_global SHOW_LEVELS_2_3_4_TOGETHER 1
 
 vcqi_global SHOW_BLANKS_BETWEEN_LEVELS 1
+
+* User specifies the Stata svyset syntax to describe the complex sample
+vcqi_global VCQI_SVYSET_SYNTAX svyset clusterid, strata(stratumid) weight(psweight) singleunit(scaled)
 
 * User specifies the method for calculating confidence intervals
 * Valid choices are LOGIT, WILSON, JEFFREYS or CLOPPER; our default 
@@ -161,19 +193,34 @@ vcqi_global VCQI_CI_METHOD WILSON
 
 vcqi_global EXPORT_TO_EXCEL 				1
 
-* The code to format excel is a little slow, so give an option to turn it off
-* when debugging (usually 1)
+* Specify if you would like the excel columns to be narrow in Tabulated output
+* Set to 1 for yes - The code to do this is a little slow
+vcqi_global MAKE_EXCEL_COLUMNS_NARROW 		1
 
-vcqi_global FORMAT_EXCEL    				1
+* User specifies the number of digits after the decimal place in coverage
+* outcome tables and plots
+
+vcqi_global VCQI_NUM_DECIMAL_DIGITS			1
 
 * Specify whether the code should make plots, or not (usually 1)
 
 * MAKE_PLOTS must be 1 for any plots to be made
 vcqi_global MAKE_PLOTS      				1
 
+* Set PLOT_OUTCOMES_IN_TABLE_ORDER to 1 if you want inchworm and 
+* unweighted plots to list strata in the same order as the tables;
+* otherwise the strata will be sorted by the outcome and shown in
+* bottom-to-top order of increasing indicator performance
+vcqi_global PLOT_OUTCOMES_IN_TABLE_ORDER 	1
+
 * Make inchworm plots? Set to 1 for yes.
 vcqi_global VCQI_MAKE_IW_PLOTS				1
 vcqi_global VCQI_MAKE_LEVEL2_IWPLOTS		0
+
+* IWPLOT_SHOWBARS = 0 means show inchworm distributions
+* IWPLOT_SHOWBARS = 1 means show horizontal bars instead of inchworms
+
+vcqi_global IWPLOT_SHOWBARS					1
 
 * Make unweighted sample proportion plots? Set to 1 for yes.
 vcqi_global VCQI_MAKE_UW_PLOTS				1
@@ -209,14 +256,20 @@ vcqi_global SAVE_VCQI_GPH_FILES				1
 * If you want to save the databased, change the value to 0.
 * (Usually 1)
 
-vcqi_global DELETE_VCQI_DATABASES_AT_END	1
+vcqi_global DELETE_VCQI_DATABASES_AT_END	0
 
 * Specify whether the code should delete intermediate datasets 
 * at the end of the analysis (Usually 1)
 * If you wish to keep them for additional analysis or debugging,
 * set the option to 0.
 
-vcqi_global DELETE_TEMP_VCQI_DATASETS		1
+vcqi_global DELETE_TEMP_VCQI_DATASETS		0
+
+* Set this global to 1 if you would like to create an augmented dataset
+* that merges survey dataset with derived variables calculated by VCQI.
+* Default value is 0 (no)
+
+vcqi_global VCQI_MAKE_AUGMENTED_DATASET		1
 
 ********************************************************************************
 * Code Block: SIA-E                                              (Do not change)
@@ -283,72 +336,46 @@ vcqi_global DESC_02_WEIGHTED	NO
 vcqi_global DESC_02_DENOMINATOR	ALL
 
 vcqi_global DESC_02_TO_TITLE 	 Child was here when campaign happened
-* Clear out the SUBTITLE in case it was previously used.
+* No subtitle
 vcqi_global DESC_02_TO_SUBTITLE
 * Remember that DESC_02 automatically assigns two footnotes, so if you
 * want to include another, start with the number 3.
 * We are not using it here, but clear it out in case it was used earlier.
 vcqi_global DESC_02_TO_FOOTNOTE_3 
-	
-DESC_02
+DESC_02, cleanup
 
 * How did people hear about the campaign?
+vcqi_global DESC_02_DATASET 	SIA
 vcqi_global DESC_02_VARIABLES	SIA18
+vcqi_global DESC_02_WEIGHTED	NO
+vcqi_global DESC_02_DENOMINATOR	ALL
 
 vcqi_global DESC_02_TO_TITLE 	 Sources of information about the campaign
-* Clear out the SUBTITLE in case it was previously used.
+* No subtitle and no extra footnotes
 vcqi_global DESC_02_TO_SUBTITLE
-* Remember that DESC_02 automatically assigns two footnotes, so if you
-* want to include another, start with the number 3.
-* We are not using it here, but clear it out in case it was used earlier.
 vcqi_global DESC_02_TO_FOOTNOTE_3 
-
-DESC_02
+DESC_02, cleanup
 
 * If the child did not receive the vaccine, why?
+vcqi_global DESC_02_DATASET 	SIA
 vcqi_global DESC_02_VARIABLES	SIA25
+vcqi_global DESC_02_WEIGHTED	NO
+vcqi_global DESC_02_DENOMINATOR	ALL
 
 vcqi_global DESC_02_TO_TITLE 	 Reasons for non-vaccination in the campaign
-* Clear out the SUBTITLE in case it was previously used.
+* No subtitle and no extra footnotes
 vcqi_global DESC_02_TO_SUBTITLE
-* Remember that DESC_02 automatically assigns two footnotes, so if you
-* want to include another, start with the number 3.
-* We are not using it here, but clear it out in case it was used earlier.
 vcqi_global DESC_02_TO_FOOTNOTE_3 
+DESC_02, cleanup
 
-DESC_02
-
-* Had they already received a dose before the campaign?
-
-* Do a weighted estimate, and generate a subtotal variable
-* to summarize the two 'yes' answers.
-vcqi_global DESC_02_VARIABLES			SIA27
-vcqi_global DESC_02_WEIGHTED			YES
-vcqi_global DESC_02_N_SUBTOTALS			1
-vcqi_global	DESC_02_SUBTOTAL_LEVELS_1	1 2
-vcqi_global DESC_02_SUBTOTAL_LABEL_1	Yes
-
-vcqi_global DESC_02_TO_TITLE 	 Received the vaccine before the campaign
-* Clear out the SUBTITLE in case it was previously used.
-vcqi_global DESC_02_TO_SUBTITLE
-* Remember that DESC_02 automatically assigns two footnotes, so if you
-* want to include another, start with the number 3.
-* We are not using it here, but clear it out in case it was used earlier.
-vcqi_global DESC_02_TO_FOOTNOTE_3 
-
-DESC_02
-* Reset the SUBTOTALS globals
-vcqi_global DESC_02_N_SUBTOTALS	
-vcqi_global DESC_02_SUBTOTAL_LEVELS_1 
-vcqi_global DESC_02_SUBTOTAL_LABEL_1 
-
-* Run the four SIA analyses
+* Run the SIA coverage analyses
 
 vcqi_global SIA_COVG_01_TO_TITLE       Vaccinated During SIA
 vcqi_global SIA_COVG_01_TO_SUBTITLE
 	
 vcqi_global SIA_COVG_01_TO_FOOTNOTE_1  Abbreviations: CI=Confidence Interval; LCB=Lower Confidence Bound; UCB=Upper Confidence Bound; DEFF=Design Effect; ICC=Intracluster Correlation Coefficient
 vcqi_global SIA_COVG_01_TO_FOOTNOTE_2  Note: This measure is a population estimate that incorporates survey weights.  The CI, LCB and UCB are calculated with software that take the complex survey design into account.
+vcqi_global SORT_PLOT_LOW_TO_HIGH 1 // 1=sort proportions on plot low at bottom to high at top; 0 is the opposite
 
 SIA_COVG_01
 
@@ -357,6 +384,7 @@ vcqi_global SIA_COVG_02_TO_SUBTITLE
 	
 vcqi_global SIA_COVG_02_TO_FOOTNOTE_1  Abbreviations: CI=Confidence Interval; LCB=Lower Confidence Bound; UCB=Upper Confidence Bound; DEFF=Design Effect; ICC=Intracluster Correlation Coefficient
 vcqi_global SIA_COVG_02_TO_FOOTNOTE_2  Note: This measure is a population estimate that incorporates survey weights.  The CI, LCB and UCB are calculated with software that take the complex survey design into account.
+vcqi_global SORT_PLOT_LOW_TO_HIGH 1 // 1=sort proportions on plot low at bottom to high at top; 0 is the opposite
 
 SIA_COVG_02
 
@@ -374,11 +402,77 @@ vcqi_global SIA_COVG_03_TO_FOOTNOTE_1  Abbreviations: CI=Confidence Interval; LC
 vcqi_global SIA_COVG_03_TO_FOOTNOTE_2  Note: This measure is a population estimate that incorporates survey weights. 
 
 SIA_COVG_03
+
+* Vaccinated During SIA, Stratified by Number of Prior Doses 
+
+* Indicate if the questionnaire yielded variables that record only one  
+* opportunity for a prior dose (SINGLE) or multiple opportunities (PLURAL)
+
+* If not populated, default value of PLURAL will be used
+vcqi_global PRIOR_SIA_DOSE_MAX			PLURAL 
+
+vcqi_global SIA_COVG_04_TO_TITLE      	Vaccinated During SIA, Stratified by Number of Prior Doses 
+vcqi_global SIA_COVG_04_TO_SUBTITLE
 	
+vcqi_global SIA_COVG_04_TO_FOOTNOTE_1  Abbreviations: CI=Confidence Interval
+vcqi_global SIA_COVG_04_TO_FOOTNOTE_2  Note: This measure is a population estimate that incorporates survey weights. The CI is calculated with software that takes the complex survey design into account.
+
+SIA_COVG_04	
+
+* Identify clusters with alarmingly low coverage for SIA dose
+
+* Specify whether to make one table listing only the clusters with low 
+* coverage (ONLY_LOW_CLUSTERS)
+* or to make one table per stratum, listing all clusters and highlighting
+* those with low coverage (ALL_CLUSTERS)
+vcqi_global SIA_COVG_05_TABLES ALL_CLUSTERS
+
+* Specify whether alarmingly low coverage is defined by an absolute
+* number of respondents vaccinated (COUNT) or by percent of respondents
+* in the cluster (PERCENT)
+vcqi_global SIA_COVG_05_THRESHOLD_TYPE COUNT
+
+* Specify the threshold that defines alarmingly low 
+* A count, like 0, 1, 2 if the THRESHOLD_TYPE is COUNT
+* A percent 0 up to 100 if the THRESHOLD_TYPE is PERCENT
+
+* Clusters whose coverage is <= the threshold will be flagged 
+* as having alarmingly low coverage.
+vcqi_global SIA_COVG_05_THRESHOLD 5
+
+* Establish FOOTNOTE_1 and _2, depending on the values of the global macros 
+* SIA_COVG_05_TABLES and THRESHOLD_TYPE
+*
+* Note that we use these two globals here without checking for valid values.
+* If their values are not valid, the program SIA_COVG_05 below will stop with
+* an error *before* these footnotes are used in any tables.
+
+if "`=upper("$SIA_COVG_05_TABLES")'" == "ALL_CLUSTERS" ///
+	vcqi_global SIA_COVG_05_TO_FOOTNOTE_1 Note: Shaded rows have alarmingly low coverage for SIA dose.
+
+if "`=upper("$SIA_COVG_05_TABLES")'" == "ONLY_LOW_CLUSTERS" ///
+	vcqi_global SIA_COVG_05_TO_FOOTNOTE_1 Note: Each row has alarmingly low coverage for SIA dose.
+
+if "`=upper("$SIA_COVG_05_THRESHOLD_TYPE")'" == "COUNT" ///
+	local criterion_string N who received SIA dose <= ${SIA_COVG_05_THRESHOLD}
+
+if "`=upper("$SIA_COVG_05_THRESHOLD_TYPE")'" == "PERCENT" ///
+	local criterion_string the weighted % who received SIA dose <= ${SIA_COVG_05_THRESHOLD}%
+
+vcqi_global SIA_COVG_05_TO_FOOTNOTE_2 In this table, alarmingly low means: `criterion_string'.
+
+* Note that the worksheet title is built by the indicator and not specified 
+* by the user.
+* Note also the indicator builds footnotes 1 and 2, so the first 
+* user-specified footnote would be #3. 
+vcqi_global SIA_COVG_05_TO_FOOTNOTE_3
+
+SIA_COVG_05
+
 vcqi_global SIA_QUAL_01_TO_TITLE    Vaccinated Respondent Received SIA Card
 vcqi_global SIA_QUAL_01_TO_SUBTITLE
-	
 vcqi_global SIA_QUAL_01_TO_FOOTNOTE_1  Note: This measure is an unweighted summary of a proportion from the survey sample.
+vcqi_global SORT_PLOT_LOW_TO_HIGH 1 // 1=sort proportions on plot low at bottom to high at top; 0 is the opposite
 
 SIA_QUAL_01
 
@@ -403,8 +497,8 @@ vcqi_global COVG_DIFF_01_ANALYSIS_COUNTER 1
 
 vcqi_global COVG_DIFF_01_ID_OR_NAME NAME
 
-vcqi_global COVG_DIFF_01_STRATUM_NAME1 UPPER PROVINCE
-vcqi_global COVG_DIFF_01_STRATUM_NAME2 LOWER PROVINCE
+vcqi_global COVG_DIFF_01_STRATUM_NAME1 NORTHERN PROVINCE
+vcqi_global COVG_DIFF_01_STRATUM_NAME2 SOUTHERN PROVINCE
 
 vcqi_global COVG_DIFF_01_INDICATOR SIA_COVG_01
 vcqi_global COVG_DIFF_01_VARIABLE got_sia_dose
@@ -415,11 +509,11 @@ COVG_DIFF_01
 
 ***********************
 * SIA is first dose coverage is equal between two districts:
-* Rosebud and Dongolocking
+* District 01 versus 09
 
 vcqi_global COVG_DIFF_01_STRATUM_LEVEL 3
-vcqi_global COVG_DIFF_01_STRATUM_NAME1 Rosebud
-vcqi_global COVG_DIFF_01_STRATUM_NAME2  Dongolocking
+vcqi_global COVG_DIFF_01_STRATUM_NAME1 District 01
+vcqi_global COVG_DIFF_01_STRATUM_NAME2  District 09
 
 vcqi_global COVG_DIFF_01_ID_OR_NAME NAME
 
@@ -450,12 +544,12 @@ vcqi_global COVG_DIFF_02_TO_FOOTNOTE_1 Abbreviations: CI = Confidence Interval
 COVG_DIFF_02
 
 * ---------------------------------------------------
-* campaign card coverage is equal between urban and rural in the Lower Province
+* campaign card coverage is equal between urban and rural in the Southern Province
 
 vcqi_global COVG_DIFF_02_ID_OR_NAME name
 vcqi_global COVG_DIFF_02_STRATUM_LEVEL 2
 
-vcqi_global COVG_DIFF_02_STRATUM_NAME lower province
+vcqi_global COVG_DIFF_02_STRATUM_NAME Southern Province
 
 vcqi_global COVG_DIFF_02_INDICATOR SIA_QUAL_01
 vcqi_global COVG_DIFF_02_ANALYSIS_COUNTER 1
@@ -474,6 +568,10 @@ COVG_DIFF_02
 *                  Exit gracefully
 *-------------------------------------------------------------------------------
 *
+* Make augmented dataset for additional anaylsis purposes if user requests it.
+
+if "$VCQI_MAKE_AUGMENTED_DATASET"=="1" & "$VCQI_CHECK_INSTEAD_OF_RUN" != "1" make_SIA_augmented_dataset, noidenticaldupes
+*
 * Close the datasets that hold the results of 
 * hypothesis tests, and put them into the output spreadsheet
 *
@@ -485,3 +583,33 @@ COVG_DIFF_02
 
 vcqi_cleanup
 
+********************************************************************************
+
+$VCQI____END_OF_PROGRAM
+
+* Output to the log window is suppressed by the command $VCQI____END_OF_PROGRAM
+* (which is an alias for "set output error")
+
+* So this change log in block H will not appear when the user runs VCQI
+
+********************************************************************************
+* Code Block: SIA-H                                              (Do not change)
+*-------------------------------------------------------------------------------
+* Change log 
+* 				Updated 
+*				version 
+* Date 			number 	Name			What Changed 
+* 2020-01-16	1.00	Dale Rhoda		Version as of 2020-01-16
+* 2020-04-09	1.01	Dale Rhoda		Add VCQI____END_OF_PROGRAM to 
+*                                       suppress showing this change log
+*                                       in the VCQI log window after showing
+*                                       the VCQI ASCCI art.
+* 2020-12-09	1.02	Dale Rhoda		Allow the user to plot strata in table order
+* 2020-12-12	1.03	Dale Rhoda		Allow user to SHOW_LEVEL_4_ONLY
+*                                       and update test dataset to 2020-10-16
+*                                       which is Harmonia instead of 
+*                                       Sassafrippi
+******************************************************************************** 
+
+* turn on normal output to the log window again
+set output proc

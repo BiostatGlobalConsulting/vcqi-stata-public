@@ -26,7 +26,7 @@ program define RI_CONT_01_04GO
 			make_unwtd_output_database, measureid(RI_CONT_01) vid(`d1'_`d2') var(dropout_`d1'_`d2') estlabel(`=upper("`d1'")'-`=upper("`d2'")' Dropout (%))
 
 		}
-		noi di ""
+		noi di as text ""
 	}
 	vcqi_log_comment $VCP 5 Flow "Exiting"
 	global VCP `oldvcp'

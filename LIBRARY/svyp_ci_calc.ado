@@ -1,4 +1,4 @@
-*! svyp_ci_calc version 1.11 - Biostat Global Consulting - 2017-08-26
+*! svyp_ci_calc version 1.14 - Biostat Global Consulting - 2020-05-25
 *******************************************************************************
 * Change log
 * 				Updated
@@ -40,6 +40,21 @@
 *										around when p-hat is near 0 or 1
 *
 * 2017-08-26	1.11	Mary Prier		Added version 14.1 line
+*
+* 2018-05-13	1.12	Dale Rhoda		Only set neff to N if p-hat is 0 or 1
+*                                       out to 7 digits (increased from 3)
+*
+* 2020-04-22	1.13	Dale Rhoda		Use Clopper-Pearson if the stderr is 0
+*                                       unless the users asked for Jeffreys
+*                                       or Agresti or Fleiss.
+*
+*                                       Also, allow the name 'Exact' as a 
+*                                       synonym for Clopper-Pearson
+* 
+* 2020-05-25	1.14	Dale Rhoda		Wilson is okay if stderr is 0 if
+*                                       the user adjusts and truncates, so
+*                                       do NOT change it to Clopper-Pearson
+*
 *-------------------------------------------------------------------------------
 
 program define svyp_ci_calc, rclass	
@@ -111,12 +126,19 @@ program define svyp_ci_calc, rclass
 		* Make sure method is valid
 		
 		local method = proper("`method'")
-		if !inlist("`method'","Wald","Wilson","Clopper","Clopper-Pearson") & ///
+		if !inlist("`method'","Wald","Wilson","Clopper","Clopper-Pearson", "Exact") & ///
 		   !inlist("`method'","Jeffreys","Agresti","Agresti-Coull","Logit") & ///
-		   !inlist("`method'","Arcsine","Fleiss","Wilsoncc","Anscombe") 	{
-			noi display as error                  "The method option must be either Wald, Wilson, Clopper, Clopper-Pearson, Jeffreys, Agresti, Agresti-Coull, Logit, Fleiss or Wilsoncc"
+		   !inlist("`method'","Fleiss","Wilsoncc") 	{
+		   	
+			noi display as error                  "The method option must be either Wald, Wilson, Clopper, Clopper-Pearson, Exact, Jeffreys, Agresti, Agresti-Coull, Logit, Fleiss or Wilsoncc"
+						
+			* This program is used in the innermost loop of a World Health Organization software suite
+			* named the Vaccination Coverage Quality Indicators (VCQI).  If the routine was called
+			* as part of VCQI, then the global VCQI_LOGOPEN will be set to 1.  In that case, also
+			* direct an error message to the VCQI log and exit VCQI.  Otherwise, exit whatever program 
+			* called this one with an invalid method option.
 			if "$VCQI_LOGOPEN" == "1" {
-				vcqi_log_comment svypd 1 Error "The method option must be either Wald, Wilson, Clopper, Clopper-Pearson, Jeffreys, Agresti, Agresti-Coull, Logit, Fleiss, or Wilsoncc"
+				vcqi_log_comment svypd 1 Error "The method option must be either Wald, Wilson, Clopper, Clopper-Pearson, Exact, Jeffreys, Agresti, Agresti-Coull, Logit, Fleiss, or Wilsoncc"
 				vcqi_halt_immediately
 			}
 			else exit 99
@@ -126,6 +148,7 @@ program define svyp_ci_calc, rclass
 		
 		if "`level'" != "" & "`cilevellist'" != "" {
 			noi display as error "For svy_ci_calculator: specify LEVEL or CILEVELLIST, but not both"
+			* Ditto...send an error message to the VCQI log, if appropriate
 			if "$VCQI_LOGOPEN" == "1" {
 				vcqi_log_comment svypd 1 Error "For svy_ci_calculator: specify LEVEL or CILEVELLIST, but not both"
 				vcqi_halt_immediately
@@ -170,13 +193,15 @@ program define svyp_ci_calc, rclass
 		gen double se      = `stderr'
 		gen double n       = `n'
 		
-		local pstring  = strofreal(`p',     "%5.3f")
-		local sestring = strofreal(`stderr',"%5.3f")
-		
+		local pstring  = strofreal(`p',     "%9.7f")
+		local sestring = strofreal(`stderr',"%9.7f")
+				
 		gen double neff = pqhat / se^2
 		
-		if ("`pstring'"  == "1.000" | "`pstring'" == "0.000" | ///
-			"`sestring'" == "0.000" ) replace neff = n
+		* If phat is 0 or 1 to seven digits or if stderr is 0 to seven digits
+		* then we have homogeneity; set neff to n
+		if ("`pstring'"  == "1.0000000" | "`pstring'" == "0.0000000" | ///
+			"`sestring'" == "0.0000000" ) replace neff = n
 						
 		gen double df_N  = round(n,1)
 		
@@ -185,25 +210,26 @@ program define svyp_ci_calc, rclass
 		
 		gen double DEFF = (df_N-1) / neff
 		
-		replace DEFF = 1 if abs(DEFF-1) < 0.00001		
-		
+		if ("`pstring'"  == "1.0000000" | "`pstring'" == "0.0000000" | ///
+			"`sestring'" == "0.0000000" ) replace DEFF = 1
+			
 		gen double ao2     = (100 - level) / 100 / 2  
 		gen double zao2    = invnormal(1-ao2)
 		gen double acc		 = (zao2^2)/2 // Agresti-Coull c
 		
-		*noi di "df_n = `=df_N[1]'; df = `=df[1]'"
+		*noi di as text "df_n = `=df_N[1]'; df = `=df[1]'"
 		
 		gen double tdfNao2 = invt(df_N-1,1-ao2) // not used here...we would use it if we used the K&G 1998 neff
 		gen double tddfao2 = invt(df,1-ao2)
 		
-		*noi di "t1 = `=tdfNao2[1]'; t2 = `=tddfao2[1]'"
+		*noi di as text "t1 = `=tdfNao2[1]'; t2 = `=tddfao2[1]'"
 			
 		* Adjust the Neff if user has specifed the adjust option 
 		if "`adjust'" != ""  {
-			*noi di "neff = `=neff[1]'"
+			*noi di as text "neff = `=neff[1]'"
 			qui replace neff = neff * (zao2 / tddfao2)^2 
 			*qui replace neff = neff * (tdfNao2 / tddfao2)^2 // use this line instead of the former line to calculate K&G 1998 neff
-			*noi di "neff = `=neff[1]'"
+			*noi di as text "neff = `=neff[1]'"
 		}
 			
 		* Replace effective sample size with actual sample size if 
@@ -218,21 +244,22 @@ program define svyp_ci_calc, rclass
 		
 		if "`method'" == "Wald" {
 		
-			* If p is 0 or 1, skip the Wald calculation  and go to Clopper-Pearson
-			if real("`p'") == 0 | real("`p'") == 1 local method = "Clopper-Pearson"
+			* If p is 0 or 1 or stderr == 0
+			* skip the Wald calculation  and go to Clopper-Pearson
+			if real("`p'") == 0 | real("`p'") == 1 | real("`stderr'") == 0 local method = "Clopper-Pearson"
 			else {
 				gen lcb_2sided = phat - abs(zao2 * sqrt(pqhat/neff))
 				gen ucb_2sided = phat + abs(zao2 * sqrt(pqhat/neff))
 			}
 		}
 
-
 	********************************************************************************
 	********************************************************************************
 		
 		if "`method'" == "Logit" {
-			* If p is 0 or 1, skip the Logit calculation  and go to Clopper-Pearson
-			if real("`p'") == 0 | real("`p'") == 1 local method = "Clopper-Pearson"
+			* If p is 0 or 1 or stderr == 0
+			* skip the Logit calculation  and go to Clopper-Pearson
+			if real("`p'") == 0 | real("`p'") == 1 | real("`stderr'") == 0 local method = "Clopper-Pearson"
 			else {
 				gen double term1 = ln(phat/(1-phat))
 				gen double term2 = zao2 / sqrt( neff * pqhat )
@@ -252,9 +279,6 @@ program define svyp_ci_calc, rclass
 		
 		if "`method'" == "Wilson" {
 
-			* If p is 0 or 1, skip the Wilson calculation  and go to Clopper-Pearson
-			if real("`p'") == 0 | real("`p'") == 1 local method = "Clopper-Pearson"
-			else {
 				gen double term1 = phat + ((zao2)^2)/(2*neff)
 				gen double term2 = zao2 * sqrt((pqhat/neff) + ((zao2)^2)/((2*neff)^2))
 				gen double term3 = 1 + ((zao2)^2)/neff
@@ -263,7 +287,6 @@ program define svyp_ci_calc, rclass
 				gen double ucb_2sided = (term1 + term2) / term3
 
 				drop term1 term2 term3
-			}
 		}
 
 	********************************************************************************
@@ -298,6 +321,7 @@ program define svyp_ci_calc, rclass
 			gen double ucb_2sided = ptilde + zao2 * sqrt( pqtilde / ntilde )
 
 			drop xtilde ntilde ptilde pqtilde
+
 		}
 
 	********************************************************************************
@@ -325,11 +349,13 @@ program define svyp_ci_calc, rclass
 	********************************************************************************
 	********************************************************************************
 
-		if inlist("`method'", "Clopper-Pearson", "Clopper") {
+		if inlist("`method'", "Clopper-Pearson", "Clopper", "Exact") {
 		
-			* If the sample proportion is 0 or 1, consider the 
-			* effective sample size to be equal to the actual sample size
-			if real("`p'") == 0 | real("`p'") == 1 qui replace neff = n
+			* If the sample proportion is 0 or 1, 
+			* or if the standard error is zero (meaning all clusters have the same observed proportion)
+			* then consider the effective sample size to be equal to the actual sample size
+			if real("`p'") == 0 | real("`p'") == 1 | real("`stderr'") == 0 qui replace neff = n
+			if real("`p'") == 0 | real("`p'") == 1 | real("`stderr'") == 0 qui replace DEFF = 1
 
 			gen double  x = phat*neff
 			gen double v1 = 2*x
@@ -384,6 +410,8 @@ program define svyp_ci_calc, rclass
 		
 		return local method = "`method'"
 		
+		return scalar neff = neff[1]
+		
 		return scalar deff = DEFF[1]
 		return scalar df   = df[1]
 		return local cilevellist = "`cilevellist'"
@@ -403,7 +431,7 @@ program define svyp_ci_calc, rclass
 		
 		return scalar stderr = `stderr'
 			
-		*noi di "svyp: " string(`p',"%5.3f") ///
+		*noi di as text "svyp: " string(`p',"%5.3f") ///
 		*   " (" string(ci_list[1,2],"%5.3f")	///
 		*   "-"   string(ci_list[1,3],"%5.3f") ")"  ///
 		*   " Level: `lvl'  `method'"
@@ -411,7 +439,7 @@ program define svyp_ci_calc, rclass
 		return scalar svyp = `svyp'
 
 		return matrix ci_list   = ci_list
-		
+				
 		restore
 	}
 end

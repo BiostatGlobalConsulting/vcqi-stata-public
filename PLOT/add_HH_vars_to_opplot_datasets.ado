@@ -19,7 +19,7 @@ program define add_HH_vars_to_opplot_datasets
 	
 		local exitflag 0 
 		
-		*noi di "Adding stratum and cluster names to organ pipe plot data files"
+		*noi di as text "Adding stratum and cluster names to organ pipe plot data files"
 		
 		cd "$VCQI_OUTPUT_FOLDER"
 		local folder_exists `: dir . dirs "Plots_OP"'

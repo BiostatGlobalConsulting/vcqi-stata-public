@@ -1,4 +1,4 @@
-*! RI_QUAL_07_01PP version 1.03 - Biostat Global Consulting - 2017-08-26
+*! RI_QUAL_07_01PP version 1.04 - Biostat Global Consulting - 2019-11-08
 *******************************************************************************
 * Change log
 * 				Updated
@@ -7,6 +7,7 @@
 * 2016-02-12	1.01	Dale Rhoda		Make list of temp datasets 
 * 2017-01-31	1.02	Dale Rhoda		Added VCQI_LEVEL4_SET_VARLIST
 * 2017-08-26	1.03	Mary Prier		Added version 14.1 line
+* 2019-11-08	1.04	Dale Rhoda		Introduced MOV_OUTPUT_DOSE_LIST
 *******************************************************************************
 
 program define RI_QUAL_07_01PP
@@ -29,7 +30,7 @@ program define RI_QUAL_07_01PP
 		drop _merge
 
 		local dlist	
-		foreach d in $RI_DOSE_LIST {
+		foreach d in $MOV_OUTPUT_DOSE_LIST {
 			local dlist `dlist' got_valid_`d'_to_analyze flag_uncor_mov_`d'_`vc'
 		}
 

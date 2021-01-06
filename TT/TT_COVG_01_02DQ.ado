@@ -1,4 +1,4 @@
-*! TT_COVG_01_02DQ version 1.02 - Biostat Global Consulting - 2017-08-26
+*! TT_COVG_01_02DQ version 1.03 - Biostat Global Consulting - 2018-05-31
 *******************************************************************************
 * Change log
 * 				Updated
@@ -6,6 +6,7 @@
 * Date 			number 	Name			What Changed
 * 2017-02-03	1.01	Dale Rhoda		Cosmetic changes
 * 2017-08-26	1.02	Mary Prier		Added version 14.1 line
+* 2018-05-31	1.03	Dale Rhoda		TT39 must be > 0 to represent 1+ doses
 *******************************************************************************
 
 program define TT_COVG_01_02DQ
@@ -34,7 +35,7 @@ program define TT_COVG_01_02DQ
 		local dropthis = r(N)
 		if r(N) > 0 vcqi_log_comment $VCP 2 Warning "No TT dates on card for `dropthis' out of `bigN' records."
 
-		* no info in doses in index pregnancy
+		* no info on doses in index pregnancy
 		count if !inlist(TT37,0,1,2,3,99) & TT36 == 1
 		local dropthis = r(N)
 		if r(N) > 0 vcqi_log_comment $VCP 2 Warning "No info on # of doses during index pregnancy for `dropthis' out of `bigN' records."
@@ -50,16 +51,16 @@ program define TT_COVG_01_02DQ
 		if r(N) > 0 vcqi_log_comment $VCP 2 Warning "No info on # of doses outside pregnancy `dropthis' out of `bigN' records."
 
 		* women whose history says they got 1+ doses
-		count if (inlist(TT37,1,2,3) |(!missing(TT39) & TT39 < 99) | inlist(TT41,1,2,3,4,5,6,7))
+		count if (inlist(TT37,1,2,3) | (TT39 > 0 & TT39 < 99) | inlist(TT41,1,2,3,4,5,6,7))
 		local bigN = r(N)
 		
 		* years since last TT dose is missing, but they got 1+ doses
-		count if (missing(TT42) | TT42 == 98 | TT42 == 99) & (inlist(TT37,1,2,3) | (!missing(TT39) & TT39 < 99) | inlist(TT41,1,2,3,4,5,6,7))
+		count if (missing(TT42) | TT42 == 98 | TT42 == 99) & (inlist(TT37,1,2,3) | (TT39 > 0 & TT39 < 99) | inlist(TT41,1,2,3,4,5,6,7))
 		local dropthis = r(N)
 		if r(N) > 0 vcqi_log_comment $VCP 2 Warning "Years since last TT is not set for `dropthis' out of `bigN' respondents who got 1+ doses."
 		
 		* years since last TT dose should be no higher than the woman's age	
-		count if (TT42 > TT16 & TT42 != 99 & !missing(TT42) & !missing(TT16)) & (inlist(TT37,1,2,3) | (!missing(TT39) & TT39 < 99) | inlist(TT41,1,2,3,4,5,6,7))
+		count if (TT42 > TT16 & TT42 != 99 & !missing(TT42) & !missing(TT16)) & (inlist(TT37,1,2,3) | (TT39 > 0 & TT39 < 99) | inlist(TT41,1,2,3,4,5,6,7))
 		local dropthis = r(N)
 		if r(N) > 0 vcqi_log_comment $VCP 2 Warning "Years since last dose is > age for `dropthis' out of `bigN' records who got 1+ doses."
 		

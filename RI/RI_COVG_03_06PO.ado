@@ -1,4 +1,4 @@
-*! RI_COVG_03_06PO version 1.09 - Biostat Global Consulting - 2017-08-26
+*! RI_COVG_03_06PO version 1.11 - Biostat Global Consulting - 2020-12-16
 *******************************************************************************
 * Change log
 * 				Updated
@@ -17,6 +17,9 @@
 * 2016-05-16	1.08	Dale Rhoda		Tell user how many inchworm plots
 *										will be made
 * 2017-08-26	1.09	Mary Prier		Added version 14.1 line
+* 2019-10-13	1.10	Dale Rhoda		Supress double-inchworms if user requests bars
+* 2020-12-16	1.11	Cait Clary		Allow double inchworms when showbars=1 then 
+* 										reset IWPLOT_SHOWBARS global
 *******************************************************************************
 
 program define RI_COVG_03_06PO
@@ -33,7 +36,7 @@ program define RI_COVG_03_06PO
 		
 		if "$VCQI_MAKE_OP_PLOTS" == "1" {
 		
-			noi di _col(5) "Organ pipe plots"
+			noi di as text _col(5) "Organ pipe plots"
 
 			capture mkdir Plots_OP
 			
@@ -88,18 +91,18 @@ program define RI_COVG_03_06PO
 					if $VCQI_SAVE_OP_PLOT_DATA ///
 						local savedata savedata(Plots_OP/RI_COVG_03_${ANALYSIS_COUNTER}_opplot_`abbrev'_`opp_stratum_id_`i''_`opp_stratum_name_`i'')			
 					
-					opplot `v'  , clustvar(clusterid) weightvar(psweight) ///
+					opplot `v'  , clustvar(clusterid) plotn  weightvar(psweight) ///
 						   stratvar(stratumid) stratum(`=int(`opp_stratum_id_`i'')') ///
 						   title("`opp_stratum_id_`i'' - `opp_stratum_name_`i''") ///
 						   subtitle(`quote'"`subtitle'"`quote') ///
-						   barcolor1(ltblue) `savegph' `savedata' ///
-						   export (Plots_OP/RI_COVG_03_${ANALYSIS_COUNTER}_opplot_`abbrev'_`opp_stratum_id_`i''_`opp_stratum_name_`i''.png)
+						   barcolor1(vcqi_level3) barcolor2(gs15) `savegph' `savedata' ///
+						   export(Plots_OP/RI_COVG_03_${ANALYSIS_COUNTER}_opplot_`abbrev'_`opp_stratum_id_`i''_`opp_stratum_name_`i''.png)
 					
 					vcqi_log_comment $VCP 3 Comment "Organ pipe plot was created and exported for `opp_stratum_name_`i''."
 
 				}
 			}
-			noi di ""
+			noi di as text ""
 		}
 		
 		********************************
@@ -126,7 +129,7 @@ program define RI_COVG_03_06PO
 				clear
 			}		
 			
-			noi di _col(5) "Inchworm plots (`ppd' plots)"
+			noi di as text _col(5) "Inchworm plots (`ppd' plots)"
 			
 			capture mkdir Plots_IW_UW
 			
@@ -154,7 +157,11 @@ program define RI_COVG_03_06PO
 					title(RI - Fully Vaccinated - Valid) name(RI_COVG_03_${ANALYSIS_COUNTER}_iwplot_fvv)
 				vcqi_log_comment $VCP 3 Comment "Fully vaccinated (valid) plot was created and exported."
 				
-				* fully vaccinated - valid and crude
+				* Fully vaccinated - valid vs. crude
+				
+				* Temporarily set IWPLOT_SHOWBARS to 0 so that the double inchworm plot is generated
+				vcqi_global IWPLOT_SHOWBARS 0
+
 				graph drop _all
 
 				vcqi_to_double_iwplot , database(${VCQI_OUTPUT_FOLDER}/RI_COVG_03_${ANALYSIS_COUNTER}_fvv_database) ///
@@ -167,6 +174,9 @@ program define RI_COVG_03_06PO
 					caption(Gray hollow shape is crude coverage; colored shape is valid coverage, size(vsmall) span) 
 					
 				vcqi_log_comment $VCP 3 Comment "Valid & crude coverage inchworm plot was created and exported."
+
+				* Revert IWPLOT_SHOWBARS back to the user's selection
+				vcqi_global IWPLOT_SHOWBARS $IWPLOT_SHOWBARS_SAVEOPT
 
 				* fully vaccinated by age 1
 				graph drop _all

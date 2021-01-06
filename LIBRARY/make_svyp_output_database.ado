@@ -1,4 +1,4 @@
-*! make_svyp_output_database version 1.07 - Biostat Global Consulting - 2017-08-26
+*! make_svyp_output_database version 1.18 - Biostat Global Consulting - 2020-12-14
 *******************************************************************************
 * Change log
 * 				Updated
@@ -13,6 +13,26 @@
 *										VCQI_LEVEL4_SET_LAYOUT
 * 2017-05-15	1.06	Dale Rhoda		Put stderr in the database
 * 2017-08-26	1.07	Mary Prier		Added version 14.1 line
+* 2018-01-16	1.08	MK Trimner		Added $VCQI_SVYSET_SYNTAX
+* 2018-07-05	1.09	Dale Rhoda		Added adjust to all svypd calls
+* 2018-10-10	1.10	Dale Rhoda		Require some respondents to have 0 or 1
+*										before calling svypd
+* 2019-01-01	1.11	Dale Rhoda		Allow strings in db to be up to 255 chars
+*                                       and added nwtd_est
+* 2019-01-28	1.12	Dale Rhoda		Drop the old icc calculation as it did
+*										not account for variability in weights;
+*										base the icc estimation on output from
+*										the loneway command.
+* 2020-05-11	1.13	Dale Rhoda		Restring level4name before finishing
+*                                       if it is empty
+* 2020-12-01	1.14	Dale Rhoda		Use calcicc instead of loneway; we 
+*                                       want to report negative values of ICC
+*                                       if that's what we observe
+* 2020-12-09	1.15	Dale Rhoda		Tostring the level1-4 names at the end
+* 2020-12-11	1.16	Dale Rhoda		Add truncate to every svypd call
+* 2020-12-12	1.17	Dale Rhoda		Allow user to SHOW_LEVEL_4_ALONE
+* 2020-12-14	1.18	Dale Rhoda		Hard-code cilevel to be 95 for VCQI
+* 										and add variable labels
 *******************************************************************************
 
 program define make_svyp_output_database
@@ -30,55 +50,87 @@ program define make_svyp_output_database
 
 		use "${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}", clear
 
-		svyset clusterid, weight(psweight) strata(stratumid)
+		$VCQI_SVYSET_SYNTAX
 				
 		capture postclose go
-		postfile go level id str30 level4id str30 level4name str30 outcome ///
+		postfile go level id str255 level4id str255 level4name str255 outcome ///
 					double estimate double stderr cilevel double cill ///
 					double ciul double lcb double ucb double deff ///
-					double icc n nwtd double icc2 nclusters using ///
+					double icc n nwtd nclusters nwtd_est using ///
 					"${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}_`vid'_database", replace
 					
 		global VCQI_DATABASES $VCQI_DATABASES `measureid'_${ANALYSIS_COUNTER}_`vid'_database
-							
-		forvalues l = 1/3 {
-			quietly levelsof level`l'id, local(llist)
-			if "${VCQI_SHOW`l'}" == "1" & "`llist'" != "" {
-				foreach i in `llist' {
-					quietly loneway `variable' clusterid if level`l'id == `i'
-					scalar icc2 = r(rho)
-					noi svypd `variable' if level`l'id == `i', method($VCQI_CI_METHOD) 
-					scalar icc = (r(deff) - 1) / ((r(N)/r(clusters)) - 1)
-					post go (`l') (`i') ("") ("") ("`variable'") ///
-							(r(svyp)) (r(stderr)) (r(level)) (r(lb_alpha)) (r(ub_alpha)) ///
-							(r(lb_2alpha)) (r(ub_2alpha)) (r(deff))  ///
-							(icc) (r(N)) (r(Nwtd)) (icc2) (r(clusters))
 
+		local lastl 3
+		if $VCQI_SHOW1 == 0 & $VCQI_SHOW2 == 0 & $VCQI_SHOW3 == 0 & $VCQI_SHOW4 == 1 local lastl 4		
+		
+		forvalues l = 1/`lastl' {
+			
+			* Take over l temporarily if l is 4 and set back to 1
+			* to make the output come out right
+			if `l' != 4 local l_was_4 0
+			else {
+				local l_was_4 1
+				local l 1
+			}
+			
+			quietly levelsof level`l'id, local(llist)
+			if ("${VCQI_SHOW`l'}" == "1" & "`llist'" != "") | (`l_was_4') {
+				foreach i in `llist' {
+				
+					* Only estimate the proportion if some of the respondents have non-missing 0s or 1s
+					count if level`l'id == `i' & inlist(`variable',0,1)
+					
+					if r(N) > 0 {
+
+						*quietly loneway `variable' clusterid if level`l'id == `i'
+						*scalar icc = r(rho)
+						quietly calcicc `variable' clusterid if level`l'id == `i'
+						scalar icc = r(anova_icc)
+						if icc == . {
+							if r(sd_w) == 0 & r(sd_b)  > 0 scalar icc = 1
+							if r(sd_w) == 0 & r(sd_b) == 0 scalar icc = 0
+						}
+						noi svypd `variable' if level`l'id == `i', method($VCQI_CI_METHOD) adjust truncate
+						
+						// Post if l was 1 or 2 or 3, but skip if l was 4
+						if `l_was_4' == 0 ///
+						post go (`l') (`i') ("") ("") ("`variable'") ///
+								(r(svyp)) (r(stderr)) (95) (r(lb_alpha)) (r(ub_alpha)) ///
+								(r(lb_2alpha)) (r(ub_2alpha)) (r(deff))  ///
+								(icc) (r(N)) (r(Nwtd)) (r(clusters)) (`=r(Nwtd)*r(svyp)')
+
+					}
+								
 					* if the user has asked for a stratified analysis, either by
 					* urban/rural or some other stratifier, then calculate the 
-					* coverage results for each sub-stratum within the third
+					* coverage results for each sub-stratum within the current
 					* level strata
 							
-					if "$VCQI_LEVEL4_STRATIFIER" != "" & ( "${SHOW_LEVELS_`l'_4_TOGETHER}" == "1"  | ( inlist(`l',2,3) & "$SHOW_LEVELS_2_3_4_TOGETHER" == "1"  )) {
+					if "$VCQI_LEVEL4_STRATIFIER" != "" & ( "$SHOW_LEVEL_4_ALONE" == "1" | "${SHOW_LEVELS_`l'_4_TOGETHER}" == "1"  | ( inlist(`l',2,3) & "$SHOW_LEVELS_2_3_4_TOGETHER" == "1"  )) {
 					
 						quietly levelsof $VCQI_LEVEL4_STRATIFIER, local(llist4)
 						
 						foreach j in `llist4' {
 						
-							count if level`l'id == `i' & $VCQI_LEVEL4_STRATIFIER == `j'
+							count if level`l'id == `i' & $VCQI_LEVEL4_STRATIFIER == `j' & inlist(`variable',0,1)
 							
 							* only do the calculation and put out the results if there
 							* are respondents in this sub-stratum
 							if r(N) > 0 {
 							
-								quietly loneway `variable' clusterid if level`l'id == `i' & ///
-									$VCQI_LEVEL4_STRATIFIER == `j'
-								scalar icc2 = r(rho)
+								*quietly loneway `variable' clusterid if level`l'id == `i' & $VCQI_LEVEL4_STRATIFIER == `j'
+								*scalar icc = r(rho)
+								quietly calcicc `variable' clusterid if level`l'id == `i' & $VCQI_LEVEL4_STRATIFIER == `j'
+								scalar icc = r(anova_icc)
+								if icc == . {
+									if r(sd_w) == 0 & r(sd_b)  > 0 scalar icc = 1
+									if r(sd_w) == 0 & r(sd_b) == 0 scalar icc = 0
+								}
 
 								noi svypd `variable' if level`l'id == `i' & ///
-									$VCQI_LEVEL4_STRATIFIER == `j', method($VCQI_CI_METHOD)		
+									$VCQI_LEVEL4_STRATIFIER == `j', method($VCQI_CI_METHOD)	adjust truncate	
 								
-								scalar icc =(r(deff) - 1) / ((r(N)/r(clusters)) - 1)
 								* pass along the name and id of the sub-stratum
 								if substr("`: type $VCQI_LEVEL4_STRATIFIER'",1,3) == ///
 										"str" local l4name = "`j'"
@@ -87,14 +139,14 @@ program define make_svyp_output_database
 
 								post go (`l') (`i') ("`j'") ("`l4name'") ///
 									("`variable'") ///
-									(r(svyp)) (r(stderr)) (r(level)) (r(lb_alpha)) (r(ub_alpha)) ///
+									(r(svyp)) (r(stderr)) (95) (r(lb_alpha)) (r(ub_alpha)) ///
 									(r(lb_2alpha)) (r(ub_2alpha)) (r(deff)) ///
-									(icc) (r(N)) (r(Nwtd)) (icc2) (r(clusters))
+									(icc) (r(N)) (r(Nwtd)) (r(clusters)) (`=r(Nwtd)*r(svyp)')
 							}
 						}
 					}
 					
-					if "$VCQI_LEVEL4_SET_VARLIST" != "" & ( "${SHOW_LEVELS_`l'_4_TOGETHER}" == "1"  | ( inlist(`l',2,3) & "$SHOW_LEVELS_2_3_4_TOGETHER" == "1"  )) {
+					if "$VCQI_LEVEL4_SET_VARLIST" != "" & ( "$SHOW_LEVEL_4_ALONE" == "1" | "${SHOW_LEVELS_`l'_4_TOGETHER}" == "1"  | ( inlist(`l',2,3) & "$SHOW_LEVELS_2_3_4_TOGETHER" == "1"  )) {
 						
 						forvalues j = 1/$LEVEL4_SET_NROWS {
 						
@@ -103,27 +155,31 @@ program define make_svyp_output_database
 						
 							if "${LEVEL4_SET_ROWTYPE_`j'}" == "DATA_ROW" {
 						
-								count if level`l'id == `i' & ${LEVEL4_SET_CONDITION_`j'}
+								count if level`l'id == `i' & ${LEVEL4_SET_CONDITION_`j'} & inlist(`variable',0,1)
 								
 								* only do the calculation and put out the results if there
 								* are respondents in this sub-stratum
 								if r(N) > 0 {
 								
-									quietly loneway `variable' clusterid if ///
-										level`l'id == `i' & ${LEVEL4_SET_CONDITION_`j'}
-										
-									scalar icc2 = r(rho)
+									*quietly loneway `variable' clusterid if level`l'id == `i' & ${LEVEL4_SET_CONDITION_`j'}										
+									*scalar icc = r(rho)
+									quietly calcicc `variable' clusterid if level`l'id == `i' & ${LEVEL4_SET_CONDITION_`j'}										
+									scalar icc = r(anova_icc)
+									if icc == . {
+										if r(sd_w) == 0 & r(sd_b)  > 0 scalar icc = 1
+										if r(sd_w) == 0 & r(sd_b) == 0 scalar icc = 0
+									}
 
 									noi svypd `variable' if level`l'id == `i' & ///
-										${LEVEL4_SET_CONDITION_`j'}, method($VCQI_CI_METHOD)		
-									
-									scalar icc =(r(deff) - 1) / ((r(N)/r(clusters)) - 1)
+										${LEVEL4_SET_CONDITION_`j'}, method($VCQI_CI_METHOD) adjust truncate
 
+									if r(svyp) == 1 scalar icc = 0
+									
 									post go (`l') (`i') ("`j'") ("`l4name'") ///
 										("`variable'") ///
-										(r(svyp)) (r(stderr)) (r(level)) (r(lb_alpha)) (r(ub_alpha)) ///
+										(r(svyp)) (r(stderr)) (95) (r(lb_alpha)) (r(ub_alpha)) ///
 										(r(lb_2alpha)) (r(ub_2alpha)) (r(deff)) ///
-										(icc) (r(N)) (r(Nwtd)) (icc2) (r(clusters))
+										(icc) (r(N)) (r(Nwtd)) (r(clusters)) (`=r(Nwtd)*r(svyp)')
 								}
 							}
 							
@@ -133,7 +189,7 @@ program define make_svyp_output_database
 									("`variable'") ///
 									(.) (.) (.) (.) (.) ///
 									(.) (.) (.) ///
-									(.) (.) (.) (.) (.)
+									(.) (.) (.) (.) (.) 
 							}
 
 							if "${LEVEL4_SET_ROWTYPE_`j'}" == "LABEL_ONLY" {
@@ -142,12 +198,16 @@ program define make_svyp_output_database
 									("`variable'") ///
 									(.) (.) (.) (.) (.) ///
 									(.) (.) (.) ///
-									(.) (.) (.) (.) (.)
+									(.) (.) (.) (.) (.) 
 							}	
 						}
 					}
 				}
 			}
+			
+			* Now set l back to 4 if that's its value at the top of the 
+			* loop so we exit the loop gracefully
+			if `l_was_4' local l 4
 		}
 
 		capture postclose go
@@ -167,8 +227,8 @@ program define make_svyp_output_database
 		qui compress
 		
 		label variable estimate `"`estlabel'"'
-		label variable icc  "Estimated from DEFF and m"
-		label variable icc2 "Estimated with loneway command"
+		label variable icc  "Estimated with one-way ANOVA"
+		label variable nwtd_est "(Weighted N) x (Point Estimate)"
 		
 		* bring in level 1 name
 		gen level1id = 1
@@ -229,8 +289,38 @@ program define make_svyp_output_database
 		
 		destring _all, replace
 		
+		capture tostring level1name, replace
+		capture tostring level2name, replace
+		capture tostring level3name, replace
+		capture tostring level4name, replace
+		
 		compress
 
+		capture label variable level1name  "Level1 name"
+		capture label variable level2id    "Level2 ID"
+		capture label variable level2name  "Level2 stratum name"
+		capture label variable level3id    "Level3 ID"
+		capture label variable level3name  "Level3 stratum name"
+				
+		label variable level       "Stratum geographic level"
+		label variable id          "Stratum ID (at its level)"
+		label variable level4id    "Sub-stratum ID"
+		label variable level4name  "Sub-stratum name"
+		label variable outcome     "Outcome variable"
+		label variable estimate    "Estimated proportion"
+		label variable stderr      "Standard error"
+		label variable cilevel     "Confidence level"
+		label variable cill        "2-sided CI lower-bound"
+		label variable ciul        "2-sided CI upper-bound"
+		label variable lcb         "1-sided lower confidence bound"
+		label variable ucb         "1-sided upper confidence bound"
+		label variable deff        "Design effect"
+		label variable icc         "Intracluster correlation coefficient"
+		label variable n           "Sample size (unweighted)"
+		label variable nwtd        "Sample size (weighted)"
+		label variable nclusters   "Number of clusters"
+		label variable nwtd_est    "Persons with outcome (weighted)"
+		
 		save, replace
 	}
 	vcqi_log_comment $VCP 5 Flow "Exiting"

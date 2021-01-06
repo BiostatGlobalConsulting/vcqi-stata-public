@@ -1,4 +1,4 @@
-*! SIA_QUAL_01_03DV version 1.02 - Biostat Global Consulting - 2017-08-26
+*! SIA_QUAL_01_03DV version 1.03 - Biostat Global Consulting - 2019-08-23
 *******************************************************************************
 * Change log
 * 				Updated
@@ -6,6 +6,7 @@
 * Date 			number 	Name			What Changed
 * 2016-03-07	1.01	Dale Rhoda		Added _seen and _unseen variables
 * 2017-08-26	1.02	Mary Prier		Added version 14.1 line
+* 2019-08-23	1.03	Dale Rhoda		Make outcomes missing if psweight == 0 | missing(psweight)
 *******************************************************************************
 
 program define SIA_QUAL_01_03DV
@@ -29,6 +30,8 @@ program define SIA_QUAL_01_03DV
 		gen     got_campaign_card = .
 		replace got_campaign_card = (campaign_card_seen == 1 | campaign_card_unseen == 1) if inlist(SIA20,1,2) 
 		label variable got_campaign_card "Vaccinated Respondent Received SIA Card"
+		
+		replace got_campaign_card = . if psweight == 0 | missing(psweight)
 
 		save, replace
 	}

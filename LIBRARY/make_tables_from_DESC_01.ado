@@ -1,4 +1,4 @@
-*! make_tables_from_DESC_01 version 1.04 - Biostat Global Consulting - 2017-08-26
+*! make_tables_from_DESC_01 version 1.06 - Biostat Global Consulting - 2020-12-12
 *******************************************************************************
 * Change log
 * 				Updated
@@ -12,6 +12,8 @@
 *										VCQI_LEVEL4_SET_VARLIST & 
 *										VCQI_LEVEL4_SET_LAYOUT
 * 2017-08-26	1.04	Mary Prier		Added version 14.1 line
+* 2018-11-14	1.05	Dale Rhoda		Use VCQI_NUM_DECIMAL_DIGITS
+* 2020-12-12	1.06	Dale Rhoda		Allow the user to SHOW_LEVEL_4_ALONE
 *******************************************************************************
 
 program define make_tables_from_DESC_01
@@ -213,6 +215,22 @@ program define make_tables_from_DESC_01
 		restore
 		if $SHOW_BLANKS_BETWEEN_LEVELS == 1 `postblankrow' 
 	}
+	
+		
+	* Only show the sub-strata (e.g., urban/rural)	
+	* (Note that the value of block here is 9 because this capability 
+	*  was added after that for blocks 1-8.)
+	if $SHOW_LEVEL_4_ALONE == 1 {
+		preserve
+		keep if level == 1 & !missing(level4id)
+		sort level4order
+		forvalues i = 1/`=_N' {
+			post to_dataset (name[`i']) `xlist' ///
+					(9) (level[`i']) (substratum[`i'])
+		}
+		restore
+		if $SHOW_BLANKS_BETWEEN_LEVELS == 1 `postblankrow' 
+	}	
 	
 	* Show each level 2 stratum (sorted in the order the user asked for)
 	* and underneath the level 2 row, list one row for each of the level 3
@@ -444,7 +462,16 @@ program define make_tables_from_DESC_01
 	* Usually we'll want to format the excel, but it is time consuming
 	* so give an option to turn that off during testing of the code
 	if "$FORMAT_EXCEL" == "1" {
-	
+		
+		if $VCQI_NUM_DECIMAL_DIGITS == 0 local dp 
+		if $VCQI_NUM_DECIMAL_DIGITS > 0 {
+			local dp .
+			forvalues i = 1/$VCQI_NUM_DECIMAL_DIGITS {
+				local dp `dp'0
+			}
+		}
+		if $VCQI_NUM_DECIMAL_DIGITS < 0 local dp .0
+
 		mata: b.set_border( (`=`startrow'-4',`=`startrow'-1'), (2,29) , "thin", "black" )
 		excel_box_border_using_mata `=`startrow'-4' `=`startrow'-1'  1 13 medium black
 		excel_box_border_using_mata `=`startrow'-4' `=`startrow'-1' 14 29 medium black
@@ -473,7 +500,7 @@ program define make_tables_from_DESC_01
 			
 			if substr(word("`variables'",`i'),-4,4) == "_pct" {
 				mata: b.set_column_width(`col',`col', `=max(5,`=strlen("`t`i''")+2')')
-				mata: b.set_number_format((`rows'),`col',"##0.0;;0.0;")
+				mata: b.set_number_format((`rows'),`col',"##0`dp';;0`dp';")
 			}
 			
 			if substr(word("`variables'",`i'),-2,2) == "_n" {

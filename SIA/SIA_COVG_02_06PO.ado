@@ -27,7 +27,7 @@ program define SIA_COVG_02_06PO
 
 		if "$VCQI_MAKE_OP_PLOTS" == "1" {
 		
-			noi di _col(5) "Organ pipe plots"
+			noi di as text _col(5) "Organ pipe plots"
 
 			capture mkdir Plots_OP
 		
@@ -59,11 +59,11 @@ program define SIA_COVG_02_06PO
 				if $VCQI_SAVE_OP_PLOT_DATA ///
 					local savedata savedata(Plots_OP/SIA_COVG_02_${ANALYSIS_COUNTER}_opplot_`opp_stratum_id_`i''_`opp_stratum_name_`i'')
 			
-				opplot sia_is_first_measles_dose  , clustvar(clusterid) weightvar(psweight) ///
+				opplot sia_is_first_measles_dose  , clustvar(clusterid) plotn  weightvar(psweight) ///
 					   stratvar(stratumid) stratum(`=int(`opp_stratum_id_`i'')') ///
 					   title("`opp_stratum_id_`i'' - `opp_stratum_name_`i''") ///
 					   subtitle(SIA Provided Child's First Measles Dose) ///
-					   barcolor1(ltblue) `savegph' `savedata' ///
+					   barcolor1(vcqi_level3) barcolor2(gs15) `savegph' `savedata' ///
 					   export(Plots_OP/SIA_COVG_02_${ANALYSIS_COUNTER}_`opp_stratum_id_`i''_`opp_stratum_name_`i''.png)
 				
 				vcqi_log_comment $VCP 3 Comment "Graphic file: SIA_COVG_02_${ANALYSIS_COUNTER}_`opp_stratum_id_`i''_`opp_stratum_name_`i''.png was created and saved."
@@ -94,7 +94,7 @@ program define SIA_COVG_02_06PO
 				clear
 			}		
 			
-			noi di _col(5) "Inchworm plots (`ppd' plots)"		
+			noi di as text _col(5) "Inchworm plots (`ppd' plots)"		
 			
 			capture mkdir Plots_IW_UW
 

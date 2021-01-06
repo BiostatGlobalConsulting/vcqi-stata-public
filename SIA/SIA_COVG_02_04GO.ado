@@ -14,7 +14,7 @@ program define SIA_COVG_02_04GO
 	global VCP SIA_COVG_02_04GO
 	vcqi_log_comment $VCP 5 Flow "Starting"
 	
-	make_svyp_output_database, measureid(SIA_COVG_02) vid(a) var(sia_is_first_measles_dose) estlabel(SIA Provided Childs First Measles Dose)
+	make_svyp_output_database, measureid(SIA_COVG_02) vid(a) var(sia_is_first_measles_dose) estlabel(SIA Provided Childs First Measles Dose (%))
 
 	vcqi_log_comment $VCP 5 Flow "Exiting"
 	global VCP `oldvcp'

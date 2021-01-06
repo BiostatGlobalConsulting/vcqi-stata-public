@@ -40,7 +40,7 @@ program define RI_COVG_02_04GO
 				make_svyp_output_database, measureid(RI_COVG_02) vid(`d'_aa1)  var(valid_`d'_age1_to_analyze) estlabel(Valid `du' by age 1, to analyze)
 			}
 		}
-		noi di ""
+		noi di as text ""
 	}
 	vcqi_log_comment $VCP 5 Flow "Exiting"
 	global VCP `oldvcp'

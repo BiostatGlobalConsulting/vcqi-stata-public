@@ -48,7 +48,7 @@ program define RI_COVG_05_03DV
 			drop dropthis_`d'
 		}
 		
-		noi di ""
+		noi di as text ""
 		
 		bysort clusterid: keep if _n == 1
 		

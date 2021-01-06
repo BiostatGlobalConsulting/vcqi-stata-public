@@ -1,4 +1,4 @@
-*! RI_COVG_03_01PP version 1.04 - Biostat Global Consulting - 2017-08-26
+*! RI_COVG_03_01PP version 1.05 - Biostat Global Consulting - 2020-04-20
 *******************************************************************************
 * Change log
 * 				Updated
@@ -10,6 +10,8 @@
 *										respondent has a DOB
 * 2017-01-31	1.03	Dale Rhoda		Added VCQI_LEVEL4_SET_VARLIST
 * 2017-08-26	1.04	Mary Prier		Added version 14.1 line
+* 2020-04-24	1.05	Dale Rhoda		Keep age_at_interview to calculate
+*                                       fully_vaccinated_for_age_crude & _valid
 *******************************************************************************
 
 program define RI_COVG_03_01PP
@@ -41,7 +43,7 @@ program define RI_COVG_03_01PP
 
 		keep level1id level2id level3id stratumid clusterid respid RI01 RI03 RI11 RI12  ///
 			HH02 HH04 psweight $VCQI_LEVEL4_STRATIFIER $VCQI_LEVEL4_SET_VARLIST ///
-			`dlist' 
+			age_at_interview `dlist' 
 
 		save "${VCQI_OUTPUT_FOLDER}/RI_COVG_03_${ANALYSIS_COUNTER}", replace
 

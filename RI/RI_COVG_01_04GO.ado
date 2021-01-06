@@ -35,7 +35,7 @@ program define RI_COVG_01_04GO
 		}
 		make_svyp_output_database, measureid(RI_COVG_01) vid(`d'_a)   var(got_crude_`d'_to_analyze)  estlabel(Crude `d', to analyze)
 	}
-	noi di ""
+	noi di as text ""
 	vcqi_log_comment $VCP 5 Flow "Exiting"
 	global VCP `oldvcp'
 

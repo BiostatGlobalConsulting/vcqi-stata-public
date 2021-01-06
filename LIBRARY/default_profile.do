@@ -1,3 +1,12 @@
+*! default_profile version 1.00 - Biostat Global Consulting - 2017-08-16
+*******************************************************************************
+* Change log
+* 				Updated
+*				version
+* Date 			number 	Name			What Changed
+* 2017-08-16	1.00	Dale Rhoda		Original version								
+*******************************************************************************
+
 * If you use a Git-based workflow, edit the path in the seven 
 * lines below to point to the folder that holds your VCQI repository.
 *

@@ -1,4 +1,4 @@
-*! establish_unique_SIA_ids version 1.04 - Biostat Global Consulting - 2017-08-26
+*! establish_unique_SIA_ids version 1.08 - Biostat Global Consulting - 2020-10-13
 *******************************************************************************
 * Change log
 * 				Updated
@@ -10,6 +10,12 @@
 *										is not 1
 * 2017-06-07	1.03	MK Trimner		Removed code that makes level3 dataset
 * 2017-08-26	1.04	Mary Prier		Added version 14.1 line
+* 2019-08-23	1.06	Dale Rhoda		Keep CM rows that do not match the
+*										dataset (for DOF purposes)
+* 2019-12-04	1.07	Dale Rhoda		Set clusterid and stratumid if we have
+* 										clusters with no respondents
+* 2020-10-13	1.08	Dale Rhoda		Use clonevar instead of gen for rare
+*                                       RI03 of type double
 *******************************************************************************
 
 program define establish_unique_SIA_ids
@@ -51,11 +57,26 @@ program define establish_unique_SIA_ids
 
 			egen respid = group(SIA01 SIA03 SIA11 SIA12)
 
-			gen HH01 = SIA01
-			gen HH03 = SIA03
+			clonevar HH01 = SIA01
+			clonevar HH03 = SIA03
 
 			merge m:1 HH01 HH03 using "${VCQI_DATA_FOLDER}/${VCQI_CM_DATASET}", keepusing(urban_cluster psweight_sia province_id HH04 HH02)
-			keep if _merge == 1 | _merge == 3
+			*keep if _merge == 1 | _merge == 3
+			* We want to keep clusters that do not appear in the dataset, for purposes of calculating degrees of freedom.
+			* Be sure to set their weight to zero so they are included properly in the calculations.
+			* Note that all outcomes will be missing for these respondents, so they will not affect point estimates, but their
+			* presence will help make the DOF calculation right.
+			replace psweight_sia = 0 if _merge == 2
+			replace SIA01 = HH01 if _merge == 2
+			replace stratumid = HH01 if _merge == 2
+			capture gen SIA02 = ""
+			capture replace SIA02 = HH02 if _merge == 2
+			replace SIA03 = HH03 if _merge == 2
+			replace clusterid = HH03 if _merge == 2
+			capture gen SIA04 = ""
+			capture replace SIA04 = HH04 if _merge == 2
+			replace SIA11 = "1" if _merge == 2
+			replace SIA12 = 1 if _merge == 2
 			drop _merge
 
 			gen level1id = 1
@@ -64,8 +85,18 @@ program define establish_unique_SIA_ids
 			
 			rename psweight_sia psweight
 			
+			* obtain level1 names from a small dataset for that purpose
+			merge m:1 level1id using "$LEVEL1_NAME_DATASET"
+			keep if _merge == 1 | _merge == 3
+			drop _merge
+			
 			* obtain province names from a small dataset for that purpose
-			merge m:1 level2id using "${LEVEL2_NAME_DATASET}"
+			merge m:1 level2id using "$LEVEL2_NAME_DATASET"
+			keep if _merge == 1 | _merge == 3
+			drop _merge
+			
+			* obtain stratum names from a small dataset for that purpose
+			merge m:1 level3id using "$LEVEL3_NAME_DATASET"
 			keep if _merge == 1 | _merge == 3
 			drop _merge
 			

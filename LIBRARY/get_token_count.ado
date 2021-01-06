@@ -1,4 +1,4 @@
-*! get_token_count version 1.1 - Biostat Global Consulting - 2017-08-26
+*! get_token_count version 1.01 - Biostat Global Consulting - 2017-08-26
 *******************************************************************************
 * Change log
 * 				Updated

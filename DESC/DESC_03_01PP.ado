@@ -1,4 +1,4 @@
-*! DESC_03_01PP version 1.03 - Biostat Global Consulting - 2017-08-26
+*! DESC_03_01PP version 1.04 - Biostat Global Consulting - 2018-01-16
 *******************************************************************************
 * Change log
 * 				Updated
@@ -7,6 +7,7 @@
 * 2016-02-13	1.01	Dale Rhoda		Make list of temp datasets 
 * 2017-01-31	1.02	Dale Rhoda		Added $VCQI_LEVEL4_SET_VARLIST
 * 2017-08-26	1.03	Mary Prier		Added version 14.1 line
+* 2018-01-16	1.04	Dale Rhoda		Make dataset name more generic
 *******************************************************************************
 
 program define DESC_03_01PP
@@ -16,7 +17,7 @@ program define DESC_03_01PP
 	global VCP DESC_03_01PP
 	vcqi_log_comment $VCP 5 Flow "Starting"
 
-	use "${VCQI_OUTPUT_FOLDER}/${DESC_03_DATASET}_with_ids", clear
+	use "${VCQI_OUTPUT_FOLDER}/${DESC_03_DATASET}", clear
 	quietly {
 		* The user may call this measure several times with different combinations
 		* of inputs, so track a counter so each dataset gets saved for later

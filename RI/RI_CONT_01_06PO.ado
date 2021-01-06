@@ -39,7 +39,7 @@ program define RI_CONT_01_06PO
 				vcqi_log_comment $VCP 3 Comment "Dropout plot (`=upper("`d1'")' to `=upper("`d2'")') was created and exported."
 
 			}
-			noi di ""
+			noi di as text ""
 		}
 	}
 	

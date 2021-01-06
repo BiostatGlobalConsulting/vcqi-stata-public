@@ -1,4 +1,4 @@
-*! calculate_MOV_flags version 1.09 - Biostat Global Consulting - 2017-08-26
+*! calculate_MOV_flags version 1.17 - Biostat Global Consulting - 2020-08-11
 *******************************************************************************
 * Change log
 * 				Updated
@@ -46,6 +46,50 @@
 *										it to missing
 *
 * 2017-08-26	1.09	Mary Prier		Added version 14.1 line
+*
+* 2018-05-01    1.10	Mary Prier		Introduced PAHO notion that for doses 2 
+*                              			& 3 you can receive credit for a valid
+* 										dose at an age before you are eligible
+*										(scheduled) to receive it
+* 2018-05-01									
+* Note: The names of the schedule scalars are not specific but we interpret the 
+* min_age_days scalar to be age when child is eligible for or scheduled for the 
+* dose. And we interpret the min_interval_days to specify the interval in which 
+* child would recieve valid dose. In our experience, this is handled differently 
+* in PAHO countries vs. Afro countries, but the code handles both cases.
+*
+* 2019-08-19	1.11	Dale Rhoda		Calculate the number of days from first
+*										MOV until the MOV is corrected
+*										(days_until_cor_`d'_`t')
+*
+* 2019-11-08	1.12	Dale Rhoda		Introduce macro named MOV_OUTPUT_DOSE_LIST
+*										to allow the user to specify a subset of
+*										doses to be included in MOV output
+*
+* 2020-02-15	1.13	Mary Prier		Added call to gen_EVIM_variables.ado; 
+*					 					saved RI_MOV_step07.dta as 
+*										RI_MOV_long_form_data.dta (which is used
+*										in the EVIM program); and keeping var
+*										has_card_with_dob_and_dosedate
+*
+* 2020-04-04	1.14	Mary Prier		Updated call from gen_EVIM_variables to 
+*					 					gen_EVIMS_variables, which now displays
+*										two numbers E=# eligible & S=# scheduled
+*
+* 2020-04-19	1.15	Mary Prier		Updated call from gen_EVIMS_variables to
+*										gen_CVDIMS_variables
+*
+* 2020-08-07	1.16	Dale Rhoda		Hard-code that the child is not eligible
+*                                       and that we would not give credit for a
+*                                       valid dose if the dose was received by
+*                                       either tick mark or recall; further if
+*                                       the dose is in a series, the child is 
+*                                       not eligible and we would not credit a
+*                                       valid dose if one of the EARLIER doses
+*                                       was rec'd by tick or recall
+*
+* 2020-08-11	1.17	Dale Rhoda		Label the output variables
+*
 *******************************************************************************
 
 program define calculate_MOV_flags
@@ -77,7 +121,8 @@ program define calculate_MOV_flags
 				}
 
 				keep respid dob_for_valid_dose_calculations *card_date *card_tick ///
-					 no_card *register_date *register_tick *_history 
+					 no_card *register_date *register_tick *_history ///
+					 has_card_with_dob_and_dosedate
 								
 				* If RI_RECORDS_NOT_SOUGHT, we just use data from the cards.
 				
@@ -209,38 +254,6 @@ program define calculate_MOV_flags
 				}
 
 				*******************************************************************************
-				* This code uses local macros to build a global macro that will list
-				* which doses with dates to loop through.  The global macro that lists which
-				* doses are to be ANALYZED is a subset of this list, as this list may include
-				* dates from doses that are not to be analyzed.  Usually, the two globals 
-				* will be the same though, but flexibility is built in the code here.
-				
-				if "$RI_DOSES_WITH_DATES"=="" {
-					
-					local single $RI_SINGLE_DOSES_WITH_DATES
-					if "`single'"=="" local single $RI_SINGLE_DOSE_LIST
-					
-					local multi3 $RI_MULTI_3_DOSES_WITH_DATES
-					if "`multi3'"=="" local multi3 $RI_MULTI_3_DOSE_LIST
-					
-					* Construct the global RI_DOSES_WITH_DATES using the above locals
-					* VCQI currently handles single-dose and three-dose vaccines. 
-
-					* First, list single dose vaccines 
-					global RI_DOSES_WITH_DATES `single'
-
-					* Finally, list each dose for three-dose vaccines 
-					foreach i in `multi3' {
-						global RI_DOSES_WITH_DATES "$RI_DOSES_WITH_DATES `i'1 `i'2 `i'3"
-					}
-
-					* Put a copy of the dose list in the log
-					vcqi_log_global RI_DOSES_WITH_DATES
-				}
-				
-				vcqi_log_comment $VCP 5 Issue123 "RI_DOSES_WITH_DATES is: $RI_DOSES_WITH_DATES"
-
-				*******************************************************************************
 				* Now we're going to convert this from a wide dataset with one row per
 				* respondent to a long dataset with one row per respondent/date...so if
 				* the first respondent was vaccinated on 5 different dates, they'll have
@@ -269,7 +282,7 @@ program define calculate_MOV_flags
 				postfile handle `vlist' using movlong, replace
 								
 				forvalues i = 1/`=_N' {
-					foreach d1 in `=lower("$RI_DOSES_WITH_DATES")'  {
+					foreach d1 in `=lower("$RI_DOSE_LIST")'  {
 						local plist		
 						if `d1'_`s'_date[`i']==. continue
 						foreach d2 in `=lower("$RI_SINGLE_DOSE_LIST")'  {
@@ -300,7 +313,6 @@ program define calculate_MOV_flags
 									`plist' 
 					}
 				}
-
 
 				capture postclose handle
 
@@ -359,6 +371,10 @@ program define calculate_MOV_flags
 						replace credit_`d'1_`t' = 0 if inlist(`d'_str3,"TDD","TDM")
 						replace elig_`d'1_`t' = 0 if inlist(`d'_str3,"TDD","TDM")
 						
+						***Not eligible and no credit if rec'd per tick mark/history
+						replace credit_`d'1_`t' = 0 if substr(`d'_str3,1,1) == "T"
+						replace elig_`d'1_`t'   = 0 if substr(`d'_str3,1,1) == "T"
+						
 						gen got_`d'1_`t' = credit_`d'1_`t' == 1 & got_`d' == 1
 
 						bysort person: gen cum_`d'1_`t' = sum(got_`d'1_`t')
@@ -386,7 +402,8 @@ program define calculate_MOV_flags
 						gen credit_`d'2_`t' = flag_got_`d'1_`t' & ///
 										  (age >= (age_at_`d'1_`t' + `d'2_min_interval_days))
 						gen elig_`d'2_`t'   = flag_got_`d'1_`t' & ///
-										  (age >= (age_at_`d'1_`t' + `d'2_min_interval_days))
+										  (age >= (age_at_`d'1_`t' + `d'2_min_interval_days)) & ///
+										  (age >= `d'2_min_age_days)
 						
 						* if early doses count, then s/he is always eligible
 						if "`t'" == "crude" {
@@ -394,7 +411,7 @@ program define calculate_MOV_flags
 							
 							*** Update elig variables for "TDD" & "TDM" cases (See specifications 6.6a #10) ***
 							replace credit_`d'2_`t' = 1 if inlist(`d'_str3,"TDD","TDM")
-							replace elig_`d'2_`t' = age >= `d'1_min_age_days if inlist(`d'_str3,"TDD","TDM")
+							replace elig_`d'2_`t' = age >= `d'2_min_age_days if inlist(`d'_str3,"TDD","TDM")
 						}
 						
 						if "`t'" == "valid" {
@@ -402,6 +419,10 @@ program define calculate_MOV_flags
 							replace credit_`d'2_`t' = 0 if inlist(`d'_str3,"TDD","TDM")
 							replace elig_`d'2_`t' = 0 if inlist(`d'_str3,"TDD","TDM")
 						}
+						
+						***Not eligible and no credit if dose 1 or 2 rec'd per tick mark/history
+						replace credit_`d'2_`t' = 0 if substr(`d'_str3,1,1) == "T" | substr(`d'_str3,2,1) == "T"
+						replace elig_`d'2_`t'   = 0 if substr(`d'_str3,1,1) == "T" | substr(`d'_str3,2,1) == "T"
 						
 						gen got_`d'2_`t' = credit_`d'2_`t' == 1 & got_`d' == 1
 
@@ -430,9 +451,11 @@ program define calculate_MOV_flags
 						gen credit_`d'3_`t' = flag_got_`d'2_`t' & ///
 										  (age >= (age_at_`d'2_`t' + `d'3_min_interval_days))
 						gen elig_`d'3_`t'   = flag_got_`d'2_`t' & ///
-										  (age >= (age_at_`d'2_`t' + `d'3_min_interval_days))
+										  (age >= (age_at_`d'2_`t' + `d'3_min_interval_days)) & ///
+										  (age >= `d'3_min_age_days)
 
 						gen cum_`d'_`t' = sum(got_`d')
+						label var cum_`d'_`t' "Cumulative doses of `d' (up to and including this visit) - `t'"
 						gen age_`d'_`t'2 = age * (cum_`d'_`t' == 1) * got_`d' if inlist(`d'_str3,"TDD","TDM")
 						bysort person: egen age_max_`d'_`t' = max(age_`d'_`t'2)
 						bysort person: replace age_`d'_`t'2 = age_max_`d'_`t' if inlist(`d'_str3,"TDD","TDM")
@@ -444,14 +467,18 @@ program define calculate_MOV_flags
 							
 							*** Update elig variables for "TDD" & "TDM" cases (See specifications 6.6a #10) ***
 							replace credit_`d'3_`t' = 1 if inlist(`d'_str3,"TDD","TDM")
-							replace elig_`d'3_`t' = age >= `d'1_min_age_days & (age>=age_`d'_crude2+`d'3_min_interval_days) if inlist(`d'_str3,"TDD","TDM")
+							replace elig_`d'3_`t' = age >= `d'3_min_age_days & (age>=age_`d'_crude2+`d'3_min_interval_days) if inlist(`d'_str3,"TDD","TDM")
 						}
 						
 						if "`t'" == "valid" {
 							*** Update elig variables for "TDD" & "TDM" cases (See specifications 6.6a #10) ***
 							replace credit_`d'3_`t' = age_`d'_crude2 >= `d'1_min_age_days & (age>=age_`d'_crude2+`d'3_min_interval_days) if inlist(`d'_str3,"TDD","TDM")
-							replace elig_`d'3_`t' = credit_`d'3_`t' if inlist(`d'_str3,"TDD","TDM")
+							replace elig_`d'3_`t' = credit_`d'3_`t' & age >= `d'3_min_age_days if inlist(`d'_str3,"TDD","TDM")
 						}	
+						
+						***Not eligible and no credit if dose 1 or 2 or 3 rec'd per tick mark/history
+						replace credit_`d'3_`t' = 0 if substr(`d'_str3,1,1) == "T" | substr(`d'_str3,2,1) == "T" | substr(`d'_str3,3,1) == "T"
+						replace elig_`d'3_`t'   = 0 if substr(`d'_str3,1,1) == "T" | substr(`d'_str3,2,1) == "T" | substr(`d'_str3,3,1) == "T"
 						
 						gen got_`d'3_`t' = credit_`d'3_`t' == 1 & got_`d' == 1
 
@@ -503,11 +530,21 @@ program define calculate_MOV_flags
 						if "`t'" == "crude" {
 							replace credit_`d'_`t' = 1
 						}
-						if "`d'" == "opv0" {
-							replace credit_opv0_`t' = age >= opv0_min_age_days & ///
-													  age <= opv0_max_age_days 
-							replace elig_opv0_`t' = age >= opv0_min_age_days & ///
-													age <= opv0_max_age_days 
+						
+						* Not eligible and no credit if rec'd by tick/history
+						replace credit_`d'_`t' = 0 if got_`d'_tick == 1
+						replace elig_`d'_`t'   = 0 if got_`d'_tick == 1
+						
+						* if user specified max age for valid doses using the scalar
+						* `d'_max_age_days, then use it to clarify that they will
+						* not receive credit nor are they eligible for the dose
+						* if they are too old
+						capture confirm scalar `d'_max_age_days
+						if _rc==0 {
+							replace credit_`d'_`t' = age >= `d'_min_age_days & ///
+													 age <= `d'_max_age_days 
+							replace elig_`d'_`t'   = age >= `d'_min_age_days & ///
+												     age <= `d'_max_age_days 
 						}
 						
 						* did s/he get a valid dose at this visit?
@@ -536,6 +573,15 @@ program define calculate_MOV_flags
 							age>age_at_`d'_`t' // & "`t'"=="crude"
 					}
 				}
+				
+				* Label elig_* and credit_*
+				foreach d in $RI_DOSE_LIST {
+					foreach t in crude valid {
+						capture label variable elig_`d'_`t'   "Eligible for `d' in this visit - `t'"
+						capture label variable credit_`d'_`t' "Would give credit for a valid dose of `d' in this visit - `t'"
+						capture label variable flag_got_`d'_`t'        "Received `d' in this visit - `t'"
+					}
+				}
 
 				if $VCQI_TESTING_CODE == 1 {
 					save RI_MOV_step03, replace
@@ -551,33 +597,41 @@ program define calculate_MOV_flags
 
 						* how many rec'd up to and including this visit?
 						bysort person: gen cum_`d'_`t' = sum(got_`d'_`t')
+						label variable cum_`d'_`t' "Cumulative doses of `d' received up-to-and-including this visit - `t'"
 						
 						* an mov is when s/he is eligible and doesn't receive it
 						gen mov_`d'_`t' = elig_`d'_`t' == 1 & cum_`d'_`t' == 0
+						label variable mov_`d'_`t' "Experienced an MOV for `d' in this visit - `t'"
 						
 						* cumulative movs up to and including this visit
 						bysort person: gen cum_mov_`d'_`t' = sum(mov_`d'_`t')
+						label variable cum_mov_`d'_`t' "Cumulative MOVs for `d' thru this visit - `t'"
 						
 						* corrected mov is when they have had 1+ movs and then they get it
 						gen cor_mov_`d'_`t' = cum_mov_`d'_`t' > 0 & got_`d'_`t' == 1
+						label variable cor_mov_`d'_`t' "Experienced a corrected MOV for `d' - `t'"
 							
 						* set a flag (in all visits) if the child had a 1+ corrected movs
 						bysort person: egen flag_cor_mov_`d'_`t' = total(cor_mov_`d'_`t')
 						replace flag_cor_mov_`d'_`t' = flag_cor_mov_`d'_`t' > 0 
+						label variable flag_cor_mov_`d'_`t' "Experienced 1+ corrected MOVs for `d' - `t'"
 						
 						* record (in all visits) the child's total number of movs
 						bysort person: egen total_mov_`d'_`t' = total(mov_`d'_`t')
+						label variable total_mov_`d'_`t' "Total MOVs for `d' - `t'"
+						
+						* set a counter (in all visits) of the number of eligible opportunities
+						bysort person: egen total_elig_`d'_`t' = total(elig_`d'_`t')
+						label variable total_elig_`d'_`t' "Total visits where eligible to receive `d' - `t'"
 						
 						* set a flag (in all visits) if the child had 1+ movs
-						gen flag_had_mov_`d'_`t' = total_mov_`d'_`t' > 0
+						gen flag_had_mov_`d'_`t' = total_mov_`d'_`t' > 0 
+						label variable flag_had_mov_`d'_`t' "Had 1+ MOVs for `d' in any visit - `t'"
 						
 						* set a flag (in all visits) if the child had only uncorrected movs for this dose
-						gen flag_uncor_mov_`d'_`t' = (flag_had_mov_`d'_`t' == 1) & (flag_got_`d'_`t' == 0)
-					
-						* set a counter (in all visits) of the number of eligible opportunities
-						*gen total_elig_`d'_`t' = flag_got_`d'_`t' + total_mov_`d'_`t'
-						bysort person: egen total_elig_`d'_`t' = total(elig_`d'_`t')
-						
+						gen flag_uncor_mov_`d'_`t' = (flag_had_mov_`d'_`t' == 1) & (flag_got_`d'_`t' == 0) 
+						label variable flag_uncor_mov_`d'_`t' "Experienced 1+ uncorrected MOVs for `d' in any visit - `t'"
+
 						order *`d'_`t', last
 					}
 				}
@@ -592,18 +646,17 @@ program define calculate_MOV_flags
 				********************************************************************************
 				* If dose was recorded by tick mark/history, do not include in MOV 
 				*     Set the MOV-related flags to zero
-
 				
 				foreach d in `=lower("$RI_SINGLE_DOSE_LIST")' {
 					foreach t in crude valid {  // t is for "type"
-						replace mov_`d'_`t' = 0 if got_`d'_tick==1 
-						replace cum_mov_`d'_`t' = 0 if got_`d'_tick==1 
-						replace cor_mov_`d'_`t'  = 0 if got_`d'_tick==1 
-						replace flag_cor_mov_`d'_`t' = 0 if got_`d'_tick==1 
-						replace total_mov_`d'_`t' = 0 if got_`d'_tick==1 
-						replace flag_had_mov_`d'_`t' = 0 if got_`d'_tick==1 
-						replace flag_uncor_mov_`d'_`t' = 0 if got_`d'_tick==1 
-						replace total_elig_`d'_`t' = 0 if got_`d'_tick==1 
+						replace mov_`d'_`t' 			= 0 if got_`d'_tick==1 
+						replace cum_mov_`d'_`t' 		= 0 if got_`d'_tick==1 
+						replace cor_mov_`d'_`t'  		= 0 if got_`d'_tick==1 
+						replace flag_cor_mov_`d'_`t' 	= 0 if got_`d'_tick==1 
+						replace total_mov_`d'_`t' 		= 0 if got_`d'_tick==1 
+						replace flag_had_mov_`d'_`t' 	= 0 if got_`d'_tick==1 
+						replace flag_uncor_mov_`d'_`t' 	= 0 if got_`d'_tick==1 
+						replace total_elig_`d'_`t' 		= 0 if got_`d'_tick==1 
 					}
 				}
 				
@@ -620,9 +673,6 @@ program define calculate_MOV_flags
 
 				foreach d in `=lower("$RI_MULTI_3_DOSE_LIST")' {
 					foreach t in crude valid {
-						
-						*local d "dpt"
-						*local t "valid"
 						
 						*** Dose 1 ***
 						* Note: <inlist> can only handle a list of 10 strings, so have to use 2 replace statements for each MOV variable that needs updating
@@ -721,20 +771,64 @@ program define calculate_MOV_flags
 					vcqi_global RI_TEMP_DATASETS $RI_TEMP_DATASETS RI_MOV_step06
 				}
 				
+				***********************************************************************************
+				* For MOVs that were later corrected, calculate days from initial MOV to correction
+				***********************************************************************************
+				
+				foreach d in `=lower("$RI_DOSE_LIST")' {
+					foreach t in crude valid {  // t is for "type"
+						* Calculate days between this MOV and the date it was corrected
+						* tempvar ed_`d'_`t'
+						gen ed_`d'_`t' = age_at_`d'_`t' - age if mov_`d'_`t' == 1 & flag_cor_mov_`d'_`t' == 1
+						* Save the max extra days (# of days from first MOV until it was corrected)
+						bysort person: egen days_until_cor_`d'_`t' = max(ed_`d'_`t')
+						label variable days_until_cor_`d'_`t' "Days b/t 1st MOV & correction: `d' - `t'"
+						drop ed_`d'_`t'
+					}
+				}
+				
+				if $VCQI_TESTING_CODE == 1 {
+					save RI_MOV_step06b, replace
+					vcqi_global RI_TEMP_DATASETS $RI_TEMP_DATASETS RI_MOV_step06b
+				}
+				
 				********************************************************************************
-				* Loop over all doses and calculate a final set of derived variables
+				* Loop over all doses that will be listed in MOV output 
+				* and calculate a final set of derived variables
 				********************************************************************************
 
+				* The user may specify a global that lists a subset of doses to be included
+				* in MOV tables and figures and in the summaries of how many eligible visits
+				* were made and whether the child recieved and MOV for any dose
+				*
+				* By 'any dose' we mean 'any dose' in the macro named MOV_OUTPUT_DOSE_LIST
+				* 
+				* Note that if the user does not specify MOV_OUTPUT_DOSE_LIST, VCQI sets it 
+				* equal to RI_DOSE_LIST in the program check_RI_analysis_metadata								
+				
 				gen elig_for_anydose_crude = 0
 				gen elig_for_anydose_valid = 0
+				
+				label variable elig_for_anydose_crude "Eligible for 1+ doses - crude"
+				label variable elig_for_anydose_valid "Eligible for 1+ doses - valid"
 
 				gen mov_for_anydose_crude = 0
 				gen mov_for_anydose_valid = 0
+				
+				label variable mov_for_anydose_crude "Had MOV for 1+ doses - crude"
+				label variable mov_for_anydose_valid "Had MOV for 1+ doses - valid"
 
 				gen total_visit_movs_crude = 0
 				gen total_visit_movs_valid = 0
+				
+				label variable total_visit_movs_crude "Total visits with MOVs - crude"
+				label variable total_visit_movs_valid "Total visits with MOVs - valid"
+				
+				* Replace this global with the lower-case version in case the 
+				* user mistakenly used upper case
+				vcqi_global MOV_OUTPUT_DOSE_LIST = lower("$MOV_OUTPUT_DOSE_LIST")
 
-				foreach d in `=lower("$RI_DOSE_LIST")' {
+				foreach d in `=lower("$MOV_OUTPUT_DOSE_LIST")' {
 					foreach t in crude valid {  // t is for "type"
 					
 						replace elig_for_anydose_`t' = 1 if elig_`d'_`t'==1
@@ -747,8 +841,11 @@ program define calculate_MOV_flags
 
 				foreach t in crude valid {  // t is for "type"
 					bysort person: egen total_elig_visits_`t' = total(elig_for_anydose_`t')
+					label variable total_elig_visits_`t' "Total visits eligible for 1+ doses - `t'"
 					bysort person: egen total_mov_visits_`t' = total(mov_for_anydose_`t')
+					label variable total_mov_visits_`t'  "Total visits with MOVs - `t'"
 					bysort person: egen total_movs_`t' = total(total_visit_movs_`t')
+					label variable total_movs_`t'        "Total MOVs - `t'"
 				}
 				
 				
@@ -771,8 +868,7 @@ program define calculate_MOV_flags
 				vcqi_global RI_MULTI_3_DOSE_LIST $RI_MULTI_3_DOSE_LIST_SAVED
 				vcqi_global RI_DOSE_LIST_SAVED
 				vcqi_global RI_MULTI_3_DOSE_LIST_SAVED
-				
-				
+								
 				order elig_for_anydose_crude mov_for_anydose_crude total_visit_movs_crude ///
 					  total_elig_visits_crude total_mov_visits_crude total_movs_crude ///
 					  elig_for_anydose_valid mov_for_anydose_valid total_visit_movs_valid ///
@@ -785,15 +881,24 @@ program define calculate_MOV_flags
 					vcqi_global RI_TEMP_DATASETS $RI_TEMP_DATASETS RI_MOV_step07
 				}
 				
+				* Create dataset of CVDIMS variables 
+				*  Dataset is 1 row per respondent & contains 3 variables (respid, cvdims_sequence_crude, cvdims_sequence_valid) 
+				save RI_MOV_long_form_data, replace
+				vcqi_global RI_TEMP_DATASETS $RI_TEMP_DATASETS RI_MOV_long_form_data
+				gen_CVDIMS_variables
+				
 				********************************************************************************
 
 				* Only keep one row per person
+				use RI_MOV_long_form_data, clear
 				capture drop age
 				capture drop got*
 				capture drop *str3
 				drop visitdate
 				bysort person: keep if _n == 1
 				capture drop person
+				
+				label variable dob "Date of birth"
 
 				if $VCQI_TESTING_CODE == 1 {
 					save RI_MOV_step08, replace

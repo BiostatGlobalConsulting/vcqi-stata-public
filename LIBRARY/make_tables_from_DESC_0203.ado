@@ -1,4 +1,4 @@
-*! make_tables_from_DESC_0203 version 1.06 - Biostat Global Consulting - 2017-08-26
+*! make_tables_from_DESC_0203 version 1.10 - Biostat Global Consulting - 2020-12-12
 *******************************************************************************
 * Change log
 * 				Updated
@@ -21,6 +21,15 @@
 *										b) put sub-total AFTER  a variable or response
 *										c) show sub-totals only
 * 2017-08-26	1.06	Mary Prier		Added version 14.1 line
+* 2018-01-16	1.07	MK Trimner		Added label options for N and NWTD
+* 2018-01-17	1.08	Dale Rhoda		Added capability to _LIST_N_BEFORE_PCT
+* 										and to _LIST_NWTD_BEFORE_PCT
+* 2020-01-07	1.09	MK Trimner		Added double quotes to get length to account for multi lingual
+* 2020-01-09			MK Trimner		changed length for  col width for N and NWTD Labels to ustrlen to accomodate the multilingual globals
+*										Removed double quotes for `vlabel`pcounter'' length
+*										Added locals to capture the label length and pass through for col width for N and NWTD
+* 2020-01-15			MK Trimner		Added locals and double quotes for `vlabel`pcounter'' col widths
+* 2020-12-12	1.10	Dale Rhoda		Allow the user to SHOW_LEVEL_4_ALONE
 *******************************************************************************
 
 program define make_tables_from_DESC_0203
@@ -63,31 +72,58 @@ program define make_tables_from_DESC_0203
 	
 	use "${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}_`vid'_database", clear
 	
-	capture confirm variable nwtd
+	* Check to see if the table should include N before each pct
+	if upper("${`measureid'_LIST_N_BEFORE_PCT}") == "YES" local list_n_first 1
+	else local list_n_first 0
 	
 	* check the dataset to see if the calculation was weighted
+	capture confirm variable nwtd
 	if _rc == 0 local wtd 1
 	if _rc != 0 local wtd 0
 	
+	* Check to see if the table should include weighted N before each pct
+	* (Only possible if the measure is weighted)
+	if `wtd' & upper("${`measureid'_LIST_NWTD_BEFORE_PCT}") == "YES" local list_nwtd_first 1
+	else local list_nwtd_first 0
+	
+	* If the analysis is not weighted, include a column with n at the far right
+	* If the analysis is weighted, also include nwtd
+	replace n = round(n,1)
+	*if `wtd' replace nwtd = round(nwtd,1)
+	
 	* check the dataset to see how many levels of pct there are
 	* and store the label for each
-	
+		
 	forvalues ii = 1/`=wordcount("${`measureid'_VORDER}")' {
 		local i `=word("${`measureid'_VORDER}",`ii')'
+				
+		if `list_n_first' {
+			local plist `plist' n`i'
+			local blist `blist' (.)
+			local xlist `xlist' (n`i'[|i'])
+			gen n`i' = round(pct`i'*n)
+			label variable n`i' `"`: variable label pct`i'' (N)"'
+		}
 		
+		if `list_nwtd_first' {
+			local plist `plist' double nwtd`i'
+			local blist `blist' (.)
+			local xlist `xlist' (nwtd`i'[|i'])
+			gen double nwtd`i' = round(pct`i'*nwtd,0.1)
+			label variable nwtd`i' `"`: variable label pct`i'' (Weighted N)"'
+		}		
+			
 		local vlabel`ii' `: variable label pct`i''
-
-		local plist `plist' pct`i'
-
-		if `wtd' local plist `plist' str25 ci`i'
 		
+		label variable pct`i' `"`: variable label pct`i'' (%)"'
+
+		local plist `plist' double pct`i'
+		if `wtd' local plist `plist' str25 ci`i'
 		local blist `blist' (.)
 		if `wtd' local blist `blist' ("")
-		
 		local xlist `xlist' (pct`i'[|i'])
 		if `wtd' local xlist `xlist' (ci`i'[|i'])
 		
-		replace pct`i' = pct`i'*100
 		if `wtd' {
 			replace cill`i' = cill`i'*100
 			replace ciul`i' = ciul`i'*100
@@ -98,14 +134,10 @@ program define make_tables_from_DESC_0203
 			order ci`i', after(pct`i')
 			drop cill`i' ciul`i'
 		}
+
+		replace pct`i' = pct`i'*100
 		
 	}
-	
-	
-	* If the analysis is not weighted, include a column with n at the far right
-	* If the analysis is weighted, also include nwtd
-	replace n = round(n,1)
-	if `wtd' replace nwtd = round(nwtd,1)
 
 	local nlist n
 	local xlist `xlist' (n[|i'])
@@ -115,6 +147,8 @@ program define make_tables_from_DESC_0203
 
 	local blist `blist' (.)
 	if `wtd' local blist `blist' (.)
+	
+	save, replace
 	
 	capture postclose to_dataset
 	
@@ -213,7 +247,7 @@ program define make_tables_from_DESC_0203
 	
 	* now wrap the i in macro quotes before using xlist in the posts below
 	local xlist = subinstr("`xlist'","|","\`",.)
-	
+
 	* Only show results that are aggregated up to the national level (1)
 	if $SHOW_LEVEL_1_ALONE == 1 {
 		preserve 
@@ -247,6 +281,22 @@ program define make_tables_from_DESC_0203
 		forvalues i = 1/`=_N' {
 			post to_dataset (name[`i']) (.) `xlist' ///
 					(3) (level[`i']) (substratum[`i'])
+		}
+		restore
+		if $SHOW_BLANKS_BETWEEN_LEVELS == 1 `postblankrow' 
+	}
+	
+		
+	* Only show the sub-strata (e.g., urban/rural)	
+	* (Note that the value of block here is 9 because this capability 
+	*  was added after that for blocks 1-8.)	
+	if $SHOW_LEVEL_4_ALONE == 1 {
+		preserve
+		keep if level == 1 & !missing(level4id)
+		sort level4order
+		forvalues i = 1/`=_N' {
+			post to_dataset (name[`i']) (.) `xlist' ///
+					(9) (level[`i']) (substratum[`i'])
 		}
 		restore
 		if $SHOW_BLANKS_BETWEEN_LEVELS == 1 `postblankrow' 
@@ -350,7 +400,7 @@ program define make_tables_from_DESC_0203
 	local title `: variable label outcome'
 	
 	use "${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}_`vid'_TO", clear
-	label variable outcome "`title'"
+	label variable outcome `"`title'"'
 	qui compress
 	save, replace
 	
@@ -373,9 +423,10 @@ program define make_tables_from_DESC_0203
 
 	* how many variables are being exported?
 	local variables = subinstr("`plist'","str25","",.)	
+	local variables = subinstr("`variables'","double","",.)	
 	local variables stratum `variables' `nlist'
 	local nvars = wordcount("`variables'")
-		
+			
 	* which columns will they be written to?
 	local cols `nextcolumn',`=`nextcolumn'+`nvars'-1'
 			
@@ -406,13 +457,20 @@ program define make_tables_from_DESC_0203
 		
 		local col = `nextcolumn' - 1 + `i'
 		
+		if substr(word("`variables'",`i'),1,1) == "n" & ///
+		   substr(word("`variables'",`i'),1,4) != "nwtd" ///
+	        mata: b.put_string(`startrow',`col',`"`vlabel`pcounter'' (N)"')
+
+		if substr(word("`variables'",`i'),1,4) == "nwtd" ///
+	        mata: b.put_string(`startrow',`col',`"`vlabel`pcounter'' (Weighted N)"')
+
 		if substr(word("`variables'",`i'),1,3) == "pct" {
-			mata: b.put_string(`startrow',`col',"`vlabel`pcounter'' (%)")
+			mata: b.put_string(`startrow',`col',`"`vlabel`pcounter'' (%)"')
 			local ++pcounter
 		}
-		if substr(word("`variables'",`i'),1,2) == "ci" 	mata: b.put_string(`startrow',`col',"95% CI (%)")
-		if word("`variables'",`i') == "n" 		 mata: b.put_string(`startrow',`col',"N")
-		if word("`variables'",`i') == "nwtd"  	 mata: b.put_string(`startrow',`col',"Weighted N")
+		if substr(word("`variables'",`i'),1,2) == "ci" 	mata: b.put_string(`startrow',`col',`"95% CI (%)"')
+		if word("`variables'",`i') == "n" 		 mata: b.put_string(`startrow',`col',`"${`measureid'_N_LABEL}"')
+		if word("`variables'",`i') == "nwtd"  	 mata: b.put_string(`startrow',`col',`"${`measureid'_NWTD_LABEL}"')
 	}
 	
 	* If this is the first time we are writing to the worksheet
@@ -421,16 +479,16 @@ program define make_tables_from_DESC_0203
 	if `nextcolumn' == 1 {
 		
 		if "${`measureid'_TO_TITLE}" != "" {
-			mata: b.put_string(1,1,"${`measureid'_TO_TITLE}")
+			mata: b.put_string(1,1,`"${`measureid'_TO_TITLE}"')
 			mata: b.set_font_bold(1,1,"on")
 		}
 	
-		if "${`measureid'_TO_SUBTITLE}" != "" mata: b.put_string(2,1,"${`measureid'_TO_SUBTITLE}")
+		if "${`measureid'_TO_SUBTITLE}" != "" mata: b.put_string(2,1,`"${`measureid'_TO_SUBTITLE}"')
 
 		local footnoterow = `=`startrow'+`nrows'+2'
 		local i 1
 		while "${`measureid'_TO_FOOTNOTE_`i'}" != "" {
-			mata: b.put_string(`footnoterow',1,"${`measureid'_TO_FOOTNOTE_`i'}")
+			mata: b.put_string(`footnoterow',1,`"${`measureid'_TO_FOOTNOTE_`i'}"')
 			local ++footnoterow
 			local ++i
 		}
@@ -450,9 +508,25 @@ program define make_tables_from_DESC_0203
 				mata: b.set_column_width(`col',`col', `=`max_stratum_name_length'+3')
 				mata: b.set_horizontal_align((`rows'),`col',"left") 
 			}
+
+			if substr(word("`variables'",`i'),1,1) == "n" & ///
+			   substr(word("`variables'",`i'),1,4) != "nwtd" { 
+				local maxcol_width1 = max(5,length(`"`vlabel`pcounter''"')+5)
+				mata: b.set_column_width(`col',`col', `maxcol_width1' )
+				mata: b.set_horizontal_align((`rows'),`col',"right")
+				mata: b.set_number_format((`rows'),`col',"number_sep")
+			}
 			
-			if substr(word("`variables'",`i'),1,3) == "pct" {
-				mata: b.set_column_width(`col',`col', `=max(5,length("`vlabel`pcounter''")+3)')
+			if substr(word("`variables'",`i'),1,4) == "nwtd" { 
+				local maxcol_width2 =max(5,length(`"`vlabel`pcounter''"')+14)
+				mata: b.set_column_width(`col',`col', `maxcol_width2')
+				mata: b.set_horizontal_align((`rows'),`col',"right")
+				mata: b.set_number_format((`rows'),`col',"##0.0;;0.0;")
+			}
+			
+			if substr(word("`variables'",`i'),1,3) == "pct" { 
+				local maxcol_width3 =max(5,length(`"`vlabel`pcounter''"')+4)
+				mata: b.set_column_width(`col',`col', `maxcol_width3')
 				mata: b.set_number_format((`rows'),`col',"##0.0;;0.0;")
 				local ++pcounter
 			}
@@ -463,12 +537,14 @@ program define make_tables_from_DESC_0203
 			}
 			
 			if word("`variables'",`i') == "n" {
-				mata: b.set_column_width(`col',`col', 8)
+				local nlab_length = max(8,ustrlen(`"${`measureid'_N_LABEL}"')+1)
+				mata: b.set_column_width(`col',`col', `nlab_length')													  
 				mata: b.set_number_format((`rows'),`col',"number_sep")
 			}
 			
 			if word("`variables'",`i') == "nwtd" {
-				mata: b.set_column_width(`col',`col', 12)
+				local nwtdlab_length = max(12,ustrlen(`"${`measureid'_NWTD_LABEL}"')+1)
+				mata: b.set_column_width(`col',`col', `nwtdlab_length')
 				mata: b.set_number_format((`rows'),`col',"number_sep")
 			}
 		}
@@ -504,7 +580,7 @@ program define make_tables_from_DESC_0203
 	
 	mata: b.close_book()
 		
-	vcqi_log_comment $VCP 3 Comment "Tabular output: `measureid' `: variable label outcome' : `variables' to sheet `sheet' in ${VCQI_OUTPUT_FOLDER}/${VCQI_ANALYSIS_NAME}_TO.xlsx"	
+	vcqi_log_comment $VCP 3 Comment `"Tabular output: `measureid' `: variable label outcome' : `variables' to sheet `sheet' in ${VCQI_OUTPUT_FOLDER}/${VCQI_ANALYSIS_NAME}_TO.xlsx"'	
 
 	vcqi_log_comment $VCP 5 Flow "Exiting"
 	global VCP `oldvcp'

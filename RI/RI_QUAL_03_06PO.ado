@@ -22,7 +22,7 @@ program define RI_QUAL_03_06PO
 
 		if "$VCQI_MAKE_UW_PLOTS" == "1" {
 		
-			noi di _col(5) "Unweighted proportion plot"
+			noi di as text _col(5) "Unweighted proportion plot"
 		
 			capture mkdir Plots_IW_UW
 		

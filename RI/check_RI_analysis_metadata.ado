@@ -1,4 +1,4 @@
-*! check_RI_analysis_metadata version 1.09 - Biostat Global Consulting - 2017-08-26
+*! check_RI_analysis_metadata version 1.12 - Biostat Global Consulting - 2020-12-09
 *******************************************************************************
 * Change log
 * 				Updated
@@ -19,6 +19,9 @@
 * 2017-07-18	1.07	MK Trimner		Moved dataset checks within main dataset check.. will not run if dataset not set
 * 2017-07-18	1.08	Dale Rhoda		Syntax cleanup
 * 2017-08-26	1.09	Mary Prier		Added version 14.1 line
+* 2019-11-08	1.10	Dale Rhoda		Introduced MOV_OUTPUT_DOSE_LIST
+* 2020-01-20	1.11	Dale Rhoda		Made check_VCQI_CM_metadata its own program
+* 2020-12-09	1.12	Dale Rhoda		Add missing quotation mark
 *******************************************************************************
 
 program define check_RI_analysis_metadata
@@ -31,6 +34,9 @@ program define check_RI_analysis_metadata
 	* Check the generic analysis-related globals
 	check_analysis_metadata
 	
+	* Check the CM dataset
+	check_VCQI_CM_metadata
+
 	local exitflag 0
 	
 	* Check that user has specified doses to analyze
@@ -45,7 +51,6 @@ program define check_RI_analysis_metadata
 		vcqi_log_comment $VCP 1 Error "No RI doses are identified for analysis...so quit"
 		local exitflag 1
 	}
-	
 	
 	if "$VCQI_RI_DATASET" == "" {
 		di as error "Please set VCQI_RI_DATASET."
@@ -176,7 +181,29 @@ program define check_RI_analysis_metadata
 	
 	* Default is to NOT calculate report on data quality; user can turn it on
 	if "$VCQI_REPORT_DATA_QUALITY" == "" 	vcqi_global VCQI_REPORT_DATA_QUALITY 0
-
+	
+	* If the user specifies an MOV_OUTPUT_DOSE_LIST, check to be sure all the doses in that list are also in RI_DOSE_LIST
+	if "$MOV_OUTPUT_DOSE_LIST" != "" {
+		vcqi_log_global MOV_OUTPUT_DOSE_LIST
+		local ndoses_not_found 0
+		foreach w in $MOV_OUTPUT_DOSE_LIST {
+			local dose_found 0
+			forvalues i = 1/`=wordcount("$RI_DOSE_LIST")' {
+				if "`w'" == word("$RI_DOSE_LIST",`i') local dose_found 1
+			}
+			if `dose_found' == 0 {
+				local ++ndoses_not_found
+				di as error                     "The global macro MOV_OUTPUT_DOSE_LIST includes the string `w', which does not appear in the global macro RI_DOSE_LIST; VCQI will remove it from MOV_OUTPUT_DOSE_LIST"
+				vcqi_log_comment $VCP 2 Warning "The global macro MOV_OUTPUT_DOSE_LIST includes the string `w', which does not appear in the global macro RI_DOSE_LIST; VCQI will remove it from MOV_OUTPUT_DOSE_LIST."
+				global MOV_OUTPUT_DOSE_LIST = stritrim(subinstr("$MOV_OUTPUT_DOSE_LIST","`w'","",1))
+			}
+			if `ndoses_not_found' > 0 vcqi_log_global RI_DOSE_LIST
+		}
+	} 
+	else global MOV_OUTPUT_DOSE_LIST $RI_DOSE_LIST
+	global MOV_OUTPUT_DOSE_LIST = lower("$MOV_OUTPUT_DOSE_LIST")
+	vcqi_log_global MOV_OUTPUT_DOSE_LIST
+	
 	if "`exitflag'" == "1" {
 		vcqi_global VCQI_ERROR 1
 		vcqi_halt_immediately

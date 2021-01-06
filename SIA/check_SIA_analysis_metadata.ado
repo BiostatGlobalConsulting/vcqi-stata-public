@@ -1,4 +1,4 @@
-*! check_SIA_analysis_metadata version 1.04 - Biostat Global Consulting - 2017-08-26
+*! check_SIA_analysis_metadata version 1.06 - Biostat Global Consulting - 2020-01-20
 *******************************************************************************
 * Change log
 * 				Updated
@@ -16,6 +16,8 @@
 * 2017-07-18	1.03	MK Trimner		Added variable checks within check loop to see 
 *										if global set and dataset exists
 * 2017-08-26	1.04	Mary Prier		Added version 14.1 line
+* 2019-02-15	1.05	MK Trimner		Added code to exclude SIA11 from numeric check
+* 2020-01-20	1.06	Dale Rhoda		Made check_VCQI_CM_metadata its own program
 *******************************************************************************
 
 program define check_SIA_analysis_metadata
@@ -27,7 +29,9 @@ program define check_SIA_analysis_metadata
 	
 	* Check the generic analysis-related globals
 	check_analysis_metadata
-
+	
+	* Check the CM dataset
+	check_VCQI_CM_metadata
 
 	if "$VCQI_SIA_DATASET" == "" {
 		di as error "Please set VCQI_SIA_DATASET."
@@ -57,13 +61,15 @@ program define check_SIA_analysis_metadata
 			foreach v in SIA01 SIA03 SIA11 SIA12 SIA20  {
 				capture confirm variable `v' 
 				if _rc==0 {
-					* If the variable exists, confirm the variable is not missing and has the correct variable type
-					capture confirm numeric variable `v'
-					if _rc!=0 & "`v'" != "SIA11" {
-						di as error "`v' needs to be a numeric variable in SIA dataset."
-						vcqi_global VCQI_ERROR 1
-						vcqi_log_comment $VCP 1 Error "`v' needs to be a numeric variable in SIA dataset."
-						local exitflag 1
+					if "`v'" != "SIA11" {
+						* If the variable exists, confirm the variable is not missing and has the correct variable type
+						capture confirm numeric variable `v'
+						if _rc!=0 & "`v'" != "SIA11" {
+							di as error "`v' needs to be a numeric variable in SIA dataset."
+							vcqi_global VCQI_ERROR 1
+							vcqi_log_comment $VCP 1 Error "`v' needs to be a numeric variable in SIA dataset."
+							local exitflag 1
+						}
 					}
 					
 					capture assert !missing(`v') if "`v'"!="SIA22" 

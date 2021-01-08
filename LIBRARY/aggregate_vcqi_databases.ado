@@ -1,4 +1,4 @@
-*! aggregate_vcqi_databases 1.05 - Biostat Global Consulting - 2020-12-08
+*! aggregate_vcqi_databases 1.07 - Biostat Global Consulting - 2021-01-08
 ******************************************************************************* 
 * Change log 
 * 				Updated 
@@ -18,6 +18,7 @@
 *                                       easy reconstruction of individual 
 *                                       database datasets
 * 2020-12-15	1.06	Dale Rhoda		Be sure to label all the level variables
+* 2021-01-08	1.07	Dale Rhoda		Store the name of the original database, too
 ******************************************************************************** 
 * This takes all the vcqi databases and creates one single database. Then deletes all of them
 capture program drop aggregate_vcqi_databases
@@ -64,6 +65,9 @@ program define aggregate_vcqi_databases
 			
 			gen db_id = `n'
 			label variable db_id "Unique ID for this database"
+			
+			gen db_name = "`f'"
+			label variable db_name "Name of original database"
 														
 			local strcount 10
 			if `=strpos("`f'","RI_ACC_")' > 0 local strcount `=`strcount'- 1'
@@ -132,7 +136,9 @@ program define aggregate_vcqi_databases
 			
 		* Now go and add the level orders to this database
 		forvalues i = 2/3 {
-			merge m:1 level`i'id using "${VCQI_DATA_FOLDER}/level`i'order", keepusing(level`i'order) nogen
+			merge m:1 level`i'id using "${VCQI_DATA_FOLDER}/level`i'order", keepusing(level`i'order) 
+			keep if _merge == 1 | _merge == 3
+			drop _merge
 			order level`i'order, after(level`i'name)
 		}
 		
@@ -143,10 +149,13 @@ program define aggregate_vcqi_databases
 		capture label variable level1name  "Level1 name"
 		capture label variable level2id    "Level2 ID"
 		capture label variable level2name  "Level2 stratum name"
+		capture label variable level2order "Level 2 stratum table order"
 		capture label variable level3id    "Level3 ID"
 		capture label variable level3name  "Level3 stratum name"
+		capture label variable level3order "Level3 stratum table order"
 		capture	label variable level4id    "Sub-stratum ID"
 		capture label variable level4name  "Sub-stratum name"	
+		capture label variable level4order "Sub-stratum table order"
 	
 		save "${VCQI_OUTPUT_FOLDER}/VCQI_aggregated_databases_all.dta", replace
 	}

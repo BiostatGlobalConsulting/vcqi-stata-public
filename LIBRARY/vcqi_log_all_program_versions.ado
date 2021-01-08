@@ -247,7 +247,6 @@ program define vcqi_log_all_program_versions
 		vcqi_log_program_version RI_QUAL_06_05TO.ado 
 		vcqi_log_program_version RI_QUAL_06_06PO.ado 
 		vcqi_log_program_version RI_QUAL_07B.ado 
-		vcqi_log_program_version RI_QUAL_07B_00GC.ado 
 		vcqi_log_program_version RI_QUAL_07B_01PP.ado 
 		vcqi_log_program_version RI_QUAL_07B_03DV.ado 
 		vcqi_log_program_version RI_QUAL_07B_04GO.ado 

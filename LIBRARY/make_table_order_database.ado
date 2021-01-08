@@ -1,4 +1,4 @@
-*! make_table_order_database version 1.02 - Biostat Global Consulting - 2020-12-26
+*! make_table_order_database version 1.04 - Biostat Global Consulting - 2021-01-06
 *******************************************************************************
 * Change log
 * 				Updated
@@ -8,6 +8,7 @@
 * 2020-12-09	1.00	Dale Rhoda		Original version (from make_unwtd_output_database.ado)
 * 2020-12-12	1.01	Dale Rhoda		Allow user to SHOW_LEVEL_4_ALONE	
 * 2020-12-26	1.03	Dale Rhoda		Include the logical condition with each row
+* 2021-01-06	1.04	Dale Rhoda		Allow long level4 names
 *******************************************************************************
 
 program define make_table_order_database
@@ -24,7 +25,7 @@ program define make_table_order_database
 		if "$VCQI_TT_DATASET"  != "" use "${VCQI_OUTPUT_FOLDER}/TT_with_ids" , clear
 				
 		capture postclose go
-		postfile go level id str30 level4id str30 level4name str200 condition using ///
+		postfile go level id str255 level4id str255 level4name str200 condition using ///
 					"${VCQI_OUTPUT_FOLDER}/table_order_database", replace
 
 		global VCQI_DATABASES $VCQI_DATABASES table_order_database
@@ -169,10 +170,10 @@ program define make_table_order_database
 		capture label variable level3id    "Level3 ID"
 		capture label variable level3name  "Level3 stratum name"
 
-		label variable level       "Stratum geographic level"
-		label variable id          "Stratum ID (at its level)"
-		label variable level4id    "Sub-stratum ID"
-		label variable level4name  "Sub-stratum name"
+		capture label variable level       "Stratum geographic level"
+		capture label variable id          "Stratum ID (at its level)"
+		capture label variable level4id    "Sub-stratum ID"
+		capture label variable level4name  "Sub-stratum name"
 		
 		save, replace
 		

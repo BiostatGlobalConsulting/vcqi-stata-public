@@ -1,4 +1,4 @@
-*! make_tables_from_DESC_0203 version 1.10 - Biostat Global Consulting - 2020-12-12
+*! make_tables_from_DESC_0203 version 1.11 - Biostat Global Consulting - 2021-01-06
 *******************************************************************************
 * Change log
 * 				Updated
@@ -30,6 +30,7 @@
 *										Added locals to capture the label length and pass through for col width for N and NWTD
 * 2020-01-15			MK Trimner		Added locals and double quotes for `vlabel`pcounter'' col widths
 * 2020-12-12	1.10	Dale Rhoda		Allow the user to SHOW_LEVEL_4_ALONE
+* 2021-01-06	1.11	Dale Rhoda		Extend stratum string length to 255
 *******************************************************************************
 
 program define make_tables_from_DESC_0203
@@ -154,7 +155,7 @@ program define make_tables_from_DESC_0203
 	
 	* the variable 'outcome' is simply a placeholder for a label here...
 
-	postfile to_dataset str50 stratum outcome `plist' `nlist' ///
+	postfile to_dataset str255 stratum outcome `plist' `nlist' ///
 				 block  level substratum ///
 				using ///
 				"${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}_`vid'_TO", replace

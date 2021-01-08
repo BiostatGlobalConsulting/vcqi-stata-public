@@ -1,4 +1,4 @@
-*! make_DESC_0203_output_database version 1.17 - Biostat Global Consulting - 2020-12-12
+*! make_DESC_0203_output_database version 1.18 - Biostat Global Consulting - 2021-01-06
 *******************************************************************************
 * Change log
 * 				Updated
@@ -29,6 +29,7 @@
 * 2020-12-09	1.15	Dale Rhoda		Tostring the level1-4 names at the end
 * 2020-12-11	1.16	Dale Rhoda		Add truncate to every svypd call
 * 2020-12-12	1.17	Dale Rhoda		Allow user to SHOW_LEVEL_4_ALONE
+* 2021-01-06	1.18	Dale Rhoda		Allow long level4 names
 *******************************************************************************
 
 program define make_DESC_0203_output_database
@@ -153,7 +154,7 @@ program define make_DESC_0203_output_database
 				
 		capture postclose go
 
-		postfile go level id str30 level4id str30 level4name str30 outcome ///
+		postfile go level id str255 level4id str255 level4name str255 outcome ///
 					`plist' `nlist' using ///
 		  "${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}_`vid'_database", replace			
 

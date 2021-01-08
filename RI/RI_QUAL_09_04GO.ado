@@ -1,4 +1,4 @@
-*! RI_QUAL_09_04GO version 1.06 - Biostat Global Consulting - 2019-11-10
+*! RI_QUAL_09_04GO version 1.07 - Biostat Global Consulting - 2021-01-06
 *******************************************************************************
 * Change log
 * 				Updated
@@ -13,6 +13,7 @@
 * 2017-08-26	1.04	Mary Prier		Added version 14.1 line
 * 2019-11-09	1.05 	Dale Rhoda		Introduced MOV_OUTPUT_DOSE_LIST
 * 2019-11-10	1.06	Dale Rhoda		Added _`vc' to DV names
+* 2021-01-06	1.07	Dale Rhoda		Allow long level4 names
 *******************************************************************************
 
 program define RI_QUAL_09_04GO
@@ -35,7 +36,7 @@ program define RI_QUAL_09_04GO
 			noi di _continue _col(5) "`d' "
 
 			capture postclose go
-			postfile go level id str30 level4id str30 level4name str30 dose ///
+			postfile go level id str255 level4id str255 level4name str30 dose ///
 				n_eligible n_mov n_uncor_mov n_cor_mov using ///
 				"${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}_`d'_database", replace
 
@@ -168,7 +169,7 @@ program define RI_QUAL_09_04GO
 		noi di  _col(5) "Totals... "
 		
 		capture postclose go
-		postfile go level id str30 level4id str30 level4name str30 dose ///
+		postfile go level id str255 level4id str255 level4name str30 dose ///
 			n_eligible n_mov n_uncor_mov n_cor_mov using ///
 			"${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}_anydose_database", replace
 			
@@ -380,15 +381,15 @@ program define RI_QUAL_09_04GO
 			capture label variable level3id    "Level3 ID"
 			capture label variable level3name  "Level3 stratum name"
 				
-			label variable level       "Stratum geographic level"
-			label variable id          "Stratum ID (at its level)"
-			label variable level4id    "Sub-stratum ID"
-			label variable level4name  "Sub-stratum name"
-			label variable dose        "Dose"
-			label variable n_eligible  "Number of respondents with vx dates when age-eligible for the dose"
-			label variable n_mov       "Number of missed opportunities (MOVs)"	
-			label variable n_uncor_mov "Number of uncorrected MOVs"
-			label variable n_cor_mov   "Number of corrected MOVs"
+			capture label variable level       "Stratum geographic level"
+			capture label variable id          "Stratum ID (at its level)"
+			capture label variable level4id    "Sub-stratum ID"
+			capture label variable level4name  "Sub-stratum name"
+			capture label variable dose        "Dose"
+			capture label variable n_eligible  "Number of respondents with vx dates when age-eligible for the dose"
+			capture label variable n_mov       "Number of missed opportunities (MOVs)"	
+			capture label variable n_uncor_mov "Number of uncorrected MOVs"
+			capture label variable n_cor_mov   "Number of corrected MOVs"
 		
 			save, replace
 		}

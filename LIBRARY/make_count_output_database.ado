@@ -1,4 +1,4 @@
-*! make_count_output_database version 1.07 - Biostat Global Consulting - 2020-12-12
+*! make_count_output_database version 1.08 - Biostat Global Consulting - 2021-01-06
 *******************************************************************************
 * Change log
 * 				Updated
@@ -13,6 +13,7 @@
 * 2017-08-26	1.05	Mary Prier		Added version 14.1 line
 * 2020-12-09	1.06	Dale Rhoda		Tostring the level1-4 names at the end
 * 2020-12-12	1.07	Dale Rhoda		Allow user to SHOW_LEVEL_4_ALONE
+* 2021-01-06	1.08	Dale Rhoda		Allow long level4 names
 *******************************************************************************
 
 program define make_count_output_database
@@ -31,7 +32,7 @@ program define make_count_output_database
 		use "${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}", clear
 				
 		capture postclose go
-		postfile go level id str30 level4id str30 level4name str100 outcome ///
+		postfile go level id str255 level4id str255 level4name str100 outcome ///
 					double estimate n using ///
 					"${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}_`vid'_database", replace
 
@@ -199,7 +200,8 @@ program define make_count_output_database
 		replace name = level1name if level == 1
 		replace name = level2name if level == 2
 		replace name = level3name if level == 3
-	capture replace level4name = string(level4name)
+		capture replace level4name = string(level4name)
+		
 		* Append the name to the front of the level4name if we have a single stratifier
 		* Otherwise leave it off
 		*replace name = name + " - " + level4name if !missing(level4name) & "$VCQI_LEVEL4_SET_VARLIST" == ""
@@ -230,13 +232,13 @@ program define make_count_output_database
 		capture label variable level3id    "Level3 ID"
 		capture label variable level3name  "Level3 stratum name"
 		
-		label variable level       "Stratum geographic level"
-		label variable id          "Stratum ID (at its level)"
-		label variable level4id    "Sub-stratum ID"
-		label variable level4name  "Sub-stratum name"
-		label variable outcome     "Outcome variable"
-		label variable estimate    "Estimated count"
-		label variable n           "Sample size (unweighted)"	
+		capture label variable level       "Stratum geographic level"
+		capture label variable id          "Stratum ID (at its level)"
+		capture label variable level4id    "Sub-stratum ID"
+		capture label variable level4name  "Sub-stratum name"
+		capture label variable outcome     "Outcome variable"
+		capture label variable estimate    "Estimated count"
+		capture label variable n           "Sample size (unweighted)"	
 		
 		save, replace
 	}

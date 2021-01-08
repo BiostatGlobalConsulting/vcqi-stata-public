@@ -1,4 +1,4 @@
-*! make_tables_from_unwtd_output version 1.11 - Biostat Global Consulting - 2020-12-12
+*! make_tables_from_unwtd_output version 1.12 - Biostat Global Consulting - 2021-01-06
 *******************************************************************************
 * Change log
 * 				Updated
@@ -20,6 +20,7 @@
 * 2020-01-15	1.10	MK Trimner		Added double quotes when ustrlen was used for possible labels
 *										Created local to pass through the length for col widths
 * 2020-12-12	1.11	Dale Rhoda		Allow user to SHOW_LEVEL_4_ALONE
+* 2021-01-06	1.12	Dale Rhoda		Extend stratum string length to 255
 *******************************************************************************
 
 program define make_tables_from_unwtd_output
@@ -73,7 +74,7 @@ program define make_tables_from_unwtd_output
 		
 		capture postclose to_dataset
 
-		postfile to_dataset str50 stratum  estimate n block level substratum ///
+		postfile to_dataset str255 stratum  estimate n block level substratum ///
 					using ///
 					"${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}_`vid'_TO", replace
 

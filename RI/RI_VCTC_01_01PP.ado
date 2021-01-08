@@ -1,10 +1,11 @@
-*! RI_VCTC_01_01PP version 1.00 - Biostat Global Consulting - 2020-09-24
+*! RI_VCTC_01_01PP version 1.01 - Biostat Global Consulting - 2021-01-06
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name			What Changed
 * 2020-09-24	1.00	Dale Rhoda		Original version
+* 2021-01-06	1.01	Dale Rhoda		Check that RI_QUAL_01 ran
 *******************************************************************************
 
 program define RI_VCTC_01_01PP
@@ -18,12 +19,11 @@ program define RI_VCTC_01_01PP
 
 		quietly {
 			
-			*Verify RI_COVG_01 & _02 ran
+			*Verify RI_COVG_01 & _02 & RI_QUAL_01 ran
 			check_RI_COVG_01_03DV	
 			check_RI_COVG_02_03DV
+			check_RI_QUAL_01_03DV
 			
-			** Also check to see if RI_QUAL_01 ran
-
 			use "${VCQI_OUTPUT_FOLDER}/RI_COVG_02_${ANALYSIS_COUNTER}", clear
 			merge 1:1 respid using "${VCQI_OUTPUT_FOLDER}/RI_COVG_01_${ANALYSIS_COUNTER}"
 			drop _merge

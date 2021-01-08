@@ -1,4 +1,4 @@
-*! DESC_01_04GO version 1.04 - Biostat Global Consulting - 2020-12-12
+*! DESC_01_04GO version 1.05 - Biostat Global Consulting - 2021-01-06
 *******************************************************************************
 * Change log
 * 				Updated
@@ -9,6 +9,7 @@
 * 2017-01-31	1.02	Dale Rhoda		Incorporate VCQI_LEVEL4_SET
 * 2017-08-26	1.03	Mary Prier		Added version 14.1 line
 * 2020-12-12	1.04	Dale Rhoda		tostring the levelnames, to be safe
+* 2021-01-06	1.05	Dale Rhoda		Allow long level4 names
 *******************************************************************************
 
 program define DESC_01_04GO
@@ -38,7 +39,7 @@ program define DESC_01_04GO
 		bysort clusterid: gen firstrow = (_n == 1)
 
 		capture postclose d01hh
-		postfile d01hh level id str30 level4id str30 level4name expected_n visited_n ///
+		postfile d01hh level id str255 level4id str255 level4name expected_n visited_n ///
 					 info_from_occupant_n info_from_occupant_pct ///
 					 eligible_occupant_n eligible_occupant_pct ///
 					 info_from_neighbor_n info_from_neighbor_pct ///
@@ -260,7 +261,7 @@ program define DESC_01_04GO
 		replace unavailable = 1 if eligible == 1 & missing(survey_disp)
 
 		capture postclose d01el
-		postfile d01el 	level id str30 level4id str30 level4name ///
+		postfile d01el 	level id str255 level4id str255 level4name ///
 						eligible_n selected_n completed_n completed_pct  ///
 						male_n male_pct female_n female_pct ///
 						register_n register_pct ///

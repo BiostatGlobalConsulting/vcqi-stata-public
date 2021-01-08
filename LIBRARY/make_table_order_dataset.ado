@@ -1,4 +1,4 @@
-*! make_table_order_dataset version 1.01 - Biostat Global Consulting - 2020-12-26
+*! make_table_order_dataset version 1.02 - Biostat Global Consulting - 2021-01-06
 *******************************************************************************
 * Change log
 * 				Updated
@@ -7,6 +7,7 @@
 ********************************************************************************
 * 2020-12-09	1.00	Dale Rhoda		Original version (from make_tables_from_unwtd_output.ado)
 * 2020-12-25	1.01	Dale Rhoda		Pass the logical condition into the TO dataset
+* 2021-01-06	1.02	Dale Rhoda		Extend stratum string length to 255
 *******************************************************************************
 
 program define make_table_order_dataset
@@ -20,7 +21,7 @@ program define make_table_order_dataset
 
 		capture postclose to_dataset
 
-		postfile to_dataset str50 stratum block level substratum level1id ///
+		postfile to_dataset str255 stratum block level substratum level1id ///
 		            level2id level3id level4id str200 condition using ///
 					"${VCQI_OUTPUT_FOLDER}/table_order_TO", replace
 

@@ -1,4 +1,4 @@
-*! vcqi_to_double_iwplot version 1.26 - Biostat Global Consulting - 2020-12-12
+*! vcqi_to_double_iwplot version 1.27 - Biostat Global Consulting - 2021-01-05
 *******************************************************************************
 * Change log
 * 				Updated
@@ -52,6 +52,8 @@
 *                                       and round to the user requested number
 *                                       of decimal digits
 * 2020-12-12	1.26	Dale Rhoda		Allow the user to SHOW_LEVEL_4_ALONE
+* 2021-01-05	1.27	Dale Rhoda		Tidy up the contents of param1 & param2
+*										when nn == 2; drop superfluous variables
 *******************************************************************************
 
 program define vcqi_to_double_iwplot
@@ -383,16 +385,29 @@ program define vcqi_to_double_iwplot
 	gen rownumber = _n
 	local nrows = _N
 	capture gen outlinewidth = "vvthin"
+	
+	* Import parameters from database2 needed to update param1 and param2 for those rows of the file
+	drop estimate outcome
+	merge m:1 level1id level2id level3id `level4id' using "`database2'", keepusing(estimate n deff )   // merge in pt est & n & deff from 2nd database
+	keep if _merge == 3 | _merge == 1
+	drop _merge
+	
 	expand 2
 	bysort rownumber: gen nn = _n
-	replace param4 = "`datafile2'" if nn == 2
-	replace param5 = "`outcome2'"  if nn == 2
-	replace outlinecolor = "gs3"   if nn == 2
-	replace areacolor = "none"     if nn == 2
-	replace lcb = .                if nn == 2
-	replace ucb = .                if nn == 2
-	replace rightsidetext = ""     if nn == 2
-	replace outlinewidth = "vthin" if nn == 2
+	replace param4 = "`datafile2'"     if nn == 2
+	replace param5 = "`outcome2'"      if nn == 2
+	replace outlinecolor = "gs3"       if nn == 2
+	replace areacolor = "none"         if nn == 2
+	replace lcb = .                    if nn == 2
+	replace ucb = .                    if nn == 2
+	replace rightsidetext = ""         if nn == 2
+	replace outlinewidth = "vthin"     if nn == 2
+	
+	* Use the values from database2 to update param1 & 2
+	replace param1 = round(n/deff, 1)  if nn == 2
+	replace param2 = estimate          if nn == 2
+	drop estimate n deff
+	sort rownumber nn
 	
 	save "Plots_IW_UW/iwplot_params_base", replace
 	save "Plots_IW_UW/iwplot_params_`filetag'_`show1'`show2'`show3'`show4'", replace

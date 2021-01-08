@@ -1,4 +1,4 @@
-*! make_tables_from_DESC_01 version 1.06 - Biostat Global Consulting - 2020-12-12
+*! make_tables_from_DESC_01 version 1.07 - Biostat Global Consulting - 2021-01-06
 *******************************************************************************
 * Change log
 * 				Updated
@@ -14,6 +14,7 @@
 * 2017-08-26	1.04	Mary Prier		Added version 14.1 line
 * 2018-11-14	1.05	Dale Rhoda		Use VCQI_NUM_DECIMAL_DIGITS
 * 2020-12-12	1.06	Dale Rhoda		Allow the user to SHOW_LEVEL_4_ALONE
+* 2021-01-06	1.07	Dale Rhoda		Extend stratum string length to 255
 *******************************************************************************
 
 program define make_tables_from_DESC_01
@@ -76,7 +77,7 @@ program define make_tables_from_DESC_01
 	
 	capture postclose to_dataset
 	
-	postfile to_dataset str50 stratum ///
+	postfile to_dataset str255 stratum ///
 			expected_n visited_n info_from_occupant_n info_from_occupant_pct ///
 			eligible_occupant_n eligible_occupant_pct ///
 			info_from_neighbor_n info_from_neighbor_pct ///

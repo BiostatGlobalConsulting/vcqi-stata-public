@@ -1,4 +1,4 @@
-*! make_tables_from_svyp_output version 1.12 - Biostat Global Consulting - 2020-12-09
+*! make_tables_from_svyp_output version 1.13 - Biostat Global Consulting - 2021-01-06
 *******************************************************************************
 * Change log
 * 				Updated
@@ -19,6 +19,7 @@
 * 2019-01-03	1.10	Dale Rhoda		Fixed a typo in the row-shading code
 * 2019-10-10  	1.11  	Dale Rhoda  	Added flexible VCQI_NUM_DECIMAL_DIGITS
 * 2020-12-09	1.12	Dale Rhoda		DEFF should always have 1 decimal digit
+* 2021-01-06	1.13	Dale Rhoda		Extend stratum string length to 255
 *******************************************************************************
 
 program define make_tables_from_svyp_output

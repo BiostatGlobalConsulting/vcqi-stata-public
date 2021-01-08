@@ -285,16 +285,16 @@ vcqi_global VCQI_LEVEL4_SET_LAYOUT ${VCQI_DATA_FOLDER}/VCQI_LEVEL4_SET_LAYOUT_ur
 * These globals control how the output looks in the tabulated dataset 
 * from the 05TO programs; see Annex B in the VCQI User's Guide.
 
-vcqi_global SHOW_LEVEL_1_ALONE         0
+vcqi_global SHOW_LEVEL_1_ALONE         1
 vcqi_global SHOW_LEVEL_2_ALONE         0
 vcqi_global SHOW_LEVEL_3_ALONE         0 
 vcqi_global SHOW_LEVEL_4_ALONE         0
-vcqi_global SHOW_LEVELS_2_3_TOGETHER   0
+vcqi_global SHOW_LEVELS_2_3_TOGETHER   1
 
 vcqi_global SHOW_LEVELS_1_4_TOGETHER   1
 vcqi_global SHOW_LEVELS_2_4_TOGETHER   0
 vcqi_global SHOW_LEVELS_3_4_TOGETHER   0
-vcqi_global SHOW_LEVELS_2_3_4_TOGETHER 1
+vcqi_global SHOW_LEVELS_2_3_4_TOGETHER 0
 
 vcqi_global SHOW_BLANKS_BETWEEN_LEVELS 1
 
@@ -809,7 +809,7 @@ vcqi_global SORT_PLOT_LOW_TO_HIGH 1 // 1=sort proportions on plot low at bottom 
 RI_QUAL_07B
 
 * Estimate the proportion of visits that had MOVs
-vcqi_global RI_QUAL_08_VALID_OR_CRUDE VALID
+vcqi_global RI_QUAL_08_VALID_OR_CRUDE CRUDE
 
 vcqi_global RI_QUAL_08_TO_TITLE       Percent of Visits with MOVs
 vcqi_global RI_QUAL_08_TO_SUBTITLE
@@ -822,7 +822,7 @@ vcqi_global SORT_PLOT_LOW_TO_HIGH 0 // 1=sort proportions on plot low at bottom 
 RI_QUAL_08
 
 * Estimate the proportion of children who experienced 1+ MOVs
-vcqi_global RI_QUAL_09_VALID_OR_CRUDE VALID
+vcqi_global RI_QUAL_09_VALID_OR_CRUDE CRUDE
 
 vcqi_global RI_QUAL_09_TO_TITLE       Percent of Respondents with MOVs
 vcqi_global RI_QUAL_09_TO_SUBTITLE
@@ -842,7 +842,7 @@ RI_QUAL_09
 * than the specified thresholds
 * 1. Penta1 to Penta2 longer than 56 days
 * 2. Penta2 to Penta3 longer than 56 days
-* 3. BGC to MCV1 longer than 273 days
+* 3. BCG to MCV1 longer than 273 days
 
 vcqi_global RI_QUAL_12_DOSE_PAIR_LIST PENTA1 PENTA2 PENTA2 PENTA3 BCG MCV1
 vcqi_global RI_QUAL_12_THRESHOLD_LIST 56 56 273

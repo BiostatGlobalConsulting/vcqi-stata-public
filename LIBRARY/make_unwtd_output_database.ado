@@ -1,4 +1,4 @@
-*! make_unwtd_output_database version 1.09 - Biostat Global Consulting - 2020-12-14
+*! make_unwtd_output_database version 1.10 - Biostat Global Consulting - 2021-01-06
 *******************************************************************************
 * Change log
 * 				Updated
@@ -20,6 +20,7 @@
 * 2020-12-09	1.07	Dale Rhoda		Tostring the level1-4 names at the end
 * 2020-12-12	1.08	Dale Rhoda		Allow user to SHOW_LEVEL_4_ALONE
 * 2020-12-14	1.09	Dale Rhoda		Add variable labels
+* 2021-01-06	1.10	Dale Rhoda		Allow long level4 names
 *******************************************************************************
 
 program define make_unwtd_output_database
@@ -38,7 +39,7 @@ program define make_unwtd_output_database
 		use "${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}", clear
 				
 		capture postclose go
-		postfile go level id str30 level4id str30 level4name str30 outcome ///
+		postfile go level id str255 level4id str255 level4name str255 outcome ///
 					double estimate n using ///
 					"${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}_`vid'_database", replace
 
@@ -206,13 +207,13 @@ program define make_unwtd_output_database
 		capture label variable level3id    "Level3 ID"
 		capture label variable level3name  "Level3 stratum name"
 			
-		label variable level       "Stratum geographic level"
-		label variable id          "Stratum ID (at its level)"
-		label variable level4id    "Sub-stratum ID"
-		label variable level4name  "Sub-stratum name"
-		label variable outcome     "Outcome variable"
-		label variable estimate    "Estimated proportion"
-		label variable n           "Sample size (unweighted)"					
+		capture label variable level       "Stratum geographic level"
+		capture label variable id          "Stratum ID (at its level)"
+		capture label variable level4id    "Sub-stratum ID"
+		capture label variable level4name  "Sub-stratum name"
+		capture label variable outcome     "Outcome variable"
+		capture label variable estimate    "Estimated proportion"
+		capture label variable n           "Sample size (unweighted)"					
 		
 		save, replace
 		

@@ -1,12 +1,10 @@
-*! RI_VCTC_01_06PO version 1.01 - Biostat Global Consulting - 2021-01-06
+*! RI_VCTC_01_06PO version 1.00 - Biostat Global Consulting - 2020-09-24
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name			What Changed
 * 2020-09-24	1.00	Dale Rhoda		Original version
-* 2021-01-06  1.01	Dale Rhoda		Added timely_legend_info to list of 
-*																	temp datasets to delete later
 *******************************************************************************
 
 program define RI_VCTC_01_06PO
@@ -106,8 +104,6 @@ program define RI_VCTC_01_06PO
 					* as generating the twoway plotit macro
 					capture postclose handle
 					postfile handle sequence order str255 label str255 dose using timely_legend_info, replace
-          
-          vcqi_global RI_VCTC_01_TEMP_DATASETS $RI_VCTC_01_TEMP_DATASETS timely_legend_info
 
 					* Loop over the doses and build the set of twoway bar, rbar, and rcap commands that will make the stacked bar and confidence interval
 					local i 0

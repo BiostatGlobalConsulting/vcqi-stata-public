@@ -1,4 +1,4 @@
-*! make_tables_from_RI_QUAL_09 version 1.09 - Biostat Global Consulting - 2020-12-12
+*! make_tables_from_RI_QUAL_09 version 1.00 - Biostat Global Consulting - 2021-01-06
 *******************************************************************************
 * Change log
 * 				Updated
@@ -18,6 +18,7 @@
 * 2019-11-13 	1.08	Dale Rhoda		Fix an old bug that was replacing pct
 *										with zero in the category title rows
 * 2020-12-12	1.09	Dale Rhoda		Allow user to SHOW_LEVEL_4_ALONE
+* 2021-01-06	1.10	Dale Rhoda		Extend stratum string length to 255
 *******************************************************************************
 
 program define make_tables_from_RI_QUAL_09
@@ -73,7 +74,7 @@ program define make_tables_from_RI_QUAL_09
 	*
 	capture postclose to_dataset
 
-	postfile to_dataset str50 stratum n_mov pct_mov n_uncor_mov pct_uncor ///
+	postfile to_dataset str255 stratum n_mov pct_mov n_uncor_mov pct_uncor ///
 	                    n_cor_mov pct_cor `x1' n block level substratum ///
 				        using ///
       "${VCQI_OUTPUT_FOLDER}/`measureid'_${ANALYSIS_COUNTER}_`ldose'_TO", replace

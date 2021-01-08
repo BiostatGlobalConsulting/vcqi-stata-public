@@ -1,4 +1,4 @@
-*! vcqi_halt_immediately version 1.25 - Biostat Global Consulting - 2020-12-09
+*! vcqi_halt_immediately version 1.26 - Biostat Global Consulting - 2021-01-06
 *******************************************************************************
 * Change log
 * 				Updated
@@ -80,6 +80,10 @@
 *
 * 2020-12-09    1.25    Dale Rhoda      Introduce $MISC_TEMP_DATASETS
 *
+* 2021-01-06	1.26	Dale Rhoda		Add RI_QUAL_07B, RI_CCC_02 and RI_CIC_02
+*                                       to the list for deleting temporary datasets;
+*                                       also close any open graphs
+*
 *******************************************************************************
 
 program define vcqi_halt_immediately
@@ -92,6 +96,10 @@ program define vcqi_halt_immediately
 	
 		if "$VCQI_CHECK_INSTEAD_OF_RUN" != "1" {
 		
+			****************************************************************************
+			* Close any graphs that remain open
+			graph drop _all
+			
 			****************************************************************************
 			* If the user made organ pipe plots and saved accompanying datasets,
 			* augment those datasets with the cluster names
@@ -180,9 +188,9 @@ program define vcqi_halt_immediately
 							   RI_ACC_01 RI_CONT_01 DESC_01 DESC_02 DESC_03  ///
 							   RI_COVG_01 RI_COVG_02 RI_COVG_03 RI_COVG_04 RI_COVG_05 ///
 							   RI_QUAL_01 RI_QUAL_02 RI_QUAL_03 RI_QUAL_04 RI_QUAL_05 ///
-							   RI_QUAL_06 RI_QUAL_07 RI_QUAL_08 RI_QUAL_09 RI_QUAL_12 ///
-							   RI_QUAL_13 RI_CCC_01 RI_CIC_01 COVG_DIFF_01 COVG_DIFF_02 ///
-							   RI_VCTC_01 {					   
+							   RI_QUAL_06 RI_QUAL_07 RI_QUAL_07B RI_QUAL_08 RI_QUAL_09 RI_QUAL_12 ///
+							   RI_QUAL_13 RI_CCC_01 RI_CCC_02 RI_CIC_01 RI_CIC_02 ///
+							   COVG_DIFF_01 COVG_DIFF_02 RI_VCTC_01 {					   
 					foreach d in ${`p'_TEMP_DATASETS} {
 						vcqi_log_comment $VCP 3 Cleanup "Erasing temp dataset `d'"
 						capture erase "${VCQI_OUTPUT_FOLDER}/`d'.dta"

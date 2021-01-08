@@ -167,16 +167,16 @@ vcqi_global VCQI_LEVEL4_SET_LAYOUT ${VCQI_DATA_FOLDER}/VCQI_LEVEL4_SET_LAYOUT_ur
 * These globals control how the output looks in the tabulated dataset 
 * from the 05TO programs; see Annex B in the VCQI User's Guide.
 
-vcqi_global SHOW_LEVEL_1_ALONE         0
+vcqi_global SHOW_LEVEL_1_ALONE         1
 vcqi_global SHOW_LEVEL_2_ALONE         0
-vcqi_global SHOW_LEVEL_3_ALONE         0 
+vcqi_global SHOW_LEVEL_3_ALONE         0
 vcqi_global SHOW_LEVEL_4_ALONE         0
-vcqi_global SHOW_LEVELS_2_3_TOGETHER   0
+vcqi_global SHOW_LEVELS_2_3_TOGETHER   1
 
 vcqi_global SHOW_LEVELS_1_4_TOGETHER   1
 vcqi_global SHOW_LEVELS_2_4_TOGETHER   0
 vcqi_global SHOW_LEVELS_3_4_TOGETHER   0
-vcqi_global SHOW_LEVELS_2_3_4_TOGETHER 1
+vcqi_global SHOW_LEVELS_2_3_4_TOGETHER 0
 
 vcqi_global SHOW_BLANKS_BETWEEN_LEVELS 1
 

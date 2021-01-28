@@ -132,7 +132,21 @@ program define make_table_order_dataset
 			}
 			restore
 		}
-		
+
+		* Only show the sub-strata (e.g., urban/rural)	
+		* (Note that the value of block here is 9 because this capability 
+		*  was added after that for blocks 1-8.)
+		if $SHOW_LEVEL_4_ALONE == 1 {
+			preserve
+			keep if level == 1 & !missing(level4id)
+			sort level4order
+			forvalues i = 1/`=_N' {
+				post to_dataset (name[`i']) (9) (level[`i']) (substratum[`i']) ///
+			        (level1id[`i']) (level2id[`i']) (level3id[`i']) (level4id[`i'])	("`=condition[`i']'")
+			}
+			restore
+		}		
+				
 		* Show each level 2 stratum (sorted in the order the user asked for)
 		* and underneath the level 2 row, list one row for each of the level 3
 		* strata that are in the level 2 stratum.  e.g., Show a row for each

@@ -1,4 +1,4 @@
-*! TT_COVG_01_03DV version 1.06 - Biostat Global Consulting - 2019-08-23
+*! TT_COVG_01_03DV version 1.07 - Biostat Global Consulting - 2021-01-15
 *******************************************************************************
 * Change log
 * 				Updated
@@ -16,6 +16,8 @@
 * 2017-08-26	1.04	Mary Prier		Added version 14.1 line
 * 2018-05-28	1.05	Dale Rhoda		Years since last dose must be non-negative
 * 2019-08-23	1.06	Dale Rhoda		Make outcomes missing if psweight == 0 | missing(psweight)
+* 2021-01-15	1.07	Dale Rhoda		Allow card or register dates to be recorded
+*                                       as the complete date or using _m and _d and _y variables
 *******************************************************************************
 
 program define TT_COVG_01_03DV
@@ -42,8 +44,15 @@ program define TT_COVG_01_03DV
 		label variable lifetime_tt_doses_by_card "Lifetime TT doses per card"
 			
 		forvalues i = 30/35 {
+			
+			gen card_evidence_of_tt`=`i'-29' = 0
+			capture replace card_evidence_of_tt`=`i'-29' = 1 if !missing(TT`i') & TT`i' != 99 & TT`i' != 0
+			capture replace card_evidence_of_tt`=`i'-29' = 1 if TT`i'_m >= 1 & TT`i'_m <= 12
+			capture replace card_evidence_of_tt`=`i'-29' = 1 if TT`i'_d >= 1 & TT`i'_d <= 31
+			capture replace card_evidence_of_tt`=`i'-29' = 1 if !missing(TT`i'_y) & TT`i'_y != 9 & TT`i'_y != 0
+			label variable  card_evidence_of_tt`=`i'-29' "TT card has evidence of TT`=`i'-29'"
 		
-			replace lifetime_tt_doses_by_card = lifetime_tt_doses_by_card + 1 if !missing(TT`i')
+			replace lifetime_tt_doses_by_card = lifetime_tt_doses_by_card + 1 if card_evidence_of_tt`=`i'-29' == 1
 			replace years_since_last_dose_c_or_h = ( (TT09-TT`i') / 365 ) ///
 					if !missing(TT`i') & !missing(TT09) & ///
 				   ( (TT09-TT`i') / 365 ) < years_since_last_dose_c_or_h & ///
@@ -100,8 +109,15 @@ program define TT_COVG_01_03DV
 			label variable years_since_last_dose_r_or_h "Years since last TT per card or history (0 means < 1)"
 			
 			forvalues i = 21/26 {
+				
+				gen register_evidence_of_tt`=`i'-20' = 0
+				capture replace register_evidence_of_tt`=`i'-20' = 1 if !missing(TTHC`i') & TTHC`i' != 99 & TTHC`i' != 0
+				capture replace register_evidence_of_tt`=`i'-20' = 1 if TTHC`i'_m >= 1 & TTHC`i'_m <= 12
+				capture replace register_evidence_of_tt`=`i'-20' = 1 if TTHC`i'_d >= 1 & TTHC`i'_d <= 31
+				capture replace register_evidence_of_tt`=`i'-20' = 1 if !missing(TTHC`i'_y) & TTHC`i'_y != 9 & TTHC`i'_y != 0
+				label variable  register_evidence_of_tt`=`i'-20' "TT register has evidence of TT`=`i'-20'"				
 			
-				replace lifetime_tt_doses_by_register = lifetime_tt_doses_by_register + 1 if !missing(TTHC`i')
+				replace lifetime_tt_doses_by_register = lifetime_tt_doses_by_register + 1 if register_evidence_of_tt`=`i'-20' == 1
 
 				replace years_since_last_dose_r_or_h = ( (TT09-TTHC`i') / 365 ) ///
 						if !missing(TTHC`i') & !missing(TT09) & ///

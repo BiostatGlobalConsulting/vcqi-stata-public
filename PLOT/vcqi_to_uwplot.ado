@@ -186,11 +186,13 @@ program define vcqi_to_uwplot
 		replace level2id = 0 if missing(level2id)
 		replace level3id = 0 if missing(level3id)
 		replace level4id = 0 if missing(level4id)		
-		merge 1:m level1id level2id level3id level4id using table_order_TO
+		merge 1:m level1id level2id level3id level4id using "${VCQI_OUTPUT_FOLDER}/table_order_TO"
 		keep if _merge == 1 | _merge == 3
 		drop _merge
 		sort table_bottom_to_top_row_order
 	}
+
+	keep if !missing(estimate)
 
 	keep name n estimate level level*id outcome
 		

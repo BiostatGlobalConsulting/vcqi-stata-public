@@ -59,8 +59,6 @@ program define SIA_COVG_03_00GC
 		vcqi_halt_immediately
 	}
 	
-	
-	
 	vcqi_log_comment $VCP 5 Flow "Exiting"
 	global VCP `oldvcp'
 

@@ -1,4 +1,4 @@
-*! RI_CCC_02_01PP version 1.01 - Biostat Global Consulting - 2020-04-11
+*! RI_CCC_02_01PP version 1.02 - Biostat Global Consulting - 2021-01-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -7,6 +7,7 @@
 * 2018-12-06	1.00	Mary Prier		Original version
 * 2020-04-11	1.01	Dale Rhoda		Also keep got_crude_*_to_analyze which
 *                                       is used for the periscopes at far right
+* 2021-01-16	1.02	Dale Rhoda		Check to be sure RI_COVG_01 has been run
 *******************************************************************************
 
 program define RI_CCC_02_01PP
@@ -38,6 +39,8 @@ program define RI_CCC_02_01PP
 		 `dlist' no_card age_at_interview dob_for_valid_dose_calculations ///
 		 urban_cluster level1name level2name level3name
 
+	check_RI_COVG_01_03DV	 
+		 
 	qui merge 1:1 respid using RI_COVG_01_${ANALYSIS_COUNTER}, keepusing(`alist')
 	qui keep if _merge == 1 | _merge == 3
 	drop _merge

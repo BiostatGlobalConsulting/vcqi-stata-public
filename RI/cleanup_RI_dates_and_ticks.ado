@@ -1,4 +1,4 @@
-*! cleanup_RI_dates_and_ticks version 1.15 - Biostat Global Consulting - 2020-02-19
+*! cleanup_RI_dates_and_ticks version 1.16 - Biostat Global Consulting - 2021-01-16
 *******************************************************************************
 * Change log
 * 				Updated
@@ -42,6 +42,11 @@
 * 2020-02-19	1.15	MK Trimner		Replace ooo code to be >= to capture if the dates are the same
 * 										Changed flag 22 to look at childs own interview date first, then if 
 *										interview date missing the latest possible survey date.
+* 2021-01-16	1.16	MK Trimner		Added code to change Interview date to have underscore
+*										Removed extra code to check for RI09 and RI09m/d/y 
+* 										as these will be checked upstream and Interview date is now required
+* 2021-01-19	1.17	MKTrimner		Changed code that uses RI dataset in 2 spots to use "preclean" dataset from OUTPUT 
+*										if VCQI_RI_DATASET changed during check_RI_analysis_metadata	
 *******************************************************************************
 
 * This program accomplishes several things:
@@ -84,7 +89,7 @@ program define cleanup_RI_dates_and_ticks
 	
 		if "$VCQI_CHECK_INSTEAD_OF_RUN" != "1" {
 		
-			use "${VCQI_DATA_FOLDER}/${VCQI_RI_DATASET}", clear
+			use "${VCQI_OUTPUT_FOLDER}/${VCQI_RI_DATASET}", clear
 
 			if ${RI_RECORDS_SOUGHT_FOR_ALL} == 1 | ${RI_RECORDS_SOUGHT_IF_NO_CARD} == 1 {
 			
@@ -273,33 +278,11 @@ program define cleanup_RI_dates_and_ticks
 			label variable age_at_interview "Age at interview (days)"
 			
 			gen date_of_interview = .
-			label variable date_of_interview "Date of interview (from RI09)"
+			label variable date_of_interview "Date of interview (from RI09 variables)"
+						
+			replace date_of_interview = mdy(RI09_m,RI09_d,RI09_y)
+			replace age_at_interview = date_of_interview - dob_for_valid_dose_calculations if missing(age_at_interview)
 			
-			capture confirm variable RI09m
-			local ri09m = _rc
-			capture confirm variable RI09d
-			local ri09d = _rc
-			capture confirm variable RI09y
-			local ri09y = _rc
-			capture confirm variable RI09
-			local ri09  = _rc
-			
-			if `ri09m' + `ri09d' + `ri09y' != 0 & `ri09' == 0 {
-				gen RI09m = month(RI09)
-				gen RI09d = day(RI09)
-				gen RI09y = year(RI09)
-			}
-			capture confirm variable RI09m
-			local ri09m = _rc
-			capture confirm variable RI09d
-			local ri09d = _rc
-			capture confirm variable RI09y
-			local ri09y = _rc
-			
-			if `ri09m' + `ri09d' + `ri09y' == 0 {
-				replace date_of_interview = mdy(RI09m,RI09d,RI09y)
-				replace age_at_interview = date_of_interview - dob_for_valid_dose_calculations if missing(age_at_interview)
-			}
 			gen date_of_last_possible_vacc = mdy($LATEST_SVY_VACC_DATE_M,$LATEST_SVY_VACC_DATE_D,$LATEST_SVY_VACC_DATE_Y)
 			label variable date_of_last_possible_vacc "Date of last possible Vx (from global LATEST_SVY_VACC_DATE)"
 			replace age_at_interview = date_of_last_possible_vacc - dob_for_valid_dose_calculations if missing(age_at_interview)
@@ -706,7 +689,7 @@ program define cleanup_RI_dates_and_ticks
 			vcqi_global RI_TEMP_DATASETS $RI_TEMP_DATASETS ${VCQI_RI_DATASET}_dqd
 			
 			* merge the new clean variables on to the RI survey dataset
-			use "${VCQI_DATA_FOLDER}/${VCQI_RI_DATASET}", clear
+			use "${VCQI_OUTPUT_FOLDER}/${VCQI_RI_DATASET}", clear
 			merge 1:1 RI01 RI03 RI11 RI12 using "${VCQI_OUTPUT_FOLDER}/${VCQI_RI_DATASET}_dqd"
 			keep if _merge == 1 | _merge == 3
 			drop _merge

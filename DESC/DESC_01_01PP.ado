@@ -1,4 +1,4 @@
-*! DESC_01_01PP version 1.03 - Biostat Global Consulting - 2017-08-26
+*! DESC_01_01PP version 1.04 - Biostat Global Consulting - 2021-01-14
 *******************************************************************************
 * Change log
 * 				Updated
@@ -8,6 +8,7 @@
 *                   					if TT_RECORDS_NOT_SOUGHT is 1
 * 2016-02-13	1.02	Dale Rhoda		Make list of temp datasets 
 * 2017-08-26	1.03	Mary Prier		Added version 14.1 line
+* 2021-01-14	1.04	Dale Rhoda		Removed HM29 and HM30 from required list
 *******************************************************************************
 
 program define DESC_01_01PP
@@ -92,8 +93,8 @@ program define DESC_01_01PP
 			sort HM01 HM03 HM09 
 			egen hhid = group(HM01 HM03 HM09)
 
-			keep HM01 HM03 HM09 hhid HM19 HM20 HM21 HM22 HM27 HM29 ///
-				 HM30 HM31 HM32 HM33 HM34 HM35 HM36 ///
+			keep HM01 HM03 HM09 hhid HM19 HM20 HM21 HM22 HM27 ///
+				 HM31 HM32 HM33 HM34 HM35 HM36 ///
 				 HM37 HM38 HM39 HM40 HM41 HM42 HM43 HM44 HM45 
 			
 			gen male = HM27 == 1

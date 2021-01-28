@@ -1,4 +1,4 @@
-*! check_analysis_metadata version 1.21 - Biostat Global Consulting - 2019-10-13
+*! check_VCQI_CM_metadata version 1.01 - Biostat Global Consulting - 2020-12-16
 *******************************************************************************
 * Change log
 * 				Updated
@@ -6,6 +6,9 @@
 * Date 			number 	Name			What Changed
 * 2020-01-20	1.0		Dale Rhoda		Original version extracted from 
 *										check_analysis_metadata.ado
+* 2020-12-16	1.01	MK Trimner		Added code to generate province_id and urban_cluster
+*										as missing if not provided in CM dataset
+*										replaced *! (NAME) with correct program name check_VCQI_CM_metadata
 *
 *******************************************************************************
 
@@ -41,7 +44,7 @@ program define check_VCQI_CM_metadata
 							local pws psweight_sia
 						}
 					}
-
+					
 					* Begin check
 					foreach v in HH01 HH02 HH04 `psw' province_id urban_cluster {
 						capture confirm variable `v' 
@@ -72,7 +75,14 @@ program define check_VCQI_CM_metadata
 
 						}
 						else {
-							if _rc!=0 {
+							if _rc!=0 & inlist("`v'","province_id","urban_cluster") {
+								capture gen `v' = .
+								label var `v' "`v' - Created as missing to run VCQI"
+								di as error "Variable `v' does not exist in CM dataset. It has been created as a missing variable to run VCQI."
+								vcqi_log_comment $VCP 2 Warning "Variable `v' does not exist in CM dataset. It has been created as a missing variable to run VCQI."
+								
+							}
+							if _rc!=0 & !inlist("`v'","province_id","urban_cluster"){
 								di as error "Variable `v' does not exist in CM dataset and is required to run VCQI."
 								vcqi_log_comment $VCP 1 Error "Variable `v' does not exist in CM dataset and is required to run VCQI."
 								local exitflag 1

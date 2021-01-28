@@ -1,4 +1,4 @@
-*! check_analysis_metadata version 1.24 - Biostat Global Consulting - 2020-12-16
+*! check_analysis_metadata version 1.26 - Biostat Global Consulting - 2021-01-18
 *******************************************************************************
 * Change log
 * 				Updated
@@ -47,6 +47,18 @@
 * 2020-12-12	1.23	Dale Rhoda		Allow SHOW_LEVEL_4_ALONE
 * 2020-12-16	1.24	Cait Clary		Save user input for IWPLOT_SHOWBARS;
 *										change log message for bars/double iw
+* 2021-01-09	1.25	Dale Rhoda		If user asks for 2+ level 4 stratifiers
+*                                       using the LEVEL4_SET syntax, then only
+*                                       make inchworm and unweighted proportion
+*                                       plots if they *also* ask for
+*                                       PLOT_OUTCOMES_IN_TABLE_ORDER.
+*                                       (the plots are very cluttered if there
+*                                         are numerous stratifiers with 
+*                                         numerous levels)
+* 2021-01-14	1.25	Dale Rhoda		If user specifies HM dataset, the var
+*                                       HM29 must be numeric
+* 2021-01-17	1.26	Dale Rhoda		Check values of VCQI_DOUBLE_IWPLOT_CITEXT.
+*                                       Set it to 2 if the user did not specify.
 *******************************************************************************
 
 program define check_analysis_metadata
@@ -90,7 +102,7 @@ program define check_analysis_metadata
 
 							* If the variable exists, confirm the variable is not missing and has the correct variable type
 							if _rc==0 {
-								if !inlist("`v'", "HH14", "HM09") {		
+								if !inlist("`v'", "HH14", "HM09", "HM29") {		
 									capture confirm numeric variable `v'
 									if _rc!=0 {
 										di as error "`v' needs to be a numeric variable in `d' dataset."
@@ -593,15 +605,17 @@ program define check_analysis_metadata
 
 		global VCQI_SHOW1 = $SHOW_LEVEL_1_ALONE + $SHOW_LEVELS_1_4_TOGETHER > 0	
 
-		* If user specifies LEVEL4_SET with 2+ variables then turn off inchworm and unweighted plots
+		* If user specifies LEVEL4_SET with 2+ variables *AND*
+		* does not ask to have outcomes plotted in TABLE_ORDER, 
+		* then turn off inchworm and unweighted plots
 
-		if `=wordcount("$VCQI_LEVEL4_SET_VARLIST")' > 1 {	
+		if `=wordcount("$VCQI_LEVEL4_SET_VARLIST")' > 1 & "$PLOT_OUTCOMES_IN_TABLE_ORDER" != "1" {	
 			if "$VCQI_MAKE_IW_PLOTS" == "1" {
-				vcqi_log_comment $VCP 2 Warning "VCQI does not make inchworm plots when the user asks for 2+ LEVEL4 stratifiers via the LEVEL4_SET syntax."
+				vcqi_log_comment $VCP 2 Warning "VCQI does not make inchworm plots when the user asks for 2+ LEVEL4 stratifiers via the LEVEL4_SET syntax and does NOT ask for PLOT_OUTCOMES_IN_TABLE_ORDER."
 				vcqi_global VCQI_MAKE_IW_PLOTS 0
 			}
 			if "$VCQI_MAKE_UW_PLOTS" == "1" {
-				vcqi_log_comment $VCP 2 Warning "VCQI does not make unweighted proportion plots when the user asks for 2+ LEVEL4 stratifiers via the LEVEL4_SET syntax."
+				vcqi_log_comment $VCP 2 Warning "VCQI does not make unweighted proportion plots when the user asks for 2+ LEVEL4 stratifiers via the LEVEL4_SET syntax and does NOT ask for PLOT_OUTCOMES_IN_TABLE_ORDER."
 				vcqi_global VCQI_MAKE_UW_PLOTS 0
 			}
 		}
@@ -618,6 +632,24 @@ program define check_analysis_metadata
 		
 		if !inlist("$IWPLOT_SHOWBARS", "", "0") ///
 			vcqi_log_comment $VCP 3 Comment "The global macro IWPLOT_SHOWBARS is set to $IWPLOT_SHOWBARS. Note that when this macro is set to 1, VCQI will convert single-inchworm plots to bar plots but continue to make double-inchworm plots."
+			
+		*************************
+		* Global that controls right side text for double inchworm plots
+		
+		* Default to point estimates only for both distributions
+		if "$VCQI_DOUBLE_IWPLOT_CITEXT" == "" vcqi_global VCQI_DOUBLE_IWPLOT_CITEXT 1
+		
+		* If user specified something besides 1 or 2 or 3, reset to 2 and issue warning
+		if !inlist("$VCQI_DOUBLE_IWPLOT_CITEXT","1","2","3") {			
+			vcqi_log_comment $VCP 2 Warning "User specified an invalid value of VCQI_DOUBLE_IWPLOT_CITEXT.  Valid values include 1 or 2 or 3.  User specified ${VCQI_DOUBLE_IWPLOT_CITEXT}.  Resetting this parameter to default value of 1."
+			vcqi_global VCQI_DOUBLE_IWPLOT_CITEXT 1
+		}
+		
+		**************************
+		
+		* Aggregate databases unless (programmer's option) the user asks not to
+		* by setting VCQI_AGGREGATE_VCQI_DATABASES to something other than 1 (like 0)
+		if "$VCQI_AGGREGATE_VCQI_DATABASES" == "" vcqi_global VCQI_AGGREGATE_VCQI_DATABASES 1
 			
 		if "`exitflag'" == "1" {
 			vcqi_global VCQI_ERROR 1

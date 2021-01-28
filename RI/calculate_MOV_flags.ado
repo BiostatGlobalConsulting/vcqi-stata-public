@@ -1,4 +1,4 @@
-*! calculate_MOV_flags version 1.17 - Biostat Global Consulting - 2020-08-11
+*! calculate_MOV_flags version 1.18 - Biostat Global Consulting - 2021-01-21
 *******************************************************************************
 * Change log
 * 				Updated
@@ -89,6 +89,11 @@
 *                                       was rec'd by tick or recall
 *
 * 2020-08-11	1.17	Dale Rhoda		Label the output variables
+*
+* 2021-01-21	1.18	Dale Rhoda		Strip out the old logic that was made
+*                                       redundant by the decision to not
+*                                       count MOVs for doses after a tick in
+*                                       a multi-dose series
 *
 *******************************************************************************
 
@@ -351,6 +356,10 @@ program define calculate_MOV_flags
 				**********************************************
 				* Set up variables for the multi-dose vaccines
 				**********************************************
+				
+				* (Recall that RI_MULTI_3_DOSE_LIST now contains the 
+				*   list of both the 2-dose and 3-dose antigens)
+				
 				foreach d in `=lower("$RI_MULTI_3_DOSE_LIST")' {
 					foreach t in crude valid {  // t is for "type"
 
@@ -366,10 +375,6 @@ program define calculate_MOV_flags
 						if "`t'" == "crude" {
 							replace credit_`d'1_`t' = 1
 						}
-
-						*** Update elig variables for "TDD" & "TDM" cases (See specifications 6.6a #10) ***
-						replace credit_`d'1_`t' = 0 if inlist(`d'_str3,"TDD","TDM")
-						replace elig_`d'1_`t' = 0 if inlist(`d'_str3,"TDD","TDM")
 						
 						***Not eligible and no credit if rec'd per tick mark/history
 						replace credit_`d'1_`t' = 0 if substr(`d'_str3,1,1) == "T"
@@ -406,20 +411,9 @@ program define calculate_MOV_flags
 										  (age >= `d'2_min_age_days)
 						
 						* if early doses count, then s/he is always eligible
-						if "`t'" == "crude" {
+						if "`t'" == "crude" ///
 							replace credit_`d'2_`t' = flag_got_`d'1_`t' & age > age_at_`d'1_`t'
-							
-							*** Update elig variables for "TDD" & "TDM" cases (See specifications 6.6a #10) ***
-							replace credit_`d'2_`t' = 1 if inlist(`d'_str3,"TDD","TDM")
-							replace elig_`d'2_`t' = age >= `d'2_min_age_days if inlist(`d'_str3,"TDD","TDM")
-						}
-						
-						if "`t'" == "valid" {
-							*** Update elig variables for "TDD" & "TDM" cases (See specifications 6.6a #10) ***
-							replace credit_`d'2_`t' = 0 if inlist(`d'_str3,"TDD","TDM")
-							replace elig_`d'2_`t' = 0 if inlist(`d'_str3,"TDD","TDM")
-						}
-						
+												
 						***Not eligible and no credit if dose 1 or 2 rec'd per tick mark/history
 						replace credit_`d'2_`t' = 0 if substr(`d'_str3,1,1) == "T" | substr(`d'_str3,2,1) == "T"
 						replace elig_`d'2_`t'   = 0 if substr(`d'_str3,1,1) == "T" | substr(`d'_str3,2,1) == "T"
@@ -456,29 +450,14 @@ program define calculate_MOV_flags
 
 						gen cum_`d'_`t' = sum(got_`d')
 						label var cum_`d'_`t' "Cumulative doses of `d' (up to and including this visit) - `t'"
-						gen age_`d'_`t'2 = age * (cum_`d'_`t' == 1) * got_`d' if inlist(`d'_str3,"TDD","TDM")
-						bysort person: egen age_max_`d'_`t' = max(age_`d'_`t'2)
-						bysort person: replace age_`d'_`t'2 = age_max_`d'_`t' if inlist(`d'_str3,"TDD","TDM")
-						drop age_max_`d'_`t'
 						
 						* if early doses count, then s/he is always eligible
-						if "`t'" == "crude" {
+						if "`t'" == "crude" ///
 							replace credit_`d'3_`t' = flag_got_`d'2_`t' & age > age_at_`d'2_`t'
-							
-							*** Update elig variables for "TDD" & "TDM" cases (See specifications 6.6a #10) ***
-							replace credit_`d'3_`t' = 1 if inlist(`d'_str3,"TDD","TDM")
-							replace elig_`d'3_`t' = age >= `d'3_min_age_days & (age>=age_`d'_crude2+`d'3_min_interval_days) if inlist(`d'_str3,"TDD","TDM")
-						}
-						
-						if "`t'" == "valid" {
-							*** Update elig variables for "TDD" & "TDM" cases (See specifications 6.6a #10) ***
-							replace credit_`d'3_`t' = age_`d'_crude2 >= `d'1_min_age_days & (age>=age_`d'_crude2+`d'3_min_interval_days) if inlist(`d'_str3,"TDD","TDM")
-							replace elig_`d'3_`t' = credit_`d'3_`t' & age >= `d'3_min_age_days if inlist(`d'_str3,"TDD","TDM")
-						}	
 						
 						***Not eligible and no credit if dose 1 or 2 or 3 rec'd per tick mark/history
-						replace credit_`d'3_`t' = 0 if substr(`d'_str3,1,1) == "T" | substr(`d'_str3,2,1) == "T" | substr(`d'_str3,3,1) == "T"
-						replace elig_`d'3_`t'   = 0 if substr(`d'_str3,1,1) == "T" | substr(`d'_str3,2,1) == "T" | substr(`d'_str3,3,1) == "T"
+						replace credit_`d'3_`t' = 0 if strpos(`d'_str3,"T") > 0
+						replace elig_`d'3_`t'   = 0 if strpos(`d'_str3,"T") > 0
 						
 						gen got_`d'3_`t' = credit_`d'3_`t' == 1 & got_`d' == 1
 
@@ -501,10 +480,6 @@ program define calculate_MOV_flags
 							
 
 						drop dropthis1_`t' dropthis2_`t' dropthis3_`t'
-
-						*gen got_`d'1_`t' = got_`d'1_`t'
-						*gen got_`d'2_`t' = got_`d'2_`t'
-						*gen got_`d'3_`t' = got_`d'3_`t'
 						
 					}
 				}
@@ -665,107 +640,6 @@ program define calculate_MOV_flags
 					vcqi_global RI_TEMP_DATASETS $RI_TEMP_DATASETS RI_MOV_step05
 				}
 				
-				* Multi-dose vaccines - Update MOV flags depending on 3 char string created at top of program
-				* See file "MOV date tick missing updates - MP.xlsx" as well as specification doc for breakdown
-				* Denominator only means: replace MOV flags with 0 and replace total_elig_<dose> with 1
-				* Do not count means: replace MOV flags with 0
-				* Note: The two cases are the same except "denominator only" also replaces total_elig_<dose> with 1
-
-				foreach d in `=lower("$RI_MULTI_3_DOSE_LIST")' {
-					foreach t in crude valid {
-						
-						*** Dose 1 ***
-						* Note: <inlist> can only handle a list of 10 strings, so have to use 2 replace statements for each MOV variable that needs updating
-						replace mov_`d'1_`t' = 0 if inlist(`d'_str3,"TDD","TDT","TDM","TTD","TTT","TTM","TMD","TMT","TMM")
-						replace mov_`d'1_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-						
-						replace cum_mov_`d'1_`t' = 0 if inlist(`d'_str3,"TDD","TDT","TDM","TTD","TTT","TTM","TMD","TMT","TMM")
-						replace cum_mov_`d'1_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-						
-						replace cor_mov_`d'1_`t' = 0 if inlist(`d'_str3,"TDD","TDT","TDM","TTD","TTT","TTM","TMD","TMT","TMM")
-						replace cor_mov_`d'1_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-						
-						replace flag_cor_mov_`d'1_`t' = 0 if inlist(`d'_str3,"TDD","TDT","TDM","TTD","TTT","TTM","TMD","TMT","TMM")
-						replace flag_cor_mov_`d'1_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-						
-						replace total_mov_`d'1_`t' = 0 if inlist(`d'_str3,"TDD","TDT","TDM","TTD","TTT","TTM","TMD","TMT","TMM")
-						replace total_mov_`d'1_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-						
-						replace flag_had_mov_`d'1_`t' = 0 if inlist(`d'_str3,"TDD","TDT","TDM","TTD","TTT","TTM","TMD","TMT","TMM")
-						replace flag_had_mov_`d'1_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-						
-						replace flag_uncor_mov_`d'1_`t' = 0 if inlist(`d'_str3,"TDD","TDT","TDM","TTD","TTT","TTM","TMD","TMT","TMM") 
-						replace flag_uncor_mov_`d'1_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-
-						*** Dose 2 ***
-						* Note: <inlist> can only handle a list of 10 strings, so have to use 3 replace statements for each MOV variable that needs updating
-						replace mov_`d'2_`t' = 0 if inlist(`d'_str3,"DTD","DTT","DTM","DMD","DMT")
-						replace mov_`d'2_`t' = 0 if inlist(`d'_str3,"TDD","TDT","TDM","TTD","TTT","TTM","TMD","TMT","TMM")
-						replace mov_`d'2_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-						
-						replace cum_mov_`d'2_`t' = 0 if inlist(`d'_str3,"DTD","DTT","DTM","DMD","DMT")
-						replace cum_mov_`d'2_`t' = 0 if inlist(`d'_str3,"TDD","TDT","TDM","TTD","TTT","TTM","TMD","TMT","TMM")
-						replace cum_mov_`d'2_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-						
-						replace cor_mov_`d'2_`t' = 0 if inlist(`d'_str3,"DTD","DTT","DTM","DMD","DMT")
-						replace cor_mov_`d'2_`t' = 0 if inlist(`d'_str3,"TDD","TDT","TDM","TTD","TTT","TTM","TMD","TMT","TMM")
-						replace cor_mov_`d'2_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-						
-						replace flag_cor_mov_`d'2_`t' = 0 if inlist(`d'_str3,"DTD","DTT","DTM","DMD","DMT")
-						replace flag_cor_mov_`d'2_`t' = 0 if inlist(`d'_str3,"TDD","TDT","TDM","TTD","TTT","TTM","TMD","TMT","TMM")
-						replace flag_cor_mov_`d'2_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-						
-						replace total_mov_`d'2_`t' = 0 if inlist(`d'_str3,"DTD","DTT","DTM","DMD","DMT")
-						replace total_mov_`d'2_`t' = 0 if inlist(`d'_str3,"TDD","TDT","TDM","TTD","TTT","TTM","TMD","TMT","TMM")
-						replace total_mov_`d'2_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-						
-						replace flag_had_mov_`d'2_`t' = 0 if inlist(`d'_str3,"DTD","DTT","DTM","DMD","DMT")
-						replace flag_had_mov_`d'2_`t' = 0 if inlist(`d'_str3,"TDD","TDT","TDM","TTD","TTT","TTM","TMD","TMT","TMM")
-						replace flag_had_mov_`d'2_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-						
-						replace flag_uncor_mov_`d'2_`t' = 0 if inlist(`d'_str3,"DTD","DTT","DTM","DMD","DMT") 
-						replace flag_uncor_mov_`d'2_`t' = 0 if inlist(`d'_str3,"TDD","TDT","TDM","TTD","TTT","TTM","TMD","TMT","TMM") 
-						replace flag_uncor_mov_`d'2_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-
-						* "TDD" & "TDT" & "TDM" are denominator only cases for dose2, so also update total_elig_<dose> var
-						replace total_elig_`d'2_`t' = 1 if inlist(`d'_str3,"TDD","TDT","TDM")
-						
-						*** Dose 3 ***
-						* Note: <inlist> can only handle a list of 10 strings, so have to use 3 replace statements for each MOV variable that needs updating
-						replace mov_`d'3_`t' = 0 if inlist(`d'_str3,"DDT","DTD","DTT","DTM","DMD","DMT")
-						replace mov_`d'3_`t' = 0 if inlist(`d'_str3,"TDT","TTD","TTT","TTM","TMD","TMT","TMM")
-						replace mov_`d'3_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-						
-						replace cum_mov_`d'3_`t' = 0 if inlist(`d'_str3,"DDT","DTD","DTT","DTM","DMD","DMT")
-						replace cum_mov_`d'3_`t' = 0 if inlist(`d'_str3,"TDT","TTD","TTT","TTM","TMD","TMT","TMM")
-						replace cum_mov_`d'3_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-						
-						replace cor_mov_`d'3_`t' = 0 if inlist(`d'_str3,"DDT","DTD","DTT","DTM","DMD","DMT")
-						replace cor_mov_`d'3_`t' = 0 if inlist(`d'_str3,"TDT","TTD","TTT","TTM","TMD","TMT","TMM")
-						replace cor_mov_`d'3_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-						
-						replace flag_cor_mov_`d'3_`t' = 0 if inlist(`d'_str3,"DDT","DTD","DTT","DTM","DMD","DMT")
-						replace flag_cor_mov_`d'3_`t' = 0 if inlist(`d'_str3,"TDT","TTD","TTT","TTM","TMD","TMT","TMM")
-						replace flag_cor_mov_`d'3_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-						
-						replace total_mov_`d'3_`t' = 0 if inlist(`d'_str3,"DDT","DTD","DTT","DTM","DMD","DMT")
-						replace total_mov_`d'3_`t' = 0 if inlist(`d'_str3,"TDT","TTD","TTT","TTM","TMD","TMT","TMM")
-						replace total_mov_`d'3_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-						
-						replace flag_had_mov_`d'3_`t' = 0 if inlist(`d'_str3,"DDT","DTD","DTT","DTM","DMD","DMT")
-						replace flag_had_mov_`d'3_`t' = 0 if inlist(`d'_str3,"TDT","TTD","TTT","TTM","TMD","TMT","TMM")
-						replace flag_had_mov_`d'3_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-						
-						replace flag_uncor_mov_`d'3_`t' = 0 if inlist(`d'_str3,"DDT","DTD","DTT","DTM","DMD","DMT") 
-						replace flag_uncor_mov_`d'3_`t' = 0 if inlist(`d'_str3,"TDT","TTD","TTT","TTM","TMD","TMT","TMM") 
-						replace flag_uncor_mov_`d'3_`t' = 0 if inlist(`d'_str3,"MDD","MDT","MDM","MTD","MTT","MTM","MMD","MMT")
-
-						* "DTD" & "TTD" are denominator only cases for dose3, so also update total_elig_<dose> var
-						replace total_elig_`d'3_`t' = 1 if inlist(`d'_str3,"DTD","TTD")
-					
-					}
-				}
-
 				if $VCQI_TESTING_CODE == 1 {
 					save RI_MOV_step06, replace
 					vcqi_global RI_TEMP_DATASETS $RI_TEMP_DATASETS RI_MOV_step06

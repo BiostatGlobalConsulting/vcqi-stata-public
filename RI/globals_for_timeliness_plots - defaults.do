@@ -17,10 +17,10 @@
 
 global TIMELY_N_DTS 5  // 5 tiles per dose
 
-global TIMELY_DT_UB_1 0     // given before the target age plus 0 days - so given early
-global TIMELY_DT_UB_2 28    // given <= the target age plus 28 days - so timely (within 28 days)
-global TIMELY_DT_UB_3 56    // given <= the target age plus 56 days - so < 2 months late
-global TIMELY_DT_UB_4 1000  // given >  the target age plus 56 days - so 2+ months late
+global TIMELY_DT_UB_1 0     // given before the target age - so given early
+global TIMELY_DT_UB_2 28    // given < the target age plus 28 days - so timely (within 28 days)
+global TIMELY_DT_UB_3 56    // given < the target age plus 56 days - so < 2 months late
+global TIMELY_DT_UB_4 1000  // given >=  the target age plus 56 days - so 2+ months late
                             // note that the fifth tile does not have an upper bound; it represents children whose timing is unknown
 
 global TIMELY_DT_COLOR_1 magenta*2
@@ -138,50 +138,44 @@ global TIMELY_DT_LEGEND_ORDER_5 5
 
 	global TIMELY_CD_HEPB_NTILES 4
 
-	global TIMELY_CD_HEPB_UB_1 1      // HEPB is timely if given on day 0 or 1
+	global TIMELY_CD_HEPB_UB_1 2      // HEPB is timely if given on day 0 or 1
 	global TIMELY_CD_HEPB_UB_2 56     // < 2 months late
 	global TIMELY_CD_HEPB_UB_3 1000   // 2+  months late
-	global TIMELY_CD_HEPB_UB_4 
-	global TIMELY_CD_HEPB_UB_5 
 
 	global TIMELY_CD_HEPB_COLOR_1 green*.33   // use yet another green for HEPB timely
 	global TIMELY_CD_HEPB_COLOR_2 magenta*.5
 	global TIMELY_CD_HEPB_COLOR_3 magenta*.8
 	global TIMELY_CD_HEPB_COLOR_4 magenta*.1
-	global TIMELY_CD_HEPB_COLOR_5         
 
 	global TIMELY_CD_HEPB_LCOLOR_1 gs2
 	global TIMELY_CD_HEPB_LCOLOR_2 gs2
 	global TIMELY_CD_HEPB_LCOLOR_3 gs2
 	global TIMELY_CD_HEPB_LCOLOR_4 gs2
-	global TIMELY_CD_HEPB_LCOLOR_5 gs2
 
 	global TIMELY_CD_HEPB_LWIDTH_1 *.2
 	global TIMELY_CD_HEPB_LWIDTH_2 *.2
 	global TIMELY_CD_HEPB_LWIDTH_3 *.2
 	global TIMELY_CD_HEPB_LWIDTH_4 *.2
-	global TIMELY_CD_HEPB_LWIDTH_5 *.2
 
 	global TIMELY_CD_HEPB_LABEL_1 Timely (within 1 day)
 	global TIMELY_CD_HEPB_LABEL_2 < 2 Months Late
 	global TIMELY_CD_HEPB_LABEL_3 2+ Months Late
 	global TIMELY_CD_HEPB_LABEL_4 Timing Unknown  
-	global TIMELY_CD_HEPB_LABEL_5 
 
 	global TIMELY_CD_HEPB_LEGEND_LABEL_1 HEPB by Day 1
 	global TIMELY_CD_HEPB_LEGEND_LABEL_2 < 2 Months Late
 	global TIMELY_CD_HEPB_LEGEND_LABEL_3 2+ Months Late
 	global TIMELY_CD_HEPB_LEGEND_LABEL_4 Timing Unknown  
-	global TIMELY_CD_HEPB_LEGEND_LABEL_5 
 
 	global TIMELY_CD_HEPB_LEGEND_ORDER_1 2 // only this category needs a new legend entry
 	global TIMELY_CD_HEPB_LEGEND_ORDER_2 
 	global TIMELY_CD_HEPB_LEGEND_ORDER_3 
 	global TIMELY_CD_HEPB_LEGEND_ORDER_4 
-	global TIMELY_CD_HEPB_LEGEND_ORDER_5 
 
-	* Now because we introduced new tiles in the #1 and #2 slots (BCG timely and HEPB timely, respectively)
-	* we need to move the default tiles from slots 1-5 to 2-7.
+	* Now because we introduced new tiles in the #1 and #2 slots 
+	* (BCG timely and HEPB timely, respectively)
+	* we need to move the default tile legend entries
+	* from slots 1-5 to 3-7.
 
 	global TIMELY_DT_LEGEND_ORDER_1 3 
 	global TIMELY_DT_LEGEND_ORDER_2 4 

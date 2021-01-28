@@ -1,4 +1,4 @@
-*! SIA_COVG_04_03DV version 1.02 - Biostat Global Consulting - 2019-01-10
+*! SIA_COVG_04_03DV version 1.03 - Biostat Global Consulting - 2021-01-13
 *******************************************************************************
 * Change log
 * 				Updated
@@ -10,6 +10,9 @@
 * 										about a SINGLE prior dose
 * 2019-01-10	1.02	Dale Rhoda		Generate a stratifier named
 *										received_prior_doses
+* 2021-01-13	1.03	Dale Rhoda		Tweak logic for prior dosecount to
+*                                       allow for _m _d and _y on 
+*                                       SIA28 or 30 or 32 or 33
 *******************************************************************************
 
 program define SIA_COVG_04_03DV
@@ -22,7 +25,7 @@ program define SIA_COVG_04_03DV
 	quietly {
 	
 		use "${VCQI_OUTPUT_FOLDER}/SIA_COVG_04_${ANALYSIS_COUNTER}", clear
-			
+					
 		* Create value label for new variable
 		label define prior 0 "Zero" 1 "1 Dose" 2 "2+ Doses" 98 "Unknown" 99 "Dose Received, But Not Sure How Many" , replace
 			
@@ -32,30 +35,39 @@ program define SIA_COVG_04_03DV
 		label var doses_prior_to_sia "Number of times dose received prior to SIA"
 		label value doses_prior_to_sia prior
 			
-		* To code this variable we will need to look at SIA27, SIA28-SIA33
-		* Create variable to show how many doses were received via card using SIA28-SIA33
-		gen prior_sia_dosecount = 0
-
-		* Increment prior dosecount if the RI record indicates they received the dose
-		foreach i in 28 30 {
+		gen received_ri_1st_dose = !inlist(SIA28,0,.)
+		replace received_ri_1st_dose = 1 if SIA29 == 1
+		capture replace received_ri_1st_dose = 1 if !missing(SIA28_m)
+		capture replace received_ri_1st_dose = 1 if !missing(SIA28_d)
+		capture replace received_ri_1st_dose = 1 if !missing(SIA28_y)
 			
-			* First check to see if both the SIA date and SIA tick variables exist
-			capture confirm var SIA`i' SIA`=`i'+1'
-			
-			* If yes, we can increment dosecount with a single line of code
-			if _rc == 0 replace prior_sia_dosecount = prior_sia_dosecount + 1 if !missing(SIA`i') | SIA`=`i'+1'==1
-			else {
-				* Otherwise we need two lines of code, protected by the capture command 
-				capture replace prior_sia_dosecount = prior_sia_dosecount + 1 if !missing(SIA`i') 
-				capture replace prior_sia_dosecount = prior_sia_dosecount + 1 if SIA`=`i'+1'==1 
-			}
-		}
-
-		* Increment prior dosecount if prior SIA records indicate they got it
-		forvalues i = 32/33 {
-			capture replace prior_sia_dosecount = prior_sia_dosecount + 1 if !missing(SIA`i') & SIA`i' > 0
-		}
+		gen received_ri_2nd_dose = !inlist(SIA30,0,.)
+		replace received_ri_2nd_dose = 1 if SIA31 == 1
+		capture replace received_ri_2nd_dose = 1 if !missing(SIA30_m)
+		capture replace received_ri_2nd_dose = 1 if !missing(SIA30_d)
+		capture replace received_ri_2nd_dose = 1 if !missing(SIA30_y)
 		
+		gen received_sia_1st_dose = !inlist(SIA32,0,2,.)
+		capture replace received_sia_1st_dose = 1 if !missing(SIA32_m)
+		capture replace received_sia_1st_dose = 1 if !missing(SIA32_d)
+		capture replace received_sia_1st_dose = 1 if !missing(SIA32_y)	
+		
+		gen received_sia_2nd_dose = !inlist(SIA33,0,2,.)
+		capture replace received_sia_2nd_dose = 1 if !missing(SIA33_m)
+		capture replace received_sia_2nd_dose = 1 if !missing(SIA33_d)
+		capture replace received_sia_2nd_dose = 1 if !missing(SIA33_y)	
+		
+		gen prior_sia_dosecount = received_ri_1st_dose  + ///
+							 	  received_ri_2nd_dose  + ///
+								  received_sia_1st_dose + ///
+								  received_sia_2nd_dose
+								 
+		label variable received_ri_1st_dose  "SIA28 or 29 have evidence of 1st RI dose"
+		label variable received_ri_2nd_dose  "SIA30 or 31 have evidence of 2nd RI dose"
+		label variable received_sia_1st_dose "SIA32 has evidence of 1st prior SIA dose"
+		label variable received_sia_2nd_dose "SIA33 has evidence of 2nd prior SIA dose"
+		label variable prior_sia_dosecount   "Number of previous doses of campaign vaccine"			
+			
 		* Now we will look at the prior_sia_dosecount variable created above and SIA27
 		* Here are the values for SIA27
 		* 1 - Yes Dates on card
@@ -69,6 +81,8 @@ program define SIA_COVG_04_03DV
 		
 		* Check to see if SIA27 exists as this will change how the next
 		* replace statements are coded
+		
+		
 		capture confirm var SIA27
 		if _rc == 0 {
 			replace doses_prior_to_sia = 0  if prior_sia_dosecount == 0 & SIA27 == 3 

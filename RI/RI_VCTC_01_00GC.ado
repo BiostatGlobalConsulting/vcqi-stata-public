@@ -1,4 +1,4 @@
-*! RI_VCTC_01_00GC version 1.03 - Biostat Global Consulting - 2020-11-16
+*! RI_VCTC_01_00GC version 1.05 - Biostat Global Consulting - 2021-01-27
 *******************************************************************************
 * Change log
 * 				Updated
@@ -11,6 +11,8 @@
 *                                       Also calculate max legend order value.
 * 2020-11-16    1.03    Dale Rhoda      Use IF instead of capture assert.
 *                                        Also add a few more defaults.
+* 2021-01-22	1.04	Dale Rhoda		TIMELY_DOSE_ORDER defaults to RI_DOSE_LIST
+* 2021-01-27    1.05	Dale Rhoda		Set default TIMELY_TEXTBAR_LABEL_Y_SPACE
 *******************************************************************************
 
 program define RI_VCTC_01_00GC
@@ -20,11 +22,21 @@ program define RI_VCTC_01_00GC
 	global VCP RI_VCTC_01_00GC
 	vcqi_log_comment $VCP 5 Flow "Starting"
 	
+	* First global to check: TIMELY_DOSE_ORDER must be defined
+	if "$TIMELY_DOSE_ORDER" == ""  {
+		vcqi_global TIMELY_DOSE_ORDER `=upper("$RI_DOSE_LIST")'
+		di as text "For RI_VCTC_01, the user did not specify TIMELY_DOSE_ORDER so VCQI will use RI_DOSE_LIST: ${RI_DOSE_LIST}." _n 
+		vcqi_log_comment $VCP 2 Warning "For RI_VCTC_01, the user did not specify TIMELY_DOSE_ORDER so VCQI will use RI_DOSE_LIST: ${RI_DOSE_LIST}."	
+	}
+	
 	* Lets start by making a few globals all upper case
 	* Make timely dose order upper case
 	global TIMELY_DOSE_ORDER = upper("$TIMELY_DOSE_ORDER")
 	local timely_dose_order $TIMELY_DOSE_ORDER
 
+	* We need to make a local with this list sorted
+	local doseorderlist : list sort timely_dose_order	
+	
 	* Make CD list upper case
 	global TIMELY_CD_LIST = upper("$TIMELY_CD_LIST")
 	local timely_cd_list $TIMELY_CD_LIST
@@ -36,15 +48,6 @@ program define RI_VCTC_01_00GC
 	
 	* Create a local that will be set to show there was an error and we need to exit the program
 	local exitflag 0
-
-	* First global to check: TIMELY_DOSE_ORDER must be defined
-	if "$TIMELY_DOSE_ORDER" == ""  {
-		local exitflag 1
-		di as error "You must define global variable TIMELY_DOSE_ORDER to make these plots." _n 
-		vcqi_log_comment $VCP 1 Error "You must define global variable TIMELY_DOSE_ORDER to make these plots."	
-	}
-	* We need to make a local with this list sorted
-	else local doseorderlist : list sort timely_dose_order
 
 	* All doses in TIMELY_DOSE_ORDER should be in the RI_DOSE_LIST
 	foreach t in $TIMELY_DOSE_ORDER {
@@ -477,7 +480,7 @@ program define RI_VCTC_01_00GC
 	else if "$TIMELY_YSCALE_MAX" == "" global TIMELY_YSCALE_MAX 100		
 		
 	* RI_VCTC_01_LEVELS should include only integers from the set 1 2 3, with no duplicates.
-	* If missing, set to 1 3
+	* If missing, set to 3
 	local level_error 0
 	if "$RI_VCTC_01_LEVELS" == "" global RI_VCTC_01_LEVELS 3
 	local level_list $RI_VCTC_01_LEVELS
@@ -506,6 +509,8 @@ program define RI_VCTC_01_00GC
 	global TIMELY_N_DOSES = wordcount("$TIMELY_DOSE_ORDER")
 
 	global TIMELY_N_CUSTOMIZED_DOSES = wordcount("$TIMELY_N_CUSTOMIZED_DOSES")
+	
+	if "$TIMELY_TEXTBAR_LABEL_Y_SPACE" == "" vcqi_global TIMELY_TEXTBAR_LABEL_Y_SPACE $TIMELY_BARWIDTH
 	
 	if `exitflag' == 1 {
 		vcqi_global VCQI_ERROR 1

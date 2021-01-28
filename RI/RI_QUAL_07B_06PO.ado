@@ -1,4 +1,4 @@
-*! RI_QUAL_07B_06PO version 1.03 - Biostat Global Consulting - 2020-12-16
+*! RI_QUAL_07B_06PO version 1.04 - Biostat Global Consulting - 2021-01-18
 *******************************************************************************
 * Change log
 * 				Updated
@@ -9,6 +9,7 @@
 * 2020-09-13	1.02	Dale Rhoda		Switch to MOV_OUTPUT_DOSE_LIST
 * 2020-12-16	1.03	Cait Clary		Allow double inchworms when showbars=1 then 
 * 										reset IWPLOT_SHOWBARS global
+* 2020-01-18	1.04	Dale Rhoda		Drop hard-coded rightsidetext for dbl iw	
 *******************************************************************************
 
 program define RI_QUAL_07B_06PO
@@ -98,8 +99,7 @@ program define RI_QUAL_07B_06PO
 						title("RI - Would have Valid `=upper("`d'")'" "if no MOVs (%)") name(RI_QUAL_07B_${ANALYSIS_COUNTER}_iwplot_`d'_double) ///
 						database2(${VCQI_OUTPUT_FOLDER}/RI_COVG_02_`double_ac'_`d'_a_database) ///
 						datafile2(${VCQI_OUTPUT_FOLDER}/RI_COVG_02_`double_ac') ///
-						caption(Gray hollow shape is valid coverage; colored shape is valid coverage if no MOVs, size(vsmall) span) ///
-						rightsidetext(2)
+						caption(Gray hollow shape is valid coverage; colored shape is valid coverage if no MOVs, size(vsmall) span) 
 						
 					vcqi_log_comment $VCP 3 Comment "Double inchworm plot was created and exported."
 					

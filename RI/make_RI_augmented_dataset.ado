@@ -1,4 +1,4 @@
-*! make_RI_augmented_dataset version 1.13 - Biostat Global Consulting - 2018-12-10
+*! make_RI_augmented_dataset version 1.14 - Biostat Global Consulting - 2021-01-21
 *******************************************************************************
 * Change log
 * 				Updated
@@ -28,6 +28,8 @@
 *										Individual
 *										Corrected file name and local names so i
 * 										is not wiped out incase multiple analysis counters used
+* 2021-01-21	1.14	Dale Rhoda		Always use the version of VCQI_RI_DATASET
+*                                       that resides in the VCQI_OUTPUT_FOLDER
 *******************************************************************************
 
 * This program creates one RI dataset containing the original RI dataset provided in VCQI 
@@ -174,11 +176,11 @@ program define make_RI_augmented_dataset
 			rename RIHC15 RI12
 			
 			* Merge with RI dataset
-			merge 1:1 RI01 RI03 RI11 RI12 using "${VCQI_DATA_FOLDER}/${VCQI_RI_DATASET}", update nogen
+			merge 1:1 RI01 RI03 RI11 RI12 using "${VCQI_OUTPUT_FOLDER}/${VCQI_RI_DATASET}", update nogen
 		}
 		
 		else if "$VCQI_RIHC_DATASET" == "" {
-			use "${VCQI_DATA_FOLDER}/${VCQI_RI_DATASET}", clear
+			use "${VCQI_OUTPUT_FOLDER}/${VCQI_RI_DATASET}", clear
 		}
 		
 		save "RI_augmented_dataset", replace

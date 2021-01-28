@@ -1,4 +1,4 @@
-*! SIA_COVG_04_02DQ version 1.01 - Biostat Global Consulting - 2019-01-10
+*! SIA_COVG_04_02DQ version 1.02 - Biostat Global Consulting - 2021-01-13
 *******************************************************************************
 * Change log
 * 				Updated
@@ -9,6 +9,8 @@
 *										to show prior doses received.
 *										If "$PRIOR_SIA_DOSE_MAX"=="SINGLE" and more than
 *										one group of prior doses provided, warning sent to log
+* 2021-01-13	1.02	Dale Rhoda		Update logic for assessing how many 
+*                                       questions hold evidence of prior doses
 *******************************************************************************
 
 program define SIA_COVG_04_02DQ
@@ -26,8 +28,8 @@ program define SIA_COVG_04_02DQ
 		* to create the doses_prior_to_sia program
 		vcqi_global EXIT_SIA_COVG_04 1
 		
-		forvalues i = 27/33 {
-			capture confirm var SIA`i'
+		foreach v in SIA28 SIA28_m SIA28_d SIA28_y SIA29 SIA30 SIA30_m SIA30_d SIA30_y SIA31 SIA32 SIA32_m SIA32_d SIA32_y SIA33 SIA33_m SIA33_d SIA33_y {
+			capture confirm var `v'
 			if _rc ==0 {
 				vcqi_global EXIT_SIA_COVG_04 0
 			}
@@ -41,35 +43,45 @@ program define SIA_COVG_04_02DQ
 		* Create local to show how many doses were received via card using SIA28-SIA33
 		local prior_questions 0
 		
-		local n 1
-		foreach i in 28 30 {
+		gen received_ri_1st_dose = !inlist(SIA28,0,.)
+		replace received_ri_1st_dose = 1 if SIA29 == 1
+		capture replace received_ri_1st_dose = 1 if !missing(SIA28_m)
+		capture replace received_ri_1st_dose = 1 if !missing(SIA28_d)
+		capture replace received_ri_1st_dose = 1 if !missing(SIA28_y)
 			
-			* First check to see if both the SIA date and SIA tick variables exist
-			capture confirm var SIA`i' SIA`=`i'+1'
-			
-			* If yes, we can increment dosecount with a single line of code
-			if _rc == 0 {
-				qui count if !missing(SIA`i') | SIA`=`i'+1'==1
-				if r(N) > 0 local ++prior_questions
-			}
-			else {
-				* Otherwise we need two lines of code, protected by the capture command 
-				qui count if !missing(SIA`i')
-				if r(N) > 0  local ++prior_questions
-				
-				qui count if SIA`=`i'+1'==1 
-				if r(N) > 0  local ++prior_questions
-			}
-			local ++n
-		}
-
-		* Increment prior dosecount if prior SIA records indicate they got it
-		forvalues i = 32/33 {
-			qui count if !missing(SIA`i') & SIA`i' > 0
-			if r(N) > 0  local ++prior_questions
-			local ++n
-		}
-	
+		gen received_ri_2nd_dose = !inlist(SIA30,0,.)
+		replace received_ri_2nd_dose = 1 if SIA31 == 1
+		capture replace received_ri_2nd_dose = 1 if !missing(SIA30_m)
+		capture replace received_ri_2nd_dose = 1 if !missing(SIA30_d)
+		capture replace received_ri_2nd_dose = 1 if !missing(SIA30_y)
+		
+		gen received_sia_1st_dose = !inlist(SIA32,0,2,.)
+		capture replace received_sia_1st_dose = 1 if !missing(SIA32_m)
+		capture replace received_sia_1st_dose = 1 if !missing(SIA32_d)
+		capture replace received_sia_1st_dose = 1 if !missing(SIA32_y)	
+		
+		gen received_sia_2nd_dose = !inlist(SIA33,0,2,.)
+		capture replace received_sia_2nd_dose = 1 if !missing(SIA33_m)
+		capture replace received_sia_2nd_dose = 1 if !missing(SIA33_d)
+		capture replace received_sia_2nd_dose = 1 if !missing(SIA33_y)	
+								 
+		label variable received_ri_1st_dose  "SIA28 or 29 have evidence of 1st RI dose"
+		label variable received_ri_2nd_dose  "SIA30 or 31 have evidence of 2nd RI dose"
+		label variable received_sia_1st_dose "SIA32 has evidence of 1st prior SIA dose"
+		label variable received_sia_2nd_dose "SIA33 has evidence of 2nd prior SIA dose"
+		
+		count if received_ri_1st_dose == 1
+		if r(N) > 0 local ++prior_questions
+		
+		count if received_ri_2nd_dose == 1
+		if r(N) > 0 local ++prior_questions
+		
+		count if received_sia_1st_dose == 1
+		if r(N) > 0 local ++prior_questions
+		
+		count if received_sia_2nd_dose == 1
+		if r(N) > 0 local ++prior_questions
+		
 		if "$PRIOR_SIA_DOSE_MAX"=="SINGLE" & `prior_questions' > 1 {
 			vcqi_log_comment $VCP 2 Warning "SIA_COVG_04: Global macro PRIOR_SIA_DOSE_MAX is set to SINGLE, but dataset shows evidence of more than 1 opportunity for prior dose. All respondents who received 1+ prior doses before campaign will be grouped together in output."
 			di as error "SIA_COVG_04: Global macro PRIOR_SIA_DOSE_MAX is set to SINGLE, but dataset shows evidence of more than 1 opportunity for prior dose. All respondents who received 1+ prior doses before campaign will be grouped together in output."

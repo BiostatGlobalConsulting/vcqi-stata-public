@@ -1,4 +1,4 @@
-*! vcqi_to_iwplot version 1.20 - Biostat Global Consulting - 2020-12-12
+*! vcqi_to_iwplot version 1.21 - Biostat Global Consulting - 2021-01-13
 *******************************************************************************
 * Change log
 * 				Updated
@@ -36,6 +36,7 @@
 *                                       iwplot_svyp.  Adjust the note accordingly.
 * 2020-12-09	1.19	Dale Rhoda		Allow the user to plot strata in table order
 * 2020-12-12	1.20	Dale Rhoda		Allow the user to SHOW_LEVEL_4_ALONE
+* 2021-01-13	1.21	Dale Rhoda		Adjust note syntax to handle CITEXT 3 and 4
 *******************************************************************************
 
 program define vcqi_to_iwplot
@@ -337,14 +338,15 @@ program define inchworm_plotit
 	if "$VCQI_IWPLOT_CITEXT" == "" vcqi_global VCQI_IWPLOT_CITEXT 2
 	
 	if "$VCQI_IWPLOT_CITEXT" == "1" ///
-	local note Text at right: 1-sided 95% LCB | Point Estimate | 1-sided 95% UCB, size(vsmall) span
+	local note Text at right: 1-sided 95% LCB | Point Estimate | 1-sided 95% UCB
 	if "$VCQI_IWPLOT_CITEXT" == "2" ///
-	local note Text at right: Point Estimate (2-sided 95% Confidence Interval), size(vsmall) span
+	local note Text at right: Point Estimate (2-sided 95% Confidence Interval)
 	if "$VCQI_IWPLOT_CITEXT" == "3" ///
-	local note Text at right: Point Estimate (2-sided 95% Confidence Interval) (0, 1-sided 95% UCB], size(vsmall) span
+	local note Text at right: Point Estimate (2-sided 95% Confidence Interval) (0, 1-sided 95% UCB]
 	if "$VCQI_IWPLOT_CITEXT" == "4" ///
-	local note Text at right: Point Estimate (2-sided 95% Confidence Interval) [1-sided 95% LCB, 100), size(vsmall) span
-	if "$VCQI_IWPLOT_CITEXT" == "5" local note Text at right: Point Estimate (2-sided 95% CI) (0, 1-sided 95% UCB] [1-sided 95% LCB, 100), size(vsmall) span 
+	local note Text at right: Point Estimate (2-sided 95% Confidence Interval) [1-sided 95% LCB, 100)
+	if "$VCQI_IWPLOT_CITEXT" == "5" ///
+	local note Text at right: Point Estimate (2-sided 95% CI) (0, 1-sided 95% UCB] [1-sided 95% LCB, 100)
 
 	local saving
 	if $SAVE_VCQI_GPH_FILES ///
@@ -367,7 +369,7 @@ program define inchworm_plotit
 		xtitle("Estimated Coverage %") ///
 		citext($VCQI_IWPLOT_CITEXT) ///
 		horlinesdata("`horlines'") ///
-		note(`note') ///
+		note(`"`note'"', size(vsmall) span ) ///
 		caption(`caption') ///
 		title(`title', span) ///
 		subtitle(`subtitle', span) ///

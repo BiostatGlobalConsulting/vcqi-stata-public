@@ -270,6 +270,7 @@ vcqi_global LEVEL3_NAME_DATASET ${VCQI_DATA_FOLDER}/level3names
 * But if the user requests two or more stratifiers  
 * then inchworm plots and unweighted proportion plots are not generated for 
 * this run.  The stratifiers will appear only in VCQI tables, but not plots.  
+* (*UNLESS* the user also asks VCQI to PLOT_OUTCOMES_IN_TABLE_ORDER.)
 
 * List of demographic variables for stratified tables (can be left blank)
 vcqi_global VCQI_LEVEL4_SET_VARLIST urban_cluster
@@ -335,8 +336,25 @@ vcqi_global PLOT_OUTCOMES_IN_TABLE_ORDER 	1
 vcqi_global VCQI_MAKE_IW_PLOTS				1
 vcqi_global VCQI_MAKE_LEVEL2_IWPLOTS		0
 
+* Text at right side of inchworm plots
+* 1 1-sided 95% LCB | Point Estimate | 1-sided 95% UCB
+* 2 Point Estimate (2-sided 95% Confidence Interval)  [THIS IS THE DEFAULT]
+* 3 Point Estimate (2-sided 95% Confidence Interval) (0, 1-sided 95% UCB]
+* 4 Point Estimate (2-sided 95% Confidence Interval) [1-sided 95% UCB, 100)
+* 5 Point Estimate (2-sided 95% CI) (0, 1-sided 95% UCB] [1-sided 95% LCB, 100)
+vcqi_global VCQI_IWPLOT_CITEXT 2
+
+* Text at right side of double inchworm plots
+* 1 (default) means show both point estimates
+* 2 means show both point estimates and both 2-sided 95% CIs
+* 3 means do not show any text
+vcqi_global VCQI_DOUBLE_IWPLOT_CITEXT 1
+
 * IWPLOT_SHOWBARS = 0 means show inchworm distributions
 * IWPLOT_SHOWBARS = 1 means show horizontal bars instead of inchworms
+* Note: This global only affects single inchworm plots. 
+* Double inchworms will show inchworm distributions regardless of the value of
+* user selects IWPLOT_SHOWBARS
 
 vcqi_global IWPLOT_SHOWBARS					0
 
@@ -751,6 +769,21 @@ vcqi_global SORT_PLOT_LOW_TO_HIGH 0 // 1=sort proportions on plot low at bottom 
 
 RI_QUAL_04
 
+* Run RI_QUAL_04 again to estimate proportion of MCV1 doses administered before 39 weeks of age
+vcqi_global ANALYSIS_COUNTER 2
+vcqi_global RI_QUAL_04_DOSE_NAME PENTA3
+vcqi_global RI_QUAL_04_AGE_THRESHOLD `=(26*7)'
+
+vcqi_global RI_QUAL_04_TO_TITLE       `=upper("$RI_QUAL_04_DOSE_NAME")' Received Before Age $RI_QUAL_04_AGE_THRESHOLD Days
+vcqi_global RI_QUAL_04_TO_SUBTITLE
+vcqi_global RI_QUAL_04_TO_FOOTNOTE_1  Note: This measure is an unweighted summary of a proportion from the survey sample.
+vcqi_global SORT_PLOT_LOW_TO_HIGH 0 // 1=sort proportions on plot low at bottom to high at top; 0 is the opposite
+
+RI_QUAL_04
+
+* Set ANALYSIS_COUNTER back to 1
+vcqi_global ANALYSIS_COUNTER 1
+
 * Estimate proportion of PENTA intra-dose intervals that were 
 * shorter than 28 days
 
@@ -853,17 +886,6 @@ vcqi_global RI_QUAL_12_TO_FOOTNOTE_1  Note: This measure is an unweighted summar
 vcqi_global SORT_PLOT_LOW_TO_HIGH 0 // 1=sort proportions on plot low at bottom to high at top; 0 is the opposite
 
 RI_QUAL_12
-
-* Estimate proportion of Penta3 doses that were given before 26 weeks
-vcqi_global RI_QUAL_13_DOSE_NAME PENTA3
-vcqi_global RI_QUAL_13_AGE_THRESHOLD `=(26*7)+1'
-
-vcqi_global RI_QUAL_13_TO_TITLE       `=upper("$RI_QUAL_13_DOSE_NAME")' Received Before Age $RI_QUAL_13_AGE_THRESHOLD Days
-vcqi_global RI_QUAL_13_TO_SUBTITLE
-vcqi_global RI_QUAL_13_TO_FOOTNOTE_1  Note: This measure is an unweighted summary of a proportion from the survey sample.
-vcqi_global SORT_PLOT_LOW_TO_HIGH 1 // 1=sort proportions on plot low at bottom to high at top; 0 is the opposite
-
-RI_QUAL_13
 
 * ------------------------------------------------------------------------------
 * Indicators that plot cumulative coverage curves and cumulative interval curves
@@ -1056,6 +1078,7 @@ global RI_VCTC_01_LEVELS 1
 global TIMELY_DOSE_ORDER bcg hepb opv0 opv1 opv2 opv3 penta1 penta2 penta3 pcv1 pcv2 pcv3 rota1 rota2 rota3 ipv mcv1 yf
 
 * Specify the y-coordinates for the bars.  If you want them to be spaced evenly, you may omit this global (leave it empty)
+* In this example, we use irregular spacing to group the different dose series.
 global TIMELY_Y_COORDS    10  20  30   43 50 57   73 80 87   103 110 117   133 140 147   160  170  180
 
 * Specify the y-coordinates for a set of light reference horizonatal lines between dose groups
@@ -1065,19 +1088,27 @@ global TIMELY_Y_COORDS    10  20  30   43 50 57   73 80 87   103 110 117   133 1
 global TIMELY_YLINE_LIST  
 
 * Run the .do file that defines the default parameters.
-* Note that you need to copy the file from the VCQI source folder named RI
-* and paste it into your VCQI_OUTPUT_FOLDER.  You may customize the 
+* VCQI first runs the program that lists default parameter values.
+* Then it runs a copy that has any user changes.  You may customize the 
 * entries in the .do file itself or you may re-specify them in code 
-* below the include statement.
-include "$VCQI_OUTPUT_FOLDER/globals_for_timeliness_plots.do"
+* below the include statements.
+
+* Include the default parameters 
+* (You may want to skip this if you have customized the parameters)
+capture include "${S_VCQI_SOURCE_CODE_FOLDER}/RI/globals_for_timeliness_plots - defaults.do"
+
+* Include the user-specified parameters, if present
+capture include "${VCQI_OUTPUT_FOLDER}/globals_for_timeliness_plots.do"
+
+* Over-ride two default parameters:
 
 * Because we are spacing the bars about every y=10 units instead of the 
 * default Y=1, specify a bar width that is 10X the default.
-global TIMELY_BARWIDTH 6.7
+vcqi_global TIMELY_BARWIDTH 6.7
 
 * Similarly, specify a buffer between the TEXTBAR label and top row that
 * is on the order of 9 or 10 y-axis units instead of ~1.
-global TIMELY_TEXTBAR_LABEL_Y_SPACE 9
+vcqi_global TIMELY_TEXTBAR_LABEL_Y_SPACE 9
 
 * Do the calculations and make the charts
 RI_VCTC_01

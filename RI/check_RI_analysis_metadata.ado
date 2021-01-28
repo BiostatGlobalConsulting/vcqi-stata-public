@@ -1,4 +1,4 @@
-*! check_RI_analysis_metadata version 1.12 - Biostat Global Consulting - 2020-12-09
+*! check_RI_analysis_metadata version 1.15 - Biostat Global Consulting - 2021-01-21
 *******************************************************************************
 * Change log
 * 				Updated
@@ -22,6 +22,12 @@
 * 2019-11-08	1.10	Dale Rhoda		Introduced MOV_OUTPUT_DOSE_LIST
 * 2020-01-20	1.11	Dale Rhoda		Made check_VCQI_CM_metadata its own program
 * 2020-12-09	1.12	Dale Rhoda		Add missing quotation mark
+* 2021-01-16	1.13	MK Trimner		Added code for a DQ check and to program for backward compatibility with the Interview variable names
+*										that were mistakenly inconsistent VCQI’s (now consistent) _m, _d, _y convention
+*										Code will check the different Interview date variable options
+*										Make sure they match and if so pass forward a single value in the form of RI09_m, RI09_d and RI09_y
+* 2021-01-19	1.14	MK Trimner		Saved preclean changes to OUTPUT folder and added to the TEMP datasets global
+* 2021-01-21	1.15	Dale Rhoda		Always copy RI dataset to INPUT folder
 *******************************************************************************
 
 program define check_RI_analysis_metadata
@@ -66,6 +72,12 @@ program define check_RI_analysis_metadata
 		vcqi_log_global VCQI_RIHC_DATASET
 		
 		capture confirm file "${VCQI_DATA_FOLDER}/${VCQI_RI_DATASET}.dta"
+		* If yes, make a copy in the OUTPUT folder
+		if _rc == 0 {
+		    copy "${VCQI_DATA_FOLDER}/${VCQI_RI_DATASET}.dta" "${VCQI_OUTPUT_FOLDER}/${VCQI_RI_DATASET}.dta", replace
+			vcqi_global RI_TEMP_DATASETS ${VCQI_RI_DATASET}
+		}
+		* If no, throw an error and stop at the bottom of this program
 		if _rc != 0 {
 			local exitflag 1 
 			di as error ///
@@ -77,7 +89,7 @@ program define check_RI_analysis_metadata
 		* Check that RI variables used across all indicators are present
 		* and have the correct variable type
 		else {
-			use "${VCQI_DATA_FOLDER}/${VCQI_RI_DATASET}", clear
+			use "${VCQI_OUTPUT_FOLDER}/${VCQI_RI_DATASET}", clear
 			
 			local dlist 
 			foreach v in $RI_DOSE_LIST {
@@ -118,6 +130,11 @@ program define check_RI_analysis_metadata
 					local exitflag 1
 				}
 			}
+			* Run the check_interview_date subprogram to check:
+			* 1. Was interview date provided
+			* 2. Was it provided in more than 1 variable?
+			* 3. If more than 1 interview date variable, do these values match?
+			check_interivew_date, exitflag(`exitflag')
 		}
 	}
 	
@@ -213,3 +230,193 @@ program define check_RI_analysis_metadata
 	global VCP `oldvcp'
 
 end
+
+***********************************************************************************************************************************************
+***********************************************************************************************************************************************
+* We want to do a DQ check on the Interview Date variables for backward compatibility with the variable names that were mistakenly inconsistent
+* This will make changes to the RI dataset and ultimately pass through 3 interview date variables: RI09_m, RI09_d, and RI09_y
+* Check to see which RI09 variables are provided
+capture program drop check_interivew_date
+program define check_interivew_date
+	
+	syntax, exitflag(int)
+
+	* First check to see if provided in single variable RI09
+	capture confirm var RI09
+	local RI09 = _rc
+
+	* Create a local to see if second option of RI09 variables were provided: RI09m, RI09d, and RI09y
+	* Create a local to see if third option of RI09 variables were provided: RI09_m, RI09_d and RI09_y
+	* Create a list of variables for each to see which components are provided
+	* If for the second and third RI09 options all 3 components are not provided, send error to screen and exit
+	local 2 
+	local 3 _
+	forvalues i = 2/3 {
+		local RI09_`i'_list
+		foreach v in RI09``i''m RI09``i''d RI09``i''y {
+			capture confirm var `v'
+			local `v' = _rc
+			if ``v'' == 0 local RI09_`i'_list `RI09_`i'_list' `v' 
+		}
+							
+		* Grab the count
+		local RI09_`i'_count = wordcount("`RI09_`i'_list'")
+
+		if inlist(`RI09_`i'_count',1,2) {
+			local RI09_`i'_list = subinstr("`RI09_`i'_list'"," "," and ",.)
+			local exitflag 1
+			noi di as error "If providing the interview date components the dataset must include all 3 variables: RI09``i''m, RI09``i''d, and RI09``i''y. Dataset only has: `RI09_`i'_list'."
+			vcqi_log_comment $VCP 1 Error "If providing the interview date components the dataset must include all 3 variables: RI09``i''m, RI09``i''d, and RI09``i''y. Dataset only has: `RI09_`i'_list'."
+		} 
+	}
+
+	* Create a local to show variable options provided
+	local RI09_1 = `RI09' 							// Single interview date
+	local RI09_2 = `RI09m' + `RI09d' + `RI09y'		// Interview date components without underscore
+	local RI09_3 = `RI09_m' + `RI09_d' + `RI09_y'	// Interview date components with underscore
+					
+	* Grab the count of how many interview dates provided
+	local RI09_count = 0
+	forvalues i = 1/3 {
+		if `RI09_`i''== 0	local ++RI09_count    
+	}
+
+	* Create a local with the list of variables reviewed
+	local interview_variables
+	if `RI09_1' == 0 local interview_variables variable RI09
+	if `RI09_2' == 0 local interview_variables `interview_variables' and variables RI09m/RI09d/RI09y	
+	if `RI09_3' == 0 local interview_variables `interview_variables' and variables RI09_m/RI09_d/RI09_y
+
+	if "`=word("`interview_variables'",1)'" == "and" local interview_variables = substr("`interview_variables'",5,.)
+
+	* If more than 1 interview date is present we need to confirm they all match
+	local interview_date_mismatch 0
+	if `RI09_count' == 3 {
+		capture assert month(RI09) == RI09m & RI09m == RI09_m
+		if _rc != 0 local interview_date_mismatch 1
+		capture assert day(RI09) == RI09d & RI09d == RI09_d
+		if _rc != 0 local interview_date_mismatch 1
+		capture assert year(RI09) == RI09y & RI09y == RI09_y
+		if _rc != 0 local interview_date_mismatch 1
+		if `interview_date_mismatch' == 1 {
+			local exitflag 1
+			noi di as error ///
+			"The 3 different interview dates provided in variable RI09, variables RI09m/RI09d/RI09y and variables RI09_m/RI09_d/_RI09_y do not match. Either provide a single interview date or correct values."
+			vcqi_log_comment $VCP 1 Error ///
+			"The 3 different interview dates provided in variable RI09, variables RI09m/RI09d/RI09y and variables RI09_m/RI09_d/_RI09_y do not match. Either provide a single interview date or correct values."
+			
+		}
+	}
+
+	if `RI09_count' == 2 & `RI09_1' + `RI09_2' == 0 {
+		capture assert month(RI09) == RI09m
+		if _rc != 0 local interview_date_mismatch 1
+		capture assert day(RI09) == RI09d
+		if _rc != 0 local interview_date_mismatch 1
+		capture assert year(RI09) == RI09y
+		if _rc != 0 local interview_date_mismatch 1
+		if `interview_date_mismatch' == 1 {
+			local exitflag 1
+			noi di as error "The 2 different interview dates provided in variable RI09 and variables RI09m/RI09d/RI09y do not match. Either provide a single interview date or correct values."
+			vcqi_log_comment $VCP 1 Error "The 2 different interview dates provided in variable RI09 and variables RI09m/RI09d/RI09y do not match. Either provide a single interview date or correct values."
+
+		}	
+	}
+
+	if `RI09_count' == 2 & `RI09_1' + `RI09_3' == 0 {
+		capture assert month(RI09) == RI09_m
+		if _rc != 0 local interview_date_mismatch 1
+		capture assert day(RI09) == RI09_d
+		if _rc != 0 local interview_date_mismatch 1
+		capture assert year(RI09) == RI09_y
+		if _rc != 0 local interview_date_mismatch 1
+		if `interview_date_mismatch' == 1 {
+			local exitflag 1
+			noi di as error "The 2 different interview dates provided in variable RI09 and variables RI09_m/RI09_d/RI09_y do not match. Either provide a single interview date or correct values."
+			vcqi_log_comment $VCP 1 Error "The 2 different interview dates provided in variable RI09 and variables RI09_m/RI09_d/RI09_y do not match. Either provide a single interview date or correct values."
+		}	
+	}
+
+	if `RI09_count' == 2 & `RI09_2' + `RI09_3' == 0 {
+		capture assert RI09m == RI09_m
+		if _rc != 0 local interview_date_mismatch 1
+		capture assert RI09d == RI09_d
+		if _rc != 0 local interview_date_mismatch 1
+		capture assert RI09y == RI09_y
+		if _rc != 0 local interview_date_mismatch 1
+		if `interview_date_mismatch' == 1 {
+			local exitflag 1
+			noi di as error "The 2 different interview dates provided in variables RI09m/RI09d/RI09y and variables RI09_m/RI09_d/RI09_y do not match. Either provide a single interview date or correct values."
+			vcqi_log_comment $VCP 1 Error ///
+			"The 2 different interview dates provided in variables RI09m/RI09d/RI09y and variables RI09_m/RI09_d/RI09_y do not match. Either provide a single interview date or correct values."
+
+		}	
+	}
+	
+	* Interview date is required, if not provided send error to screen and set exitflag
+	if `RI09_count' == 0 {
+		local exitflag 1
+		noi di as error "Interview date is a required variable to run VCQI RI analysis. Add variables RI09_m, RI09_d and RI09_y to your dataset."
+		vcqi_log_comment $VCP 1 Error "Interview date is a required variable to run VCQI RI analysis. Add variables RI09_m, RI09_d and RI09_y to your dataset."
+
+	}
+	
+	* Pass through the exitflag local to the rest of check_RI_analysis_metadata program
+	c_local exitflag `exitflag'
+
+	* If  all dates match or a single interview date is provided we want to make sure the variable VCQI uses is populated
+	local changed_interview_date_varname 0
+	if `interview_date_mismatch' == 0 & inlist(`RI09_2_count',0,3) & inlist(`RI09_3_count',0,3) & `RI09_count' > 0 {
+		if `RI09_count' > 1 {
+			noi di as text "The `RI09_count' different interview dates provided in `interview_variables' all match"
+			vcqi_log_comment $VCP 3 Comment "The `RI09_count' different interview dates provided in `interview_variables' all match"
+		}
+		
+		* If the user is not just running a check we will want to rename variables if RI09_m, RI09_d and RI09_y not provided
+		if "$VCQI_CHECK_INSTEAD_OF_RUN" != "1"  {	
+			* If only one set of Interview date components was provided
+			* Make sure they are the ones with the underscore
+			if `RI09_2' == 0 & `RI09_3' != 0 {
+				local changed_interview_date_varname 1
+				* rename these variables to include the underscore
+				foreach m in m d y {
+					noi di as text "Variable RI09`m' was renamed RI09_`m' for VCQI consistency."
+					vcqi_log_comment $VCP 2 Warning "Variable RI09`m' was renamed RI09_`m' for VCQI consistency."
+					rename RI09`m' RI09_`m'
+				}
+				local RI09_3 0
+				local RI09_2 111
+			}
+
+			* If a single interview date variable was provided and variables without underscore were not
+			* we want to break apart the RI09 into date components
+			if `RI09_1' == 0 & `RI09_3' != 0 {
+				local changed_interview_date_varname 1
+				noi di as text "Breaking variable RI09 into three separate date component variables: RI09_m, RI09_d and RI09_y"
+				vcqi_log_comment $VCP 3 Comment "Breaking variable RI09 into three separate date component variables: RI09_m, RI09_d and RI09_y"
+				gen RI09_m = month(RI09)	
+				label var RI09_m "Month of interview taken from variable RI09"
+				gen RI09_d = day(RI09)
+				label var RI09_d "Day or interview taken from variable RI09"
+				gen RI09_y = year(RI09)
+				label var RI09_y "Year of interview taken from variable RI09"
+				local RI09_3 0
+				local RI09_1 111
+			}
+		}
+
+		* Save as a new file name to preserve the original version of the dataset if changes made to variables
+		* And point the VCQI_RI_DATASET global to new dataset
+		if `changed_interview_date_varname' == 1 {
+			di as text "Dataset with interview date changes saved as ${VCQI_OUTPUT_FOLDER}/${VCQI_RI_DATASET}_preclean"
+			vcqi_log_comment $VCP 3 Comment "Dataset with interview date changes saved as ${VCQI_OUTPUT_FOLDER}/${VCQI_RI_DATASET}_preclean"
+			save "${VCQI_OUTPUT_FOLDER}/${VCQI_RI_DATASET}_preclean", replace
+			vcqi_global RI_TEMP_DATASETS $RI_TEMP_DATASETS ${VCQI_RI_DATASET}_preclean
+			vcqi_global VCQI_RI_DATASET ${VCQI_RI_DATASET}_preclean
+			
+			
+		}
+	}
+end
+***********************************************************************************************************************************************
+***********************************************************************************************************************************************

@@ -1,4 +1,4 @@
-*! date_tick_chk_05_excel_report version 1.06 - Biostat Global Consulting - 2020-12-10
+*! date_tick_chk_05_excel_report version 1.07 - Biostat Global Consulting - 2021-01-25
 *******************************************************************************
 * Change log
 * 				Updated
@@ -18,6 +18,7 @@
 *										Added footnotes to say excluding BCG Scar data
 *										had to change formatting from rows being hard coded to being a little more flexible
 *										Updated the label for Tick mark: Yes to clarify the difference between tick and history.
+* 2021-01-25	1.07	Dale Rhoda		Fixed a typo in a row label
 *******************************************************************************
 
 program define date_tick_chk_05_excel_report
@@ -93,7 +94,7 @@ program define date_tick_chk_05_excel_report
 				replace rowcount = 3 if var=="ct_`d'_`t'_miss"
 				replace group = "P2" if rowcount == 3
 
-				replace q = "How many partialy missing?" if var=="ct_`d'_`t'_parmiss" 
+				replace q = "How many partially missing?" if var=="ct_`d'_`t'_parmiss" 
 				replace rowcount = 4 if var=="ct_`d'_`t'_parmiss"
 				replace group = "P2" if rowcount == 4
 
@@ -493,11 +494,11 @@ program define date_tick_chk_05_excel_report
 		replace rowcount = 2 if var=="ct_dob_yes_valid_dose_calc"
 
 		* Row 2 show how many are using the min of the dates
-		replace q = "How many assigned using 'min'?" if var=="ct_dob_min_valid_dose_calc"
+		replace q = "How many assigned using the earliest birthdate?" if var=="ct_dob_min_valid_dose_calc"
 		replace rowcount = 3 if var=="ct_dob_min_valid_dose_calc"
 
 		* Row 3 show how many had a single birthdate
-		replace q = "How many assigned using single birthdate?" if var=="unambiguous_dob"
+		replace q = "How many assigned using the single birthdate?" if var=="unambiguous_dob"
 		replace rowcount = 4 if var=="unambiguous_dob"
 
 		* Create variables to populate these values for each category above
@@ -509,7 +510,7 @@ program define date_tick_chk_05_excel_report
 		replace denom=0 if denom==.
 			
 		* Create labels to use as column headers for table.
-		label variable q "Assigned for sensible dose calculations"
+		label variable q "Assigned for timeliness calculations"
 		label variable num "n"
 		label variable percent "%"
 		label variable denom "denom"
@@ -860,7 +861,7 @@ program define date_tick_chk_05_excel_report
 			
 		*****************************************************************************
 			
-		mata: b.put_string(18, 1, "Date disconcordance: Full date DOBs disagree")
+		mata: b.put_string(18, 1, "Date discordance: Full date DOBs disagree")
 		mata: b.set_font_bold(18, 1, "on")
 		mata: b.set_font_bold(`xlrow2', 1, "on")
 		
@@ -872,8 +873,8 @@ program define date_tick_chk_05_excel_report
 		* Foot Notes
 		pink_footnotes, srow(`=`xlrow2'-2')
 		
-		`ifreg' mata: b.put_string(`=`xlrow3'+1',1,"Note: If card, register & history yield 2+ birthdates then VCQI assigned the `min' or earliest plausible birthdate for valid dose calculations.")
-		else mata: b.put_string(`=`xlrow3'+1',1,"Note: If card & history yield 2 birthdates then VCQI assigned the `min' or earliest plausible birthdate for valid dose calculations.")
+		`ifreg' mata: b.put_string(`=`xlrow3'+1',1,`"Note: If card, register & history yield 2+ birthdates then VCQI assigned the earliest plausible birthdate for timeliness calculations."')
+		else mata: b.put_string(`=`xlrow3'+1',1, `"Note: If card & history yield 2 birthdates then VCQI assigned the earliest plausible birthdate for timeliness calculations."')
 		
 		style_font, row(`=`xlrow3'+1')
 		

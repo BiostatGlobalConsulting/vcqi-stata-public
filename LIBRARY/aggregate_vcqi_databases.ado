@@ -1,4 +1,4 @@
-*! aggregate_vcqi_databases 1.07 - Biostat Global Consulting - 2021-01-08
+*! aggregate_vcqi_databases 1.08 - Biostat Global Consulting - 2021-01-16
 ******************************************************************************* 
 * Change log 
 * 				Updated 
@@ -19,6 +19,7 @@
 *                                       database datasets
 * 2020-12-15	1.06	Dale Rhoda		Be sure to label all the level variables
 * 2021-01-08	1.07	Dale Rhoda		Store the name of the original database, too
+* 2021-01-16	1.08	Dale Rhoda		Exclude SIA_COVG_05 from aggregation
 ******************************************************************************** 
 * This takes all the vcqi databases and creates one single database. Then deletes all of them
 capture program drop aggregate_vcqi_databases
@@ -37,7 +38,7 @@ program define aggregate_vcqi_databases
 	global VCQI_AGGREGATED_DATABASES 
 	global VCQI_NON_AGGREGATED_DATABASES
 	foreach d in $VCQI_DATABASES {
-		if  `=strpos("`d'","RI_COVG_05")' > 0  | `=strpos("`d'","DESC")' > 0 | `=strpos("`d'","COVG_DIFF")' > 0 | `=strpos("`d'","table_order")' > 0 ///
+		if  `=strpos("`d'","RI_COVG_05")' > 0  | `=strpos("`d'","SIA_COVG_05")' > 0  | `=strpos("`d'","DESC")' > 0 | `=strpos("`d'","COVG_DIFF")' > 0 | `=strpos("`d'","table_order")' > 0 ///
 			global VCQI_NON_AGGREGATED_DATABASES $VCQI_NON_AGGREGATED_DATABASES `d'
 			
 		else global VCQI_AGGREGATED_DATABASES $VCQI_AGGREGATED_DATABASES `d'

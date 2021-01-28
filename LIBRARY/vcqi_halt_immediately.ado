@@ -158,7 +158,7 @@ program define vcqi_halt_immediately
 			****************************************************************************
 			* If the user has specified to keep the temp databases, run program to 
 			* append all databases into one database 
-			if "$DELETE_VCQI_DATABASES_AT_END" == "0"  aggregate_vcqi_databases
+			if "$DELETE_VCQI_DATABASES_AT_END" == "0"  & "$VCQI_AGGREGATE_VCQI_DATABASES" == "1" aggregate_vcqi_databases
 			
 			* If user specified to delete databases put comment to log
 			if "$DELETE_VCQI_DATABASES_AT_END" == "1" vcqi_log_comment $VCP 3 Comment "User has specified that VCQI databases should all be deleted."

@@ -1,10 +1,14 @@
-*! RI_VCTC_01_03DV version 1.00 - Biostat Global Consulting - 2020-09-24
+*! RI_VCTC_01_03DV version 1.03 - Biostat Global Consulting - 2021-01-24
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name			What Changed
 * 2020-09-24	1.00	Dale Rhoda		Original version
+* 2021-01-19	1.01	Dale Rhoda		Updated data values in the 
+*                                       'Timing Unknown' row
+* 2021-01-22	1.02	Dale Rhoda		Change calculation from <= to <
+* 2021-01-24	1.03	Dale Rhoda		Small edit to Excel column label
 ********************************************************************************
 
 program define RI_VCTC_01_03DV
@@ -71,7 +75,7 @@ program define RI_VCTC_01_03DV
 						if ${dd_`D'} == 1 {                            // use default tiles
 							forvalues j = 1/`=${TIMELY_N_DTS}-1' {
 								capture drop timely_y 
-								gen timely_y = timely_age_at_`d' <= `d'_min_age_days + ${TIMELY_DT_UB_`j'}
+								gen timely_y = timely_age_at_`d' < `d'_min_age_days + ${TIMELY_DT_UB_`j'}
 								if `d'_min_age_days == 0 & `j' == 1 replace timely_y = 0 // if it's a birth dose, it cannot be early
 								svypd timely_y, adjust truncate
 								matrix tplot[`i',`j'] = 100 * r(svyp)
@@ -80,7 +84,7 @@ program define RI_VCTC_01_03DV
 						else {                                          // use customized dose tiles
 							forvalues j = 1/`=${TIMELY_CD_`D'_NTILES}-1' {
 								capture drop timely_y
-								gen timely_y = timely_age_at_`d' <= ${TIMELY_CD_`D'_UB_`j'}
+								gen timely_y = timely_age_at_`d' < `d'_min_age_days + ${TIMELY_CD_`D'_UB_`j'}
 								svypd timely_y, adjust truncate
 								matrix tplot[`i', `j'] = 100 * r(svyp)
 							}
@@ -155,26 +159,32 @@ program define RI_VCTC_01_03DV
 
 						label variable `d'_label         "Tile label for `D'"
 						label variable `d'_agespan       "Tile span of days for `D'"
-						label variable `d'_tile_top_pct  "Pct value of tile top for `D'"
-						label variable `d'_tile_height   "Pct height of tile for `D'"
+						label variable `d'_tile_top_pct  "Cum pct for `D'"
+						label variable `d'_tile_height   "Pct width of tile for `D'"
 
 						if ${dd_`D'} == 1 {
 							forvalues j = 1/`=${TIMELY_N_DTS}-1' {
 								replace `d'_label = "${TIMELY_DT_LABEL_`j'}" in `j'
-								if `j' == 1 replace `d'_agespan = "Age <= `=min($VCQI_RI_MAX_AGE_OF_ELIGIBILITY, ${TIMELY_DT_UB_`j'})' days" in `j'
-								if `j'  > 1 & "${TIMELY_DT_UB_`j'}" != "" replace `d'_agespan = "Age <= `=min($VCQI_RI_MAX_AGE_OF_ELIGIBILITY, `=`d'_min_age_days + ${TIMELY_DT_UB_`j'}')' days" in `j'
+								if `j' == 1 replace `d'_agespan = "Age < `=min($VCQI_RI_MAX_AGE_OF_ELIGIBILITY, ${TIMELY_DT_UB_`j'})' days" in `j'
+								if `j'  > 1 & "${TIMELY_DT_UB_`j'}" != "" replace `d'_agespan = "Age < `=min($VCQI_RI_MAX_AGE_OF_ELIGIBILITY, `=`d'_min_age_days + ${TIMELY_DT_UB_`j'}')' days" in `j'
 								if `j'  > 1 & !missing(`d'_tile_top_pct[`j']) replace `d'_tile_height = (`d'_tile_top_pct[`j'] - `d'_tile_top_pct[`=`j'-1']) in `j'
 							}
-							replace `d'_label = "All ages" in ${TIMELY_N_DTS}
+							local j ${TIMELY_N_DTS}
+							replace `d'_tile_height = (`d'_tile_top_pct[`j'] - `d'_tile_top_pct[`=`j'-1']) in `j'
+							replace `d'_agespan = "Timing unknown" in `j'
+							replace `d'_label   = "All ages" in `j'
 						}
 						else {
 							forvalues j = 1/`=${TIMELY_CD_`D'_NTILES}-1' {
 								replace `d'_label = "${TIMELY_CD_`D'_LABEL_`j'}" in `j'
-								if `j' == 1 replace `d'_agespan = "Age <= `=min($VCQI_RI_MAX_AGE_OF_ELIGIBILITY, ${TIMELY_CD_`D'_UB_`j'})' days" in `j'
-								if `j'  > 1 & "${TIMELY_CD_`D'_UB_`j'}" != "" replace `d'_agespan = "Age <= `=min($VCQI_RI_MAX_AGE_OF_ELIGIBILITY, ${TIMELY_CD_`D'_UB_`j'})' days" in `j'
+								if `j' == 1 replace `d'_agespan = "Age < `=min($VCQI_RI_MAX_AGE_OF_ELIGIBILITY, ${TIMELY_CD_`D'_UB_`j'})' days" in `j'
+								if `j'  > 1 & "${TIMELY_CD_`D'_UB_`j'}" != "" replace `d'_agespan = "Age < `=min($VCQI_RI_MAX_AGE_OF_ELIGIBILITY, ${TIMELY_CD_`D'_UB_`j'})' days" in `j'
 								if `j'  > 1 & !missing(`d'_tile_top_pct[`j']) replace `d'_tile_height = (`d'_tile_top_pct[`j'] - `d'_tile_top_pct[`=`j'-1']) in `j'
 							}
-							replace `d'_label = "All ages" in ${TIMELY_CD_`D'_NTILES}
+							local j ${TIMELY_CD_`D'_NTILES}
+							replace `d'_tile_height = (`d'_tile_top_pct[`j'] - `d'_tile_top_pct[`=`j'-1']) in `j'
+							replace `d'_agespan = "Timing unknown" in `j'
+							replace `d'_label   = "All ages" in `j'							
 						}
 
 					}
@@ -195,7 +205,7 @@ program define RI_VCTC_01_03DV
 					label variable level "Level"
 					label variable levelid "ID"
 					label variable stratum_name "Stratum name"
-					label variable order "Chart tile order (bottom to top)"
+					label variable order "Chart tile order (left to right)"
 					
 					order level levelid stratum_name order, first
 					
@@ -203,7 +213,7 @@ program define RI_VCTC_01_03DV
 
 					capture append using "${VCQI_OUTPUT_FOLDER}/RI_VCTC_01_${ANALYSIS_COUNTER}_TO", force
 					
-					gsort level levelid -order
+					gsort level levelid order
 					
 					save "${VCQI_OUTPUT_FOLDER}/RI_VCTC_01_${ANALYSIS_COUNTER}_TO", replace
 					
@@ -215,7 +225,7 @@ program define RI_VCTC_01_03DV
 			
 			use  "${VCQI_OUTPUT_FOLDER}/RI_VCTC_01_${ANALYSIS_COUNTER}_TO", clear
 			
-			notes : "Data are sorted by level and levelid and reverse-sorted by order to put the tile top coordinates (<dose>_tile_top_pct) in the same order they appear on the chart."
+			notes : "Data are sorted by level and levelid and by bar category order."
 			
 			save, replace
 

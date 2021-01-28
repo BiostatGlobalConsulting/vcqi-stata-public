@@ -1,4 +1,4 @@
-*! SIA_COVG_03_03DV version 1.07 - Biostat Global Consulting - 2019-08-23
+*! SIA_COVG_03_03DV version 1.08 - Biostat Global Consulting - 2021-01-13
 *******************************************************************************
 * Change log
 * 				Updated
@@ -12,6 +12,9 @@
 * 2018-04-26	1.06	Dale Rhoda		Added indicators for lifetime doses
 *										regardless of age
 * 2019-08-23	1.07	Dale Rhoda		Make outcomes missing if psweight == 0 | missing(psweight)
+* 2021-01-13	1.08	Dale Rhoda      Update logic for lifetime_mcv_doses
+*                                       to allow possibility of _m or _d or _y
+*                                       on SIA32 and 33
 *******************************************************************************
 
 program define SIA_COVG_03_03DV
@@ -24,17 +27,43 @@ program define SIA_COVG_03_03DV
 	quietly {
 	
 		use "${VCQI_OUTPUT_FOLDER}/SIA_COVG_03_${ANALYSIS_COUNTER}", clear
+
+		gen received_ri_1st_dose = !inlist(SIA28,0,.)
+		replace received_ri_1st_dose = 1 if SIA29 == 1
+		capture replace received_ri_1st_dose = 1 if !missing(SIA28_m)
+		capture replace received_ri_1st_dose = 1 if !missing(SIA28_d)
+		capture replace received_ri_1st_dose = 1 if !missing(SIA28_y)
+			
+		gen received_ri_2nd_dose = !inlist(SIA30,0,.)
+		replace received_ri_2nd_dose = 1 if SIA31 == 1
+		capture replace received_ri_2nd_dose = 1 if !missing(SIA30_m)
+		capture replace received_ri_2nd_dose = 1 if !missing(SIA30_d)
+		capture replace received_ri_2nd_dose = 1 if !missing(SIA30_y)
 		
-		gen lifetime_mcv_doses = 0
-		replace lifetime_mcv_doses = lifetime_mcv_doses + 1 if inlist(SIA20,1,2)
-		replace lifetime_mcv_doses = lifetime_mcv_doses + 1 if !missing(SIA28) | SIA29 == 1
-		replace lifetime_mcv_doses = lifetime_mcv_doses + 1 if !missing(SIA30) | SIA31 == 1
-		replace lifetime_mcv_doses = lifetime_mcv_doses + 1 if !missing(SIA32)
-		replace lifetime_mcv_doses = lifetime_mcv_doses + 1 if !missing(SIA33)
-		replace lifetime_mcv_doses = lifetime_mcv_doses + 1 if SIA27 == 1 & ///
-				missing(SIA28) & missing(SIA29) & missing(SIA30) & ///
-				missing(SIA31) & missing(SIA32) & missing(SIA33)
-		label variable lifetime_mcv_doses "Number of lifetime mcv doses"
+		gen received_sia_1st_dose = !inlist(SIA32,0,2,.)
+		capture replace received_sia_1st_dose = 1 if !missing(SIA32_m)
+		capture replace received_sia_1st_dose = 1 if !missing(SIA32_d)
+		capture replace received_sia_1st_dose = 1 if !missing(SIA32_y)	
+		
+		gen received_sia_2nd_dose = !inlist(SIA33,0,2,.)
+		capture replace received_sia_2nd_dose = 1 if !missing(SIA33_m)
+		capture replace received_sia_2nd_dose = 1 if !missing(SIA33_d)
+		capture replace received_sia_2nd_dose = 1 if !missing(SIA33_y)	
+		
+		gen num_previous_doses = received_ri_1st_dose  + ///
+								 received_ri_2nd_dose  + ///
+								 received_sia_1st_dose + ///
+								 received_sia_2nd_dose
+								 
+		label variable received_ri_1st_dose  "SIA28 or 29 have evidence of 1st RI dose"
+		label variable received_ri_2nd_dose  "SIA30 or 31 have evidence of 2nd RI dose"
+		label variable received_sia_1st_dose "SIA32 has evidence of 1st prior SIA dose"
+		label variable received_sia_2nd_dose "SIA33 has evidence of 2nd prior SIA dose"
+		label variable num_previous_doses    "Number of previous doses of campaign vaccine"		
+				
+		gen lifetime_mcv_doses = num_previous_doses + inlist(SIA20,1,2)
+
+		label variable lifetime_mcv_doses "Number of lifetime MCV doses"
 		
 		* Variables to cover all ages
 		

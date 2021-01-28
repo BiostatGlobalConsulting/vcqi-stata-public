@@ -1,4 +1,4 @@
-*! RI_QUAL_13 version 1.02 - Biostat Global Consulting - 2017-08-26
+*! RI_QUAL_13 version 1.03 - Biostat Global Consulting - 2021-01-13
 *******************************************************************************
 * Change log
 * 				Updated
@@ -6,6 +6,7 @@
 * Date 			number 	Name			What Changed
 * 2017-01-09	1.01	Dale Rhoda		Skip if no respondents have DOB
 * 2017-08-26	1.02	Mary Prier		Added version 14.1 line
+* 2021-01-13	1.03	Dale Rhoda		Send deprecation msg to log
 *******************************************************************************
 
 program define RI_QUAL_13
@@ -20,6 +21,10 @@ program define RI_QUAL_13
 	}
 	else {
 	
+		noi di as text "NOTE: We recommend you call RI_QUAL_04 instead of RI_QUAL_13 ..."
+		
+		vcqi_log_comment $VCP 2 Warning "RI_QUAL_13 has been deprecated. VCQI will run RI_QUAL_13 for you for purposes of backward-compatibility, but it is no longer maintained or recommended. You should edit the control program and call RI_QUAL_04 instead."
+		
 		noi di as text "Calculating $VCP ..."
 
 		noi di as text _col(3) "Checking global macros"

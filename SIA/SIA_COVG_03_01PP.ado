@@ -1,4 +1,4 @@
-*! SIA_COVG_03_01PP version 1.05 - Biostat Global Consulting - 2017-08-26
+*! SIA_COVG_03_01PP version 1.06 - Biostat Global Consulting - 2021-01-13
 *******************************************************************************
 * Change log
 * 				Updated
@@ -9,6 +9,7 @@
 * 2017-02-13	1.03	Dale Rhoda		Fixed a typo
 * 2017-06-08	1.04	Dale Rhoda		Added $VCQI_LEVEL4_SET_VARLIST 
 * 2017-08-26	1.05	Mary Prier		Added version 14.1 line
+* 2021-01-13	1.06	Dale Rhoda		Update list of vars to keep
 *******************************************************************************
 
 program define SIA_COVG_03_01PP
@@ -23,7 +24,7 @@ program define SIA_COVG_03_01PP
 		use "${VCQI_OUTPUT_FOLDER}/SIA_with_ids", clear
 			
 		keep level1id level2id level3id stratumid clusterid respid SIA01 SIA03 ///
-			 SIA11 SIA12 SIA20 SIA27 SIA28 SIA29 SIA30 SIA31 SIA32 SIA33 HH02  ///
+			 SIA11 SIA12 SIA20 SIA27 SIA28* SIA29 SIA30* SIA31 SIA32* SIA33* HH02  ///
 			 HH04 psweight $VCQI_LEVEL4_STRATIFIER  $VCQI_LEVEL4_SET_VARLIST 
 		
 		* merge the child's age in completed years onto the SIA dataset

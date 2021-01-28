@@ -1,10 +1,12 @@
-*! SIA_COVG_04_01PP version 1.00 - Biostat Global Consulting - 2018-10-25
+*! SIA_COVG_04_01PP version 1.01 - Biostat Global Consulting - 2021-01-13
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name			What Changed
 * 2018-10-25	1.00	MK Trimner		Original
+* 2021-01-13	1.01	Dale Rhoda		Tweak list of variables that hold info
+*                                       about previous doses
 *******************************************************************************
 
 program define SIA_COVG_04_01PP
@@ -22,20 +24,13 @@ program define SIA_COVG_04_01PP
 		* Open SIA with IDS dataset from establish unique ids
 		use "${VCQI_OUTPUT_FOLDER}/SIA_with_ids", clear
 		
-		* Make a list of variables holding evidence about prior doses
-		
-		forvalues i = 27/33 {
-			capture confirm var SIA`i'
-			if _rc ==0 {
-				local vlist `vlist' SIA`i'
-			}
-		}
-
 		* Merge in SIA_COVG_01 dataset to grab got_sia_dose variables
 		merge 1:1 respid using "SIA_COVG_01_${ANALYSIS_COUNTER}", keepusing(got_sia_dose) nogen
 			
-		* Only keep variables needed for Analysis
-		keep level1id level2id level3id stratumid clusterid respid SIA01 SIA03 SIA11 SIA12 HH02 HH04 psweight `vlist' got_sia_dose 
+		* Only keep variables needed for analysis
+		keep level1id level2id level3id stratumid clusterid respid SIA01 SIA03 ///
+		     SIA11 SIA12 HH02 HH04 psweight ///
+			 SIA27 SIA28* SIA29 SIA30* SIA31 SIA32* SIA33* got_sia_dose 
 			 
 		rename HH02 stratum_name
 		rename HH04 cluster_name

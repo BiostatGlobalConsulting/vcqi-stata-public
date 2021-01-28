@@ -1,4 +1,4 @@
-*! iwplot_svyp version 1.25 - Biostat Global Consulting - 2019-10-17
+*! iwplot_svyp version 1.26 - Biostat Global Consulting - 2021-01-13
 *******************************************************************************
 * Change log
 * 				Updated
@@ -123,6 +123,8 @@
 *										inchworms and 1 for bars)
 *
 * 2019-10-17	1.25	Dale Rhoda		Set default decimal digits to 1
+*
+* 2021-01-13	1.26	Dale Rhoda		Rearrange interval orders in cistring5
 
 *********************************************************************************
 * All datasets which are called into this program should be stored in 
@@ -1304,7 +1306,7 @@ program define iwplot_svyp
 		gen cistring4 = strtrim(cistring2) + " [" + lb_str3 + "," + ub_str3 + ")" 
 
 		*   cistring5 contains p, 95% CI, (95% LCB, 100] [0, 95% UCB)
-		gen cistring5 = strtrim(cistring2) + " [" + lb_str3 + "," + ub_str3 + ")" + " (" + lb_str2 + "," + ub_str2 + "]" 
+		gen cistring5 = strtrim(cistring2) + " (" + lb_str2 + "," + ub_str2 + "]" + " [" + lb_str3 + "," + ub_str3 + ")"
 		
 		*   cistring6 contains 2sided-95%-lower-limit - p - 2sided-95%-upper-limit  N=N
 		*   (where N is ESS for ESS and N for DATASET)

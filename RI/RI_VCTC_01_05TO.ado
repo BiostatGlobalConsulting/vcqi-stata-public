@@ -5,6 +5,8 @@
 *				version
 * Date 			number 	Name			What Changed
 * 2020-09-25	1.00	Dale Rhoda		Original version
+* 2021-01-19	1.01	Dale Rhoda		Change excel note from 'vertical' to
+*                                       'horizontal'
 *******************************************************************************
 
 program define RI_VCTC_01_05TO
@@ -29,9 +31,9 @@ program define RI_VCTC_01_05TO
 			mata: b.set_sheet("RI_VCTC_01_${ANALYSIS_COUNTER}")
 			
 			*Overwrite the stratum variable name...it is not needed
-			mata: b.put_string(`=_N+3',1,"Note: This table is not meant to be copied and pasted into a report, but rather to help someone who is looking at a RI_VCTC_01 plot and wants to know (or mention in a report) the vertical height of some of the colored tiles in the stacked bars.")
+			mata: b.put_string(`=_N+3',1,"Note: This table is not meant to be copied and pasted into a report, but rather to help someone who is looking at a RI_VCTC_01 plot and wants to know (or mention in a report) the horizontal width of some of the colored tiles in the stacked bars.")
 			
-			mata: b.put_string(`=_N+4',1,"Note: The sheet is sorted by level and levelid and then reverse sorted by order, so the tile numbers in the sheet appear, bottom-to-top, in the same orientation and order as the tiles in the plot.")
+			mata: b.put_string(`=_N+4',1,"Note: The sheet is sorted by level and levelid and by left-to-right bar category order.")
 			
 			mata: b.close_book()
 		

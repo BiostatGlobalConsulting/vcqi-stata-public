@@ -1,4 +1,4 @@
-*! RI_CIC_02_06PO version 1.07 - Biostat Global Consulting - 2020-12-02
+*! RI_CIC_02_06PO version 1.08 - Biostat Global Consulting - 2021-01-26
 *******************************************************************************
 * Change log
 * 				Updated
@@ -23,6 +23,7 @@
 *                                       the right side of the figure; for now
 *                                       we retain the code that generates the
 *                                       periscope syntax, but do not execute it
+* 2021-01-26	1.08	Dale Rhoda		Change hardcoded _1 to _$ANALYSIS_COUNTER
 *******************************************************************************
 
 program define RI_CIC_02_06PO
@@ -167,7 +168,7 @@ program define RI_CIC_02_06PO
 			local xmax = ${XMAX_`cr'}								
 			foreach d in $dose_interval_groups {
 				foreach l in $RI_CIC_02_PLOT_LEVELS {
-					use "RI_CIC_02_1", clear
+					use "RI_CIC_02_${ANALYSIS_COUNTER}", clear
 					gen card_reg = "`cr'"
 					gen dose_interval_group = "`d'"
 					gen level = `l'

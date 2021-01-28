@@ -112,6 +112,8 @@ vcqi_log_all_program_versions
 * Names of datasets that hold TT data
 vcqi_global VCQI_TT_DATASET     TT_faux_dataset
 vcqi_global VCQI_TTHC_DATASET   TTHC_faux_dataset
+
+* Name of dataset that holds cluster metadata
 vcqi_global VCQI_CM_DATASET     CM_faux_dataset
 
 * If you will describe the dataset using DESC_01 then you need to also specify
@@ -167,6 +169,7 @@ vcqi_global LEVEL3_NAME_DATASET ${VCQI_DATA_FOLDER}/level3names
 * But if the user requests two or more stratifiers  
 * then inchworm plots and unweighted proportion plots are not generated for 
 * this run.  The stratifiers will appear only in VCQI tables, but not plots.  
+* (*UNLESS* the user also asks VCQI to PLOT_OUTCOMES_IN_TABLE_ORDER.)
 
 * List of demographic variables for stratified tables (can be left blank)
 vcqi_global VCQI_LEVEL4_SET_VARLIST urban_cluster

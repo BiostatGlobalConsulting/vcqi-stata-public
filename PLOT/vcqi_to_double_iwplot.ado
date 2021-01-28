@@ -1,4 +1,4 @@
-*! vcqi_to_double_iwplot version 1.27 - Biostat Global Consulting - 2021-01-05
+*! vcqi_to_double_iwplot version 1.28 - Biostat Global Consulting - 2021-01-18
 *******************************************************************************
 * Change log
 * 				Updated
@@ -54,13 +54,15 @@
 * 2020-12-12	1.26	Dale Rhoda		Allow the user to SHOW_LEVEL_4_ALONE
 * 2021-01-05	1.27	Dale Rhoda		Tidy up the contents of param1 & param2
 *										when nn == 2; drop superfluous variables
+* 2021-01-18	1.28	Dale Rhoda		Remove RIGHTSIDETEXT option and instead
+*                                       use the VCQI_DOUBLE_IWPLOT_CITEXT global
 *******************************************************************************
 
 program define vcqi_to_double_iwplot
 	version 14.1
 	
 	syntax , DATABASE(string asis) FILETAG(string) DATAFILE(string asis) DATABASE2(string asis) DATAFILE2(string asis) ///
-	[ TITLE(string asis) NAME(string) SUBTITLE(string asis) CAPTION(string asis) RIGHTSIDETEXT(string) CBTICKS(string) ]
+	[ TITLE(string asis) NAME(string) SUBTITLE(string asis) CAPTION(string asis) CBTICKS(string) ]
 	
 	local oldvcp $VCP
 	global VCP vcqi_to_iwplot
@@ -242,9 +244,22 @@ program define vcqi_to_double_iwplot
 	
 	* Include level4id in the merge key if it is relevant
 	if `show4' == 1 local level4id level4id
+
+	*****************************************************************
+	* The global "$VCQI_DOUBLE_IWPLOT_CITEXT" is constrained to be 1 or 2 or 3 in the program named
+	* check_analysis_metadata.ado
+	*
+	* 1 means show both point estimates and 2-sided CIs
+	* 2 (default) means show both point estimates
+	* 3 means NO right side text
+	*
 	
-	* replace "rightsidetext" if user specifies option #2 (two point estimates...one for each distr'n plotted)
-	if "`rightsidetext'"=="2" {
+	* This global defaults to 1.  Reset to 1 if it takes a disallowed value:
+	if !inlist("$VCQI_DOUBLE_IWPLOT_CITEXT","1","2","3") vcqi_global VCQI_DOUBLE_IWPLOT_CITEXT 1
+	
+	* replace "rightsidetext" if user specifies option #1 (two point estimates...one for each distr'n plotted)
+	if "$VCQI_DOUBLE_IWPLOT_CITEXT" == "1" {
+		local note Text at right: Point estimates from colored and from gray hollow distributions, size(vsmall) span
 		gen currentsortorder = _n
 		rename estimate estimate1
 		merge 1:1 level1id level2id level3id `level4id' using "`database2'", keepusing(estimate) nogen  // merge in pt est from 2nd database
@@ -255,19 +270,23 @@ program define vcqi_to_double_iwplot
 		rename estimate1 estimate		
 	}
 	
-	* replace "rightsidetext" if user specifies option #3 (pt est & CI for each distr'n plotted)
-	if "`rightsidetext'"=="3" {
+	* replace "rightsidetext" if user specifies option #2 (pt est & CI for each distr'n plotted)
+	if "$VCQI_DOUBLE_IWPLOT_CITEXT" == "2" {
+		local note Text at right: Colored Point Estimate (2-sided 95% CI)  |  Gray Hollow Point Estimate (2-sided 95% CI), size(vsmall) span
 		gen currentsortorder = _n
 		rename estimate estimate1
 		rename cill cill1
 		rename ciul ciul1
 		merge 1:1 level1id level2id level3id `level4id' using "`database2'", keepusing(estimate cill ciul) nogen  // merge in pt est & CI from 2nd database
 		gen p2 = 100*estimate
+		replace cill = 100*cill
+		replace ciul = 100*ciul		
+		
 		foreach m of varlist cill1 ciul1 cill ciul {
-			replace `m' = 100*`m'
 			gen     `m'_str = string(`m', "%4.${VCQI_NUM_DECIMAL_DIGITS}f")
 			replace `m'_str = "100" if `m'_str=="100.0"
 		}
+		
 	    replace rightsidetext = strtrim(string(p, "%4.${VCQI_NUM_DECIMAL_DIGITS}f")) + " (" + strtrim(cill1_str) + "," + strtrim(ciul1_str) + ") | " + strtrim(string(p2, "%4.${VCQI_NUM_DECIMAL_DIGITS}f")) + " (" + strtrim(cill_str) + "," + strtrim(ciul_str) + ") "
 		sort currentsortorder
 		drop p2 estimate cill ciul currentsortorder cill1_str ciul1_str cill_str ciul_str
@@ -276,10 +295,15 @@ program define vcqi_to_double_iwplot
 		rename ciul1 ciul
 	}
 	
-	* replace "rightsidetext" if user specifies option #4 (NO RIGHT SIDE TEXT)
-	if "`rightsidetext'"=="4" {
+	* replace "rightsidetext" if user specifies option #3 (NO RIGHT SIDE TEXT)
+	if "$VCQI_DOUBLE_IWPLOT_CITEXT" == "3" {
 	    replace rightsidetext = ""
+		local note 
 	}
+	
+	
+		noi di `"Note is `note'"'
+	
 	* If user wants strata plotted in table order, merge the table order
 	* and sort accordingly
 
@@ -294,11 +318,13 @@ program define vcqi_to_double_iwplot
 		replace level2id = 0 if missing(level2id)
 		replace level3id = 0 if missing(level3id)
 		replace level4id = 0 if missing(level4id)		
-		merge 1:m level1id level2id level3id level4id using table_order_TO
+		merge 1:m level1id level2id level3id level4id using "${VCQI_OUTPUT_FOLDER}/table_order_TO"
 		keep if _merge == 1 | _merge == 3
 		drop _merge
 		sort table_bottom_to_top_row_order
 	}
+	
+	keep if !missing(estimate)
 	
 	keep name n deff estimate level level*id outcome rightsidetext
 	
@@ -517,21 +543,6 @@ program define double_inchworm_plotit
 		tempfile horlines
 		
 		save `horlines', replace
-	}
-	
-	* List key to right side text in a note
-	if "`rightsidetext'"=="2" {
-		local note Text at right: Point Estimates from colored and from gray hollow distributions, size(vsmall) span
-	}
-	else if "`rightsidetext'"=="3" {
-		local note Text at right: Point Estimate (95% CI)  |  Point Estimate (95% CI), size(vsmall) span
-	}
-	else if "`rightsidetext'"=="4" {
-		local note ""
-	}
-	else {
-		*local note Text at right: 1-sided 95% LCB | Point Estimate | 1-sided 95% UCB, size(vsmall) span
-		local note Text at right: Point Estimate (2-sided 95% Confidence interval), size(vsmall) span
 	}
 	
 	local saving

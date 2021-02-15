@@ -1,4 +1,4 @@
-*! date_tick_chk_05_excel_report version 1.07 - Biostat Global Consulting - 2021-01-25
+*! date_tick_chk_05_excel_report version 1.10 - Biostat Global Consulting - 2021-02-12
 *******************************************************************************
 * Change log
 * 				Updated
@@ -19,6 +19,9 @@
 *										had to change formatting from rows being hard coded to being a little more flexible
 *										Updated the label for Tick mark: Yes to clarify the difference between tick and history.
 * 2021-01-25	1.07	Dale Rhoda		Fixed a typo in a row label
+* 2021-01-30	1.08	MK Trimner		Added a new tab to summarize the categories for why VCQI changed dates to ticks
+* 2020-02-07	1.09	MK Trimner		Added new column to VCQI changed dates to tick to include those changed due to later dose in series present.
+* 2020-02-12 	1.10	Dale Rhoda		Change black fill in 'Dates changed to Ticks' to lightgray instead
 *******************************************************************************
 
 program define date_tick_chk_05_excel_report
@@ -745,7 +748,134 @@ program define date_tick_chk_05_excel_report
 			}
 		}
 
+		********************************************************************************
+		********************************************************************************
+		* Add tab showing how many dates were switched to ticks by VQCI
+		use date_tick_in_progress, clear
+		noi di as text "Writing info re: DATES CHANGED TO TICKS BY VCQI..."
+		
+		* Only keep the variables we need... these are the ct_ derived variables for card and register
+		drop *dob* *history* *_diff *_within*range *all_in*order *_full *_sense
+		keep ct_*
+		
+		* Create an id for reshaping purposes
+		gen id = _n
+		
+		* Now we want to look at out of order and same variables and determine which single dose is changed due to out of order
+		local multidose_list 
+		foreach s in card `register' {
+			foreach v in `=lower("$RI_MULTI_2_DOSE_LIST")' {
+				* Create variable to show if tick set due to later dose received and earlier one missing
+				gen ct_`v'1_`s'_tick_gap =1 if (ct_`v'2_`s'_miss == 0 | ct_`v'2_`s'_tick ==1) & (ct_`v'1_`s'_miss == 1 & ct_`v'1_`s'_tick!=1)
 
+				* Create variables to show if changed to tick due to out of order
+				gen ct_`v'1_`s'_due_ooo = 1 if ct_`v'12_`s'_ooo ==1
+				gen ct_`v'2_`s'_due_ooo = 1 if ct_`v'12_`s'_ooo ==1					
+				
+				* Create variables to show if tick set due to same date
+				gen ct_`v'1_`s'_due_same = 1 if ct_`v'_`s'_same == 1
+				gen ct_`v'2_`s'_due_same = 1 if ct_`v'_`s'_same == 1
+				
+				drop ct_`v'12_`s'_ooo ct_`v'_`s'_same ct_`v'2_`s'_miss ct_`v'2_`s'_tick ct_`v'1_`s'_miss ct_`v'1_`s'_tick
+			}
+				
+			foreach v in `=lower("$RI_MULTI_3_DOSE_LIST")' {
+				* Create variables to show if tick set due to later dose received and earlier one missing
+				gen ct_`v'1_`s'_tick_gap =1 if (ct_`v'2_`s'_miss == 0 | ct_`v'2_`s'_tick ==1) & (ct_`v'1_`s'_miss == 1 & ct_`v'1_`s'_tick!=1)
+				replace ct_`v'1_`s'_tick_gap =1 if (ct_`v'3_`s'_miss == 0 | ct_`v'3_`s'_tick ==1) & (ct_`v'1_`s'_miss == 1 & ct_`v'1_`s'_tick!=1) & ct_`v'1_`s'_tick_gap!=1
+				gen ct_`v'2_`s'_tick_gap =1 if (ct_`v'3_`s'_miss == 0 | ct_`v'3_`s'_tick ==1 ==1) & (ct_`v'2_`s'_miss == 1 & ct_`v'2_`s'_tick!=1)
+				
+				* Create variables to show if tick changed due to out of order
+				gen ct_`v'1_`s'_due_ooo = 1 if ct_`v'12_`s'_ooo == 1 | ct_`v'13_`s'_ooo == 1 |  ct_`v'123_`s'_12_ooo == 1 | ct_`v'123_`s'_13_ooo == 1
+				gen ct_`v'2_`s'_due_ooo = 1 if ct_`v'12_`s'_ooo == 1 |  ct_`v'23_`s'_ooo == 1  | ct_`v'123_`s'_12_ooo == 1 | ct_`v'123_`s'_23_ooo == 1	
+				gen ct_`v'3_`s'_due_ooo = 1 if ct_`v'13_`s'_ooo == 1 |  ct_`v'23_`s'_ooo == 1  |  ct_`v'123_`s'_13_ooo == 1	| ct_`v'123_`s'_23_ooo == 1  
+				
+				
+				* Cleanup_dates_and_ticks also changes the second dose to a tick if dose date is provided and dose 1 and 3 are out of order. So we want to also capture that
+				replace ct_`v'2_`s'_due_ooo = 1 if ct_`v'123_`s'_13_ooo == 1
+				
+				gen ct_`v'1_`s'_due_same = 1 if ct_`v'12_`s'_same == 1 | ct_`v'13_`s'_same == 1 |  ct_`v'123_`s'_12_same == 1 | ct_`v'123_`s'_13_same == 1 | ct_`v'123_`s'_all_same == 1
+				gen ct_`v'2_`s'_due_same = 1 if ct_`v'12_`s'_same == 1 |  ct_`v'23_`s'_same == 1  | ct_`v'123_`s'_12_same == 1 | ct_`v'123_`s'_23_same == 1	| ct_`v'123_`s'_all_same == 1
+				gen ct_`v'3_`s'_due_same = 1 if ct_`v'13_`s'_same == 1 |  ct_`v'23_`s'_same == 1  |  ct_`v'123_`s'_13_same == 1	| ct_`v'123_`s'_23_same == 1  | ct_`v'123_`s'_all_same == 1								   
+												   				
+				drop ct_`v'12_`s'_ooo ct_`v'13_`s'_ooo ct_`v'23_`s'_ooo ct_`v'123_`s'_12_ooo ct_`v'123_`s'_13_ooo ct_`v'123_`s'_23_ooo ///
+				ct_`v'12_`s'_same ct_`v'13_`s'_same ct_`v'23_`s'_same ct_`v'123_`s'_12_same ct_`v'123_`s'_13_same ct_`v'123_`s'_23_same ct_`v'123_`s'_all_same ///
+				ct_`v'3_`s'_miss ct_`v'3_`s'_tick ct_`v'2_`s'_miss ct_`v'2_`s'_tick ct_`v'1_`s'_miss ct_`v'1_`s'_tick
+			}
+			if "`=lower("$RI_MULTI_3_DOSE_LIST")'" != "" | 	"`=lower("$RI_MULTI_2_DOSE_LIST")'" != "" local multidose_list `multidose_list' ///
+			ct_@_`s'_due_ooo ct_@_`s'_due_same ct_@_`s'_tick_gap
+			
+		}
+		
+		drop ct_*_miss ct_*_tick
+
+		* Reshape so we have 1 row per dose	
+		* Create local with register variables
+		local reshape_list
+		`ifreg' local reshape_list ct_@_register_parmiss ct_@_register_nonsense ct_@_register_too_early ct_@_register_late
+		
+		reshape long ct_@_card_parmiss ct_@_card_nonsense ct_@_card_too_early ct_@_card_late `multidose_list' `reshape_list', i(id) j(dose) string
+		
+		* Reshape again to get the source type
+		if "`=lower("$RI_MULTI_3_DOSE_LIST")'" != "" | 	"`=lower("$RI_MULTI_2_DOSE_LIST")'" != "" local multidose_list ct__@_due_ooo ct__@_due_same ct__@_tick_gap 
+		reshape long ct__@_parmiss ct__@_nonsense  ct__@_too_early ct__@_late `multidose_list', i(id dose) j(type) string 
+
+		* We no longer need id
+		drop id
+		
+		* Rename the tick_gap variable to be consistent
+		capture rename ct__tick_gap ct___tick_gap
+
+
+		* Collapse to get the totals for each category
+		if "`=lower("$RI_MULTI_3_DOSE_LIST")'" != "" | 	"`=lower("$RI_MULTI_2_DOSE_LIST")'" != "" local multidose_list ct___due_ooo ct___due_same ct___tick_gap
+		collapse (rawsum) ct___parmiss ct___nonsense  ct___too_early ct___late `multidose_list', by(dose type)
+		
+		* Remove the "ct__" from each var name
+		foreach v of varlist * {
+		    rename `v' `=subinstr("`v'","ct__","",.)'
+		}
+		
+		* Finally reshape wide to set up for excel format
+		if "`=lower("$RI_MULTI_3_DOSE_LIST")'" != "" | 	"`=lower("$RI_MULTI_2_DOSE_LIST")'" != "" local multidose_list @_due_ooo @_due_same @_tick_gap
+		reshape wide @_parmiss @_nonsense @_too_early @_late `multidose_list', i(dose) j(type) string
+
+		* Clean up the dose name format to be consistent with other tabs 
+		replace dose = upper(dose) 
+		
+		* Wipe out the 0s from single doses in multi dose only categories
+		foreach v in $RI_SINGLE_DOSE_LIST {
+		    foreach s in card `register' {
+				capture replace `s'_due_ooo = . if dose == "`v'"
+				capture replace `s'_due_same = . if dose == "`v'"
+				capture replace `s'_tick_gap = . if dose == "`v'"
+			}   
+		}
+		
+		* We also want to wipe out any values for last dose in the series for tick_gap
+		forvalues i = 2/3 {
+			foreach v in ${RI_MULTI_`i'_DOSE_LIST} {
+				foreach s in card `register' {
+					capture replace `s'_tick_gap = . if dose == "`v'`i'"
+				}
+			}
+		}
+
+		* Grab a list of rows that need wiped out in the excel sheet to be used in formatting below
+		local blackout_list
+		local blackout_list2
+		if "`=lower("$RI_MULTI_3_DOSE_LIST")'" != "" | 	"`=lower("$RI_MULTI_2_DOSE_LIST")'" != "" { 
+			forvalues i = 1/`=_N' {
+				if card_due_ooo[`i'] == . local blackout_list `blackout_list' `i'
+				if card_tick_gap[`i'] == .  local blackout_list2 `blackout_list2' `i'
+			}
+		}
+		* Pass through the local
+		c_local blackout_list `blackout_list'
+
+		* Export to excel the results
+		export excel using "${VCQI_OUTPUT_FOLDER}/${VCQI_ANALYSIS_NAME}_dates_ticks.xlsx", sh("DATES VCQI CHANGED TO TICKS", replace) cell(A3)	
+				
 		********************************************************************************
 		********************************************************************************
 		* Code to create table to show number of doses received
@@ -1041,9 +1171,11 @@ program define date_tick_chk_05_excel_report
 				local dose = "`d'"
 				
 				top_data, sheet(`d' SERIES) row(7) ifreg(`ifreg')
-				
+
 				* align group data to the right like all other text
-				mata: b.set_horizontal_align((3,7),(2,4),"right")
+				mata: b.set_horizontal_align((3,7),(2,`xlcol2'),"right")
+
+*				mata: b.set_horizontal_align((3,7),(2,4),"right")
 				mata: b.set_column_width(1,1,70)
 				
 				mata: b.put_string(1, 1, "`d' Series: Quality of date order for 2 doses")
@@ -1103,7 +1235,7 @@ program define date_tick_chk_05_excel_report
 			foreach d in  `=upper("$RI_MULTI_3_DOSE_LIST")' {
 				local dose = "`d'"			
 
-				top_data, sheet(`d' SERIES) row(7) ifreg(`ifreg')
+				top_data, sheet(`d' SERIES) row(9) ifreg(`ifreg')
 				
 				* align group data to the right like all other text
 				mata: b.set_horizontal_align((3,7),(`xlcol2',`xlcol2'),"right")
@@ -1253,6 +1385,10 @@ program define date_tick_chk_05_excel_report
 			pink_fill, row(`r') col(`=`c'+1')
 			pink_fill, row(`=`r'+1') col(`c')
 			
+			* Format the numbers to include commas
+			mata: b.set_number_format((`r',`=`r'+1'),(`c',`=`c'+1'), "number_sep")
+
+			
 			`ifreg' {
 				local c `=`c'+4'
 			
@@ -1262,6 +1398,9 @@ program define date_tick_chk_05_excel_report
 				* Shade areas that would indicate discordance
 				pink_fill, row(`r') col(`=`c'+1')
 				pink_fill, row(`=`r'+1') col(`c')
+				* Format the numbers to include commas
+				mata: b.set_number_format((`r',`=`r'+1'),(`c',`=`c'+1'), "number_sep")
+
 
 				local c `=`c'+4'
 				
@@ -1271,6 +1410,10 @@ program define date_tick_chk_05_excel_report
 				* Shade areas that would indicate discordance
 				pink_fill, row(`r') col(`=`c'+1')
 				pink_fill, row(`=`r'+1') col(`c')
+				
+				* Format the numbers to include commas
+				mata: b.set_number_format((`r',`=`r'+1'),(`c',`=`c'+1'), "number_sep")
+
 			}
 			
 		*********
@@ -1347,10 +1490,17 @@ program define date_tick_chk_05_excel_report
 		* Set borders
 		create_box_boarders, srow(`=`i'-4') erow(`=`r'-4') scol(1) ecol(`fill')
 		
+		* Format columns to percent and add commas
 		foreach num of numlist 1/14 {
 			 mata: b.set_number_format(`num', 3, "percent")
 			 mata: b.set_number_format(`num', 6, "percent")
 			 mata: b.set_number_format(`num', 9, "percent")
+ 			 mata: b.set_number_format(`num', 2, "number_sep")
+			 mata: b.set_number_format(`num', 5, "number_sep")
+			 mata: b.set_number_format(`num', 8, "number_sep")
+  			 mata: b.set_number_format(`num', 4, "number_sep")
+			 mata: b.set_number_format(`num', 7, "number_sep")
+			 mata: b.set_number_format(`num', 10, "number_sep")
 		}
 
 		* Set column width
@@ -1365,6 +1515,93 @@ program define date_tick_chk_05_excel_report
 			mata: b.set_column_width(10, 10, 11)
 			mata: b.set_column_width(11, 11, 11)
 		}
+		
+		************************************************************************
+		* Format the tab with details about doses changed to ticks
+		mata: b.set_sheet("DATES VCQI CHANGED TO TICKS")
+		
+		local tick_row = wordcount("$RI_DOSE_LIST") + 2
+		local tick_end 8
+		`ifreg' local tick_end 15
+
+		* Put the header in
+		mata: b.put_string(2, 1, "Number of Dates VCQI Changed to Tick by Dose and Reason")
+		mata: b.set_text_wrap(2,1,"on")
+		mata: b.set_font_bold(2, 1, "on")
+		
+		* align the text
+		mata: b.set_horizontal_align((3,`tick_row'),1, "right")
+		mata: b.set_horizontal_align((1,2),(2,`tick_end'), "center")
+		
+		* Add the Card header
+		mata: b.put_string(1,2,"Card")
+		mata: b.set_sheet_merge("DATES VCQI CHANGED TO TICKS",(1,1),(2,8))
+		
+		`ifreg' {
+		    * add Register header
+		    mata: b.set_sheet_merge("DATES VCQI CHANGED TO TICKS", (1,1), (9,15))
+			mata: b.put_string(1,9,"Register")
+		}
+				
+		* Make borders for card and register
+		mata: b.set_right_border((1,`tick_row'),(8,8), "thin","black")
+		`ifreg' mata: b.set_right_border((1,`tick_row'),(`tick_end',`tick_end'), "thin","black")
+		
+		* Add a gray shading for top 2 lines
+		mata: b.set_fill_pattern((1,2),(1,`tick_end'),"solid","lightgray")
+		
+		* Blackout Multi dose categories for the cells that are for single doses
+		foreach b in `blackout_list' {
+		    local b = `b' + 2
+		    mata: b.set_fill_pattern(`b',(6,8),"solid","lightgray")
+			`ifreg' mata: b.set_fill_pattern(`b',(13,15),"solid","lightgray")
+		}
+		foreach b in `blackout_list2' {
+			local b = `b' + 2
+			mata: b.set_fill_pattern(`b',8,"solid","lightgray")
+			`ifreg' mata: b.set_fill_pattern(`b',15,"solid","lightgray")
+		}
+		
+		* Add the column headers
+		mata: b.put_string(2,2,"Partial Dates")
+		mata: b.put_string(2,3,"Nonsensical Dates")  
+		mata: b.set_text_wrap(2,(4,8),"on")
+		mata: b.put_string(2,4,"Dates Before Earliest Possible Date") 
+		mata: b.put_string(2,5,"Dates Past Survey Date") 
+		mata: b.put_string(2,6,"Dates Out of Order Within Series") 
+		mata: b.put_string(2,7,"Same Dates Within Series")
+		mata: b.put_string(2,8,"To be consistent with evidence of a later dose")
+		`ifreg' {
+		    mata: b.put_string(2,13,"Register")
+		    mata: b.put_string(2,9,"Partial Dates")
+			mata: b.put_string(2,10,"Nonsensical Dates")  
+			mata: b.set_text_wrap(2,(11,15),"on")
+			mata: b.put_string(2,11,"Dates Before Earliest Possible Date") 
+			mata: b.put_string(2,12,"Dates Past Survey Date") 
+			mata: b.put_string(2,13,"Dates Out of Order Within Series") 
+			mata: b.put_string(2,14,"Same Dates Within Series")
+			mata: b.put_string(2,15,"To be consistent with evidence of a later dose")
+
+		}
+		
+		****************************************************************************
+		* Create boarders
+		create_box_boarders, srow(1) erow(`tick_row') scol(1) ecol(`tick_end')
+		
+		* Add Footnotes
+		mata: b.put_string(`=`tick_row'+1',1,"Note: These are the details around why VCQI changed dates to tick marks for each dose.")
+		mata: b.put_string(`=`tick_row'+2',1,"Note: For multi dose series the second dose is also changed to a tick if dose 1 and 3 are out of order and dose 2 is within range.")
+		style_font, row(`=`tick_row'+1')
+		style_font, row(`=`tick_row'+2')
+		
+		* Adjust column width
+		mata: b.set_column_width(1, 1, 25)
+		forvalues i = 2/`tick_end' {
+			mata: b.set_column_width(`i',`i', 17)
+		}
+		
+		* format numbers to include commas
+		mata: b.set_number_format((2,`tick_end'),(3,`tick_row'),"number_sep")
 		
 		mata: b.close_book()	
 	}
@@ -1510,7 +1747,15 @@ program define format_to_percent
 
 	mata: b.set_column_width(1, 1, `width')
 		
+	* Set format to % and add comma 
 	foreach num of numlist 1/100 {
+	    mata: b.set_number_format(`num', 2, "number_sep")
+		mata: b.set_number_format(`num', 4, "number_sep")
+		mata: b.set_number_format(`num', 5, "number_sep")
+		mata: b.set_number_format(`num', 7, "number_sep")
+		`ifreg' mata: b.set_number_format(`num', 8, "number_sep")
+		`ifreg' mata: b.set_number_format(`num', 10, "number_sep")
+
 		 mata: b.set_number_format(`num', 3, "percent")
 		 mata: b.set_number_format(`num', 6, "percent")
 		`ifreg' mata: b.set_number_format(`num', 9, "percent")

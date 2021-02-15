@@ -1,4 +1,4 @@
-*! TT_COVG_01_06PO version 1.08 - Biostat Global Consulting - 2018-05-25
+*! TT_COVG_01_06PO version 1.09 - Biostat Global Consulting - 2021-02-14
 *******************************************************************************
 * Change log
 * 				Updated
@@ -14,6 +14,7 @@
 *										will be made
 * 2017-08-26	1.07	Mary Prier		Added version 14.1 line
 * 2018-05-25	1.08	Dale Rhoda		Fix typo in graph drop _all
+* 2021-02-14	1.09	Dale Rhoda		Make opplot filename fit 8 component pattern
 *******************************************************************************
 
 program define TT_COVG_01_06PO
@@ -61,23 +62,27 @@ program define TT_COVG_01_06PO
 			local subtitle TT_COVG_01: Protected at birth `byphrase'
 
 			forvalues i = 1/`opp_nstrata' {
+				
+				graph drop _all
+				
+				local filestub TT_COVG_01_${ANALYSIS_COUNTER}_opplot_pab_`opp_stratum_id_`i''_`opp_stratum_name_`i''
 								
 				local savegph
 				if $SAVE_VCQI_GPH_FILES ///
-					local savegph   saving("Plots_OP/TT_COVG_01_${ANALYSIS_COUNTER}_opplot_`opp_stratum_id_`i''_`opp_stratum_name_`i''", replace)
+					local savegph   saving("Plots_OP/`filestub'", replace)
 
 				local savedata
 				if $VCQI_SAVE_OP_PLOT_DATA ///
-					local savedata savedata(Plots_OP/TT_COVG_01_${ANALYSIS_COUNTER}_opplot_`opp_stratum_id_`i''_`opp_stratum_name_`i'')			
+					local savedata savedata(Plots_OP/`filestub')			
 
 				opplot protected_at_birth_to_analyze  , clustvar(clusterid) plotn  weightvar(psweight) ///
 					   stratvar(stratumid) stratum(`=int(`opp_stratum_id_`i'')') ///
 					   title("`opp_stratum_id_`i'' - `opp_stratum_name_`i''") ///
 					   subtitle(`quote'"`subtitle'"`quote') ///
 					   barcolor1(vcqi_level3) barcolor2(gs15) `savegph' `savedata' ///
-					   export(Plots_OP/TT_COVG_01_${ANALYSIS_COUNTER}_`opp_stratum_id_`i''_`opp_stratum_name_`i''.png)
+					   export(Plots_OP/`filestub'.png)
 				
-				vcqi_log_comment $VCP 3 Comment "Graphic file: TT_COVG_01_${ANALYSIS_COUNTER}_`opp_stratum_id_`i''_`opp_stratum_name_`i''.png was created and saved."
+				vcqi_log_comment $VCP 3 Comment "Graphic file: `filestub'.png was created and saved."
 
 				graph drop _all
 			}
@@ -106,7 +111,7 @@ program define TT_COVG_01_06PO
 				clear
 			}		
 			
-			noi di as text _col(5) "Inchworm plots (`ppd' plots)"		
+			noi di as text _col(5) "${IWPLOT_TYPE}s (`ppd' plots)"		
 
 			capture mkdir Plots_IW_UW
 			
@@ -115,7 +120,7 @@ program define TT_COVG_01_06PO
 				datafile(${VCQI_OUTPUT_FOLDER}/TT_COVG_01_${ANALYSIS_COUNTER}) ///
 				title(TT - Protected at Birth) name(TT_COVG_01_${ANALYSIS_COUNTER}_iwplot)
 				
-			vcqi_log_comment $VCP 3 Comment "Inchworm plot was created and exported."
+			vcqi_log_comment $VCP 3 Comment "${IWPLOT_TYPE} was created and exported."
 		
 			graph drop _all
 

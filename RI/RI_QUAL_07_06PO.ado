@@ -1,4 +1,4 @@
-*! RI_QUAL_07_06PO version 1.07 - Biostat Global Consulting - 2020-12-16
+*! RI_QUAL_07_06PO version 1.08 - Biostat Global Consulting - 2021-02-11
 *******************************************************************************
 * Change log
 * 				Updated
@@ -15,6 +15,7 @@
 * 2019-11-08	1.06	Dale Rhoda		Introduced MOV_OUTPUT_DOSE_LIST
 * 2020-12-16	1.07	Cait Clary		Allow double inchworms when showbars=1 then 
 * 										reset IWPLOT_SHOWBARS global
+* 2021-02-11	1.08	Dale Rhoda		Cleaner code for double inchworms or bar charts
 *******************************************************************************
 
 program define RI_QUAL_07_06PO
@@ -46,7 +47,7 @@ program define RI_QUAL_07_06PO
 				clear
 			}			
 			
-			noi di as text _col(5) "Inchworm plots (`ppd' plots per dose)"
+			noi di as text _col(5) "${IWPLOT_TYPE}s (`ppd' plots per dose)"
 			
 			capture mkdir Plots_IW_UW
 
@@ -65,14 +66,11 @@ program define RI_QUAL_07_06PO
 					datafile(${VCQI_OUTPUT_FOLDER}/RI_QUAL_07_${ANALYSIS_COUNTER}) ///
 					title("RI - Would have Valid `=upper("`d'")'" "if no MOVs (%)") name(RI_QUAL_07_${ANALYSIS_COUNTER}_iwplot_`d'_`vc')
 					
-				vcqi_log_comment $VCP 3 Comment "Inchworm plot was created and exported."
+				vcqi_log_comment $VCP 3 Comment "${IWPLOT_TYPE} was created and exported."
 				
 				* Double inchworm to shoe coverage if no MOVs versus observed coverage (with MOVs)
 
 				graph drop _all
-
-				* Temporarily set IWPLOT_SHOWBARS to 0 so that the double inchworm plot is generated
-				vcqi_global IWPLOT_SHOWBARS 0
 
 				* Double inchworm plot that shows valid coverage in gray and 
 				* valid coverage if no MOVs in color
@@ -90,7 +88,7 @@ program define RI_QUAL_07_06PO
 					capture confirm file "${VCQI_OUTPUT_FOLDER}/RI_COVG_02_1_`d'_a_database.dta"
 					if _rc == 0 {
 						local double_ac 1
-						vcqi_log_comment $VCP 2 Warning "RI_QUAL_07 made a double inchworm plot using RI_COVG_02_1_`d'_a_database because RI_COVG_02_${ANALYSIS_COUNTER}_`d'_a_database did not exist."
+						vcqi_log_comment $VCP 2 Warning "RI_QUAL_07 made a double $IWPLOT_TYPE using RI_COVG_02_1_`d'_a_database because RI_COVG_02_${ANALYSIS_COUNTER}_`d'_a_database did not exist."
 					}
 				}
 
@@ -108,14 +106,11 @@ program define RI_QUAL_07_06PO
 						datafile2(${VCQI_OUTPUT_FOLDER}/RI_COVG_02_`double_ac') ///
 						caption(Gray hollow shape is valid coverage; colored shape is valid coverage if no MOVs, size(vsmall) span)
 						
-					vcqi_log_comment $VCP 3 Comment "Double inchworm plot was created and exported."
+					vcqi_log_comment $VCP 3 Comment "Double $IWPLOT_TYPE was created and exported."
 					
 					graph drop _all
 
 				}
-
-				* Revert IWPLOT_SHOWBARS back to the user's selection
-				vcqi_global IWPLOT_SHOWBARS $IWPLOT_SHOWBARS_SAVEOPT
 			}
 			noi di as text ""
 		}

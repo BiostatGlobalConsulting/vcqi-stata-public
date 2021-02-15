@@ -1,4 +1,4 @@
-*! RI_QUAL_07B_06PO version 1.04 - Biostat Global Consulting - 2021-01-18
+*! RI_QUAL_07B_06PO version 1.05 - Biostat Global Consulting - 2021-02-11
 *******************************************************************************
 * Change log
 * 				Updated
@@ -10,6 +10,7 @@
 * 2020-12-16	1.03	Cait Clary		Allow double inchworms when showbars=1 then 
 * 										reset IWPLOT_SHOWBARS global
 * 2020-01-18	1.04	Dale Rhoda		Drop hard-coded rightsidetext for dbl iw	
+* 2021-02-11	1.05	Dale Rhoda		Cleaner code for double inchworms or bar charts
 *******************************************************************************
 
 program define RI_QUAL_07B_06PO
@@ -41,7 +42,7 @@ program define RI_QUAL_07B_06PO
 				clear
 			}			
 			
-			noi di as text _col(5) "Inchworm plots (`ppd' plots per dose)"
+			noi di as text _col(5) "${IWPLOT_TYPE}s (`ppd' plots per dose)"
 			
 			capture mkdir Plots_IW_UW
 			
@@ -58,14 +59,11 @@ program define RI_QUAL_07B_06PO
 					datafile(${VCQI_OUTPUT_FOLDER}/RI_QUAL_07B_${ANALYSIS_COUNTER}) ///
 					title("RI - Would have Valid `=upper("`d'")'" "if no MOVs (%)") name(RI_QUAL_07B_${ANALYSIS_COUNTER}_iwplot_`d')
 					
-				vcqi_log_comment $VCP 3 Comment "Inchworm plot was created and exported."
+				vcqi_log_comment $VCP 3 Comment "${IWPLOT_TYPE} was created and exported."
 				
 				* Double inchworm to show valid coverage with no MOVs versus observed valid coverage (with MOVs)
 
 				graph drop _all
-
-				* Temporarily set IWPLOT_SHOWBARS to 0 so that the double inchworm plot is generated
-				vcqi_global IWPLOT_SHOWBARS 0
 
 				* Double inchworm plot that shows valid coverage in gray and 
 				* valid coverage if no MOVs in color
@@ -106,9 +104,6 @@ program define RI_QUAL_07B_06PO
 					graph drop _all
 
 				}
-
-				* Revert IWPLOT_SHOWBARS back to the user's selection
-				vcqi_global IWPLOT_SHOWBARS $IWPLOT_SHOWBARS_SAVEOPT
 			}
 			noi di as text ""
 		}

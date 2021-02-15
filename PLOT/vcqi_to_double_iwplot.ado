@@ -1,4 +1,4 @@
-*! vcqi_to_double_iwplot version 1.28 - Biostat Global Consulting - 2021-01-18
+*! vcqi_to_double_iwplot version 1.30 - Biostat Global Consulting - 2021-02-02
 *******************************************************************************
 * Change log
 * 				Updated
@@ -56,6 +56,9 @@
 *										when nn == 2; drop superfluous variables
 * 2021-01-18	1.28	Dale Rhoda		Remove RIGHTSIDETEXT option and instead
 *                                       use the VCQI_DOUBLE_IWPLOT_CITEXT global
+* 2021-02-01	1.29	Dale Rhoda		Remove .0 from rightsidetext if p = 100
+* 2021-02-02	1.30	Dale Rhoda		Implemented a new program to make double
+*                                       bar charts
 *******************************************************************************
 
 program define vcqi_to_double_iwplot
@@ -257,9 +260,13 @@ program define vcqi_to_double_iwplot
 	* This global defaults to 1.  Reset to 1 if it takes a disallowed value:
 	if !inlist("$VCQI_DOUBLE_IWPLOT_CITEXT","1","2","3") vcqi_global VCQI_DOUBLE_IWPLOT_CITEXT 1
 	
+	* Tweak the word depending on whether we're showing inchworms or bars
+	local switchword distributions
+	if "$IWPLOT_SHOWBARS" == "1" local switchword bars
+	
 	* replace "rightsidetext" if user specifies option #1 (two point estimates...one for each distr'n plotted)
 	if "$VCQI_DOUBLE_IWPLOT_CITEXT" == "1" {
-		local note Text at right: Point estimates from colored and from gray hollow distributions, size(vsmall) span
+		local note Text at right: Point estimates from colored and from gray hollow `switchword', size(vsmall) span
 		gen currentsortorder = _n
 		rename estimate estimate1
 		merge 1:1 level1id level2id level3id `level4id' using "`database2'", keepusing(estimate) nogen  // merge in pt est from 2nd database
@@ -301,8 +308,10 @@ program define vcqi_to_double_iwplot
 		local note 
 	}
 	
-	
-		noi di `"Note is `note'"'
+	* remove decimals from 100% labels
+	forvalues i = 1/${VCQI_NUM_DECIMAL_DIGITS} {
+		replace rightsidetext = subinstr(rightsidetext,"100.0","100",.)
+	}
 	
 	* If user wants strata plotted in table order, merge the table order
 	* and sort accordingly
@@ -479,7 +488,7 @@ program define vcqi_to_double_iwplot
 			double_inchworm_plotit, filetag(`filetag'_l2_`l2l') show1(`show1') show2(`show2') show3(`show3') ///
 					show4(`show4') `pass_thru_options' name(`name'_l2_`l2l'_`l2name_`l2l'') rightsidetext(`rightsidetext')
 				
-			vcqi_log_comment $VCP 3 Comment "Inchworm plot was created and exported."
+			vcqi_log_comment $VCP 3 Comment "${IWPLOT_TYPE} was created and exported."
 		
 			graph drop _all
 		}
@@ -559,18 +568,33 @@ program define double_inchworm_plotit
 	*  but a value of 30 or 50 should be used for final product plots)
 	
 	if "$VCQI_IWPLOT_NL" == "" vcqi_global VCQI_IWPLOT_NL 30
-		
-	iwplot_svyp , ///
-		inputdata("Plots_IW_UW/iwplot_params_`filetag'_`show1'`show2'`show3'`show4'") ///
-		nl($VCQI_IWPLOT_NL) ///
-		xtitle("Estimated Coverage %") ///
-		horlinesdata("`horlines'") ///
-		note(`note') ///
-		caption(`caption') ///
-		title(`title', span) ///
-		subtitle(`subtitle', span) ///
-		name(`=substr("`name'",1,min(32,length("`name'")))', replace) `saving' `clean' `export' 		
-		
+
+	if "$IWPLOT_SHOWBARS" == "0" ///
+		iwplot_svyp , ///
+			inputdata("Plots_IW_UW/iwplot_params_`filetag'_`show1'`show2'`show3'`show4'") ///
+			nl($VCQI_IWPLOT_NL) ///
+			xtitle("Estimated Coverage %") ///
+			horlinesdata("`horlines'") ///
+			note(`note') ///
+			caption(`caption') ///
+			title(`title', span) ///
+			subtitle(`subtitle', span) ///
+			name(`=substr("`name'",1,min(32,length("`name'")))', replace) `saving' `clean' `export' 
+	else {
+		* Tweak the wording in the caption to reflect bars
+		local name `=subinstr("`name'","iwplot","brplot",.)'
+		local caption `=subinstr("`caption'","shape is","bar shows",.)'
+		iwplot_double_barchart_svyp , ///
+			inputdata("Plots_IW_UW/iwplot_params_`filetag'_`show1'`show2'`show3'`show4'") ///
+			nl($VCQI_IWPLOT_NL) ///
+			xtitle("Estimated Coverage %") ///
+			horlinesdata("`horlines'") ///
+			note(`note') ///
+			caption(`caption') ///
+			title(`title', span) ///
+			subtitle(`subtitle', span) ///
+			name(`=substr("`name'",1,min(32,length("`name'")))', replace) `saving' `clean' `export' 	
+	}
 	if $DELETE_TEMP_VCQI_DATASETS == 1 capture erase "Plots_IW_UW/iwplot_params_`filetag'_`show1'`show2'`show3'`show4'.dta"
 
 end

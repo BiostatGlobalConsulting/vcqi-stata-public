@@ -1,4 +1,4 @@
-*! check_analysis_metadata version 1.26 - Biostat Global Consulting - 2021-01-18
+*! check_analysis_metadata version 1.28 - Biostat Global Consulting - 2021-02-13
 *******************************************************************************
 * Change log
 * 				Updated
@@ -59,6 +59,12 @@
 *                                       HM29 must be numeric
 * 2021-01-17	1.26	Dale Rhoda		Check values of VCQI_DOUBLE_IWPLOT_CITEXT.
 *                                       Set it to 2 if the user did not specify.
+* 2021-02-11	1.27	Dale Rhoda		Set the global IWPLOT_TYPE so the 
+*                                       messages to the screen reflect whether 
+*                                       the user asked for inchworms or bar charts
+* 2021-02-13	1.28	Dale Rhoda		Strip .dta off the level4 LAYOUT filename
+*                                       if the user includes it in their control
+*                                       program
 *******************************************************************************
 
 program define check_analysis_metadata
@@ -611,7 +617,7 @@ program define check_analysis_metadata
 
 		if `=wordcount("$VCQI_LEVEL4_SET_VARLIST")' > 1 & "$PLOT_OUTCOMES_IN_TABLE_ORDER" != "1" {	
 			if "$VCQI_MAKE_IW_PLOTS" == "1" {
-				vcqi_log_comment $VCP 2 Warning "VCQI does not make inchworm plots when the user asks for 2+ LEVEL4 stratifiers via the LEVEL4_SET syntax and does NOT ask for PLOT_OUTCOMES_IN_TABLE_ORDER."
+				vcqi_log_comment $VCP 2 Warning "VCQI does not make inchworm or bar plots when the user asks for 2+ LEVEL4 stratifiers via the LEVEL4_SET syntax and does NOT ask for PLOT_OUTCOMES_IN_TABLE_ORDER."
 				vcqi_global VCQI_MAKE_IW_PLOTS 0
 			}
 			if "$VCQI_MAKE_UW_PLOTS" == "1" {
@@ -627,11 +633,12 @@ program define check_analysis_metadata
 		* Default IWPLOT_SHOWBARS to 0 
 		if "$IWPLOT_SHOWBARS" != "1"	vcqi_global IWPLOT_SHOWBARS 0
 
-		* Save user option for IWPLOT_SHOWBARS macro
-		vcqi_global IWPLOT_SHOWBARS_SAVEOPT = $IWPLOT_SHOWBARS
-		
-		if !inlist("$IWPLOT_SHOWBARS", "", "0") ///
-			vcqi_log_comment $VCP 3 Comment "The global macro IWPLOT_SHOWBARS is set to $IWPLOT_SHOWBARS. Note that when this macro is set to 1, VCQI will convert single-inchworm plots to bar plots but continue to make double-inchworm plots."
+		if "$IWPLOT_SHOWBARS" == "1" ///
+			vcqi_log_comment $VCP 3 Comment "The global macro IWPLOT_SHOWBARS is set to 1. So VCQI will make barcharts instead of inchworm plots."
+			
+		if "$IWPLOT_SHOWBARS" == "1" vcqi_global IWPLOT_TYPE Bar chart
+		else                         vcqi_global IWPLOT_TYPE Inchworm plot
+			
 			
 		*************************
 		* Global that controls right side text for double inchworm plots
@@ -649,7 +656,7 @@ program define check_analysis_metadata
 		
 		* Aggregate databases unless (programmer's option) the user asks not to
 		* by setting VCQI_AGGREGATE_VCQI_DATABASES to something other than 1 (like 0)
-		if "$VCQI_AGGREGATE_VCQI_DATABASES" == "" vcqi_global VCQI_AGGREGATE_VCQI_DATABASES 1
+		if "$AGGREGATE_VCQI_DATABASES" == "" vcqi_global AGGREGATE_VCQI_DATABASES 1
 			
 		if "`exitflag'" == "1" {
 			vcqi_global VCQI_ERROR 1

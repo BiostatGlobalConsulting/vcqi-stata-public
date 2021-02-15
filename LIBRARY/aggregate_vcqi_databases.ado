@@ -1,4 +1,4 @@
-*! aggregate_vcqi_databases 1.08 - Biostat Global Consulting - 2021-01-16
+*! aggregate_vcqi_databases 1.09 - Biostat Global Consulting - 2021-02-09
 ******************************************************************************* 
 * Change log 
 * 				Updated 
@@ -20,6 +20,8 @@
 * 2020-12-15	1.06	Dale Rhoda		Be sure to label all the level variables
 * 2021-01-08	1.07	Dale Rhoda		Store the name of the original database, too
 * 2021-01-16	1.08	Dale Rhoda		Exclude SIA_COVG_05 from aggregation
+* 2021-02-09	1.09	MK Trimner		Added db_rownum ,db_id and db_name to varlist checks
+*										Also changed logic to look in folder for the databases rather than use VCQI_DATABASES global
 ******************************************************************************** 
 * This takes all the vcqi databases and creates one single database. Then deletes all of them
 capture program drop aggregate_vcqi_databases
@@ -33,13 +35,18 @@ program define aggregate_vcqi_databases
 	foreach f in unweighted weighted other all {
 		capture erase "${VCQI_OUTPUT_FOLDER}/VCQI_aggregated_databases_`f'.dta"
 	}
+		
+	* Grab the list of databases from the output folder
+	local list : dir . files "*database.dta", respectcase
+	local vcqi_databases = subinstr(`"`list'"',`"""',"",.)
+	local vcqi_databases = subinstr("`vcqi_databases'",".dta","",.)
 	
 	* Create two globals ... one for the aggregated databases and one for all others
 	global VCQI_AGGREGATED_DATABASES 
 	global VCQI_NON_AGGREGATED_DATABASES
-	foreach d in $VCQI_DATABASES {
-		if  `=strpos("`d'","RI_COVG_05")' > 0  | `=strpos("`d'","SIA_COVG_05")' > 0  | `=strpos("`d'","DESC")' > 0 | `=strpos("`d'","COVG_DIFF")' > 0 | `=strpos("`d'","table_order")' > 0 ///
-			global VCQI_NON_AGGREGATED_DATABASES $VCQI_NON_AGGREGATED_DATABASES `d'
+	foreach d in `vcqi_databases' { 
+		if  `=strpos(`"`d'"',"RI_COVG_05")' > 0  | `=strpos(`"`d'"',"SIA_COVG_05")' > 0  | `=strpos(`"`d'"',"DESC")' > 0 | ///
+		`=strpos(`"`d'"',"COVG_DIFF")' > 0 | `=strpos(`"`d'"',"table_order")' > 0 global VCQI_NON_AGGREGATED_DATABASES $VCQI_NON_AGGREGATED_DATABASES `d'	
 			
 		else global VCQI_AGGREGATED_DATABASES $VCQI_AGGREGATED_DATABASES `d'
 	}
@@ -69,6 +76,9 @@ program define aggregate_vcqi_databases
 			
 			gen db_name = "`f'"
 			label variable db_name "Name of original database"
+			
+			* Create a local with these new vars to pass through to determine if weight/unweighted/other
+			local org_ids db_rownum db_id db_name
 														
 			local strcount 10
 			if `=strpos("`f'","RI_ACC_")' > 0 local strcount `=`strcount'- 1'
@@ -84,10 +94,11 @@ program define aggregate_vcqi_databases
 			local `n'_var `r(varlist)'
 			
 			local weighted other
-			if "``n'_var'" == "level id level4id level4name outcome estimate n" local weighted unweighted
-			if "``n'_var'" == "level name level1id level1name level2id level2name level3id level3name level4id level4name id outcome estimate n" local weighted unweighted
+			if "``n'_var'" == "level id level4id level4name outcome estimate n `org_ids'" local weighted unweighted
+			if "``n'_var'" == "level name level1id level1name level2id level2name level3id level3name level4id level4name id outcome estimate n `org_ids'" ///
+			local weighted unweighted
 			if "``n'_var'" == ///
-			"level name level1id level1name level2id level2name level3id level3name level4id level4name id outcome estimate stderr cilevel cill ciul lcb ucb deff icc n nwtd nclusters nwtd_est" ///
+			"level name level1id level1name level2id level2name level3id level3name level4id level4name id outcome estimate stderr cilevel cill ciul lcb ucb deff icc n nwtd nclusters nwtd_est `org_ids'" ///
 			local weighted weighted
 			
 			if "`indicator'"=="RI_QUAL_09" local weighted unweighted

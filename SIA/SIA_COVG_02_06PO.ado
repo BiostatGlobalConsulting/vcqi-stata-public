@@ -1,4 +1,4 @@
-*! SIA_COVG_02_06PO version 1.06 - Biostat Global Consulting - 2017-08-26
+*! SIA_COVG_02_06PO version 1.07 - Biostat Global Consulting - 2021-02-14
 *******************************************************************************
 * Change log
 * 				Updated
@@ -11,6 +11,7 @@
 * 2016-05-16	1.05	Dale Rhoda		Tell user how many inchworm plots
 *										will be made
 * 2017-08-26	1.06	Mary Prier		Added version 14.1 line
+* 2021-02-14	1.07	Dale Rhoda		Make opplot filename fit 8 element pattern
 *******************************************************************************
 
 program define SIA_COVG_02_06PO
@@ -53,21 +54,25 @@ program define SIA_COVG_02_06PO
 			
 				graph drop _all
 				
+				local filestub SIA_COVG_02_${ANALYSIS_COUNTER}_opplot_firstdose_`opp_stratum_id_`i''_`opp_stratum_name_`i''
+				
 				if $SAVE_VCQI_GPH_FILES ///
-					local savegph   saving("Plots_OP/SIA_COVG_02_${ANALYSIS_COUNTER}_opplot_`opp_stratum_id_`i''_`opp_stratum_name_`i''", replace)
+					local savegph   saving("Plots_OP/`filestub'", replace)
 
 				if $VCQI_SAVE_OP_PLOT_DATA ///
-					local savedata savedata(Plots_OP/SIA_COVG_02_${ANALYSIS_COUNTER}_opplot_`opp_stratum_id_`i''_`opp_stratum_name_`i'')
+					local savedata savedata(Plots_OP/`filestub')
 			
 				opplot sia_is_first_measles_dose  , clustvar(clusterid) plotn  weightvar(psweight) ///
 					   stratvar(stratumid) stratum(`=int(`opp_stratum_id_`i'')') ///
 					   title("`opp_stratum_id_`i'' - `opp_stratum_name_`i''") ///
 					   subtitle(SIA Provided Child's First Measles Dose) ///
 					   barcolor1(vcqi_level3) barcolor2(gs15) `savegph' `savedata' ///
-					   export(Plots_OP/SIA_COVG_02_${ANALYSIS_COUNTER}_`opp_stratum_id_`i''_`opp_stratum_name_`i''.png)
+					   export(Plots_OP/`filestub'.png)
 				
-				vcqi_log_comment $VCP 3 Comment "Graphic file: SIA_COVG_02_${ANALYSIS_COUNTER}_`opp_stratum_id_`i''_`opp_stratum_name_`i''.png was created and saved."
+				vcqi_log_comment $VCP 3 Comment "Graphic file: `filestub'.png was created and saved."
 				
+				graph drop _all
+
 			}
 		}
 		
@@ -94,7 +99,7 @@ program define SIA_COVG_02_06PO
 				clear
 			}		
 			
-			noi di as text _col(5) "Inchworm plots (`ppd' plots)"		
+			noi di as text _col(5) "${IWPLOT_TYPE}s (`ppd' plots)"		
 			
 			capture mkdir Plots_IW_UW
 
@@ -105,7 +110,7 @@ program define SIA_COVG_02_06PO
 				datafile(${VCQI_OUTPUT_FOLDER}/SIA_COVG_02_${ANALYSIS_COUNTER}) ///
 				title(SIA - SIA Dose was First Dose (%) ) name(SIA_COVG_02_${ANALYSIS_COUNTER}_iwplot)
 				
-			vcqi_log_comment $VCP 3 Comment "Inchworm plot was created and exported."
+			vcqi_log_comment $VCP 3 Comment "${IWPLOT_TYPE} was created and exported."
 		}
 	}
 	

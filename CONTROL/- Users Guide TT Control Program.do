@@ -3,16 +3,27 @@
 * Vaccination Coverage Quality Indicators (VCQI) control program to analyze
 * data from a tetanus survey 
 *
+* This program is configured to analyze the VCQI demonstration datasets
+* from a fictional coverage survey in the
+* fictional country of Harmonia.  It serves as a template that users
+* may copy to use with new datasets from real surveys.  
 *
-* Program example and template for the VCQI User's Guide
+* After copying the program, make a set of edits in Blocks RI-B and RI-D and 
+* RI-F below in accordance with guidance in the VCQI User's Guide.
+*
+* This program example is described in detail in Chapter 7 of the 
+* VCQI User's Guide.
+*
+* You will find the latest versions of VCQI documentation and programs at the
+* VCQI Resources Website:  http://www.biostatglobal.com/VCQI_RESOURCES.html
 *
 * Written by Biostat Global Consulting
 *
-* See bottom of program for log of program updates
+* See comments at the bottom of program for log of program updates.
 *
-* The user might customize this program by changing items below in the
-* code blocks marked TT-B, TT-D, and TT-F below.  Those blocks are
-* marked "(User may change)".
+* IMPORTANT: The user may customize this program by changing items below in
+* code blocks marked RI-B, RI-D, and RI-F below.  Those blocks are marked 
+* "(User may change)".
 *
 *
 ********************************************************************************
@@ -172,7 +183,7 @@ vcqi_global LEVEL3_NAME_DATASET ${VCQI_DATA_FOLDER}/level3names
 * (*UNLESS* the user also asks VCQI to PLOT_OUTCOMES_IN_TABLE_ORDER.)
 
 * List of demographic variables for stratified tables (can be left blank)
-vcqi_global VCQI_LEVEL4_SET_VARLIST urban_cluster
+vcqi_global VCQI_LEVEL4_SET_VARLIST 
 
 * Name of dataset that documents the user's preferred order and 
 * row labels for LEVEL4 strata
@@ -180,7 +191,7 @@ vcqi_global VCQI_LEVEL4_SET_VARLIST urban_cluster
 *  copy VCQI's file, edit it, move it to the input dataset folder and
 *  then point to it here during later VCQI runs.)
 
-vcqi_global VCQI_LEVEL4_SET_LAYOUT ${VCQI_DATA_FOLDER}/VCQI_LEVEL4_SET_LAYOUT_urban_cluster
+vcqi_global VCQI_LEVEL4_SET_LAYOUT 
 
 * These globals control how the output looks in the tabulated dataset 
 * from the 05TO programs; see Annex B in the VCQI User's Guide.
@@ -191,7 +202,7 @@ vcqi_global SHOW_LEVEL_3_ALONE         0
 vcqi_global SHOW_LEVEL_4_ALONE         0
 vcqi_global SHOW_LEVELS_2_3_TOGETHER   1
 
-vcqi_global SHOW_LEVELS_1_4_TOGETHER   1
+vcqi_global SHOW_LEVELS_1_4_TOGETHER   0
 vcqi_global SHOW_LEVELS_2_4_TOGETHER   0
 vcqi_global SHOW_LEVELS_3_4_TOGETHER   0
 vcqi_global SHOW_LEVELS_2_3_4_TOGETHER 0
@@ -211,8 +222,8 @@ vcqi_global VCQI_CI_METHOD WILSON
 
 vcqi_global EXPORT_TO_EXCEL 				1
 
-* Specify if you would like the excel columns to be narrow in Tabulated output
-* Set to 1 for yes - The code to do this is a little slow
+* Specify if you would like the excel columns to be narrow in tabulated output
+* Set to 1 for yes
 vcqi_global MAKE_EXCEL_COLUMNS_NARROW 		0
 
 * User specifies the number of digits after the decimal place in coverage
@@ -225,9 +236,23 @@ vcqi_global VCQI_NUM_DECIMAL_DIGITS			1
 * MAKE_PLOTS must be 1 for any plots to be made
 vcqi_global MAKE_PLOTS      				1
 
+* Set PLOT_OUTCOMES_IN_TABLE_ORDER to 1 if you want inchworm and 
+* unweighted plots to list strata in the same order as the tables;
+* otherwise the strata will be sorted by the outcome and shown in
+* bottom-to-top order of increasing indicator performance
+vcqi_global PLOT_OUTCOMES_IN_TABLE_ORDER 	0
+
 * Make inchworm plots? Set to 1 for yes.
 vcqi_global VCQI_MAKE_IW_PLOTS				1
 vcqi_global VCQI_MAKE_LEVEL2_IWPLOTS		0
+
+* Text at right side of inchworm plots
+* 1 1-sided 95% LCB | Point Estimate | 1-sided 95% UCB
+* 2 Point Estimate (2-sided 95% Confidence Interval)  [THIS IS THE DEFAULT]
+* 3 Point Estimate (2-sided 95% Confidence Interval) (0, 1-sided 95% UCB]
+* 4 Point Estimate (2-sided 95% Confidence Interval) [1-sided 95% UCB, 100)
+* 5 Point Estimate (2-sided 95% CI) (0, 1-sided 95% UCB] [1-sided 95% LCB, 100)
+vcqi_global VCQI_IWPLOT_CITEXT 				2
 
 * IWPLOT_SHOWBARS = 0 means show inchworm distributions
 * IWPLOT_SHOWBARS = 1 means show horizontal bars instead of inchworms
@@ -243,14 +268,14 @@ vcqi_global VCQI_MAKE_OP_PLOTS				1
 
 * Save the data underlying each organ pipe plot?  Set to 1 for yes.
 *
-* Recall that organ pipe plots are very spare, and do not list the cluster id
-* for any of the bars
+* Recall that organ pipe plots do not include many quantitative details
+* and do not list the cluster id for any of the bars.
 *
 * If this option is turned on, (set to 1) then the organ pipe plot program 
 * will save a dataset in the Plots_OP folder for each plot.  The dataset will 
-* list the cluster id for each bar in the plot along with its height and 
-* width.  This makes it possible to identify precisely which cluster id goes
-* with which bar in the plot.
+* list the cluster id for each bar in the plot along with its height and width.
+* This makes it possible to identify which cluster id goes with which bar in
+* the plot and to understand the quantitative details of each bar.
 
 vcqi_global VCQI_SAVE_OP_PLOT_DATA			1
 
@@ -265,7 +290,7 @@ vcqi_global SAVE_VCQI_GPH_FILES				1
 *
 * WARNING!! If this macro is set to 1, VCQI will delete ALL files that
 * end in _database.dta in the VCQI_OUTPUT_FOLDER at the end of the run
-* If you want to save the databased, change the value to 0.
+* If you want to save the databases, change the value to 0.
 * (Usually 1)
 
 vcqi_global DELETE_VCQI_DATABASES_AT_END	1
@@ -277,11 +302,23 @@ vcqi_global DELETE_VCQI_DATABASES_AT_END	1
 
 vcqi_global DELETE_TEMP_VCQI_DATASETS		1
 
+* Set this parameter to 1 if you would like to create an augmented dataset
+* that merges the survey dataset with derived variables calculated by VCQI.
+* Default value is 1 (Yes)
+
+vcqi_global VCQI_MAKE_AUGMENTED_DATASET		1
+
 ********************************************************************************
 * Code Block: TT-E                                               (Do not change)
 *-------------------------------------------------------------------------------
 *                  Pre-process survey data
 *-------------------------------------------------------------------------------
+
+check_TT_schedule_metadata
+check_TT_survey_metadata
+check_TT_analysis_metadata
+
+establish_unique_TT_ids
 
 if "$VCQI_CHECK_INSTEAD_OF_RUN" == "1" {
 	vcqi_log_comment $VCP 3 Comment "The user has requested a check instead of a run."
@@ -291,13 +328,6 @@ if "$VCQI_CHECK_INSTEAD_OF_RUN" == "1" {
 	vcqi_global EXPORT_TO_EXCEL			0
 	vcqi_global	MAKE_PLOTS				0
 }
-
-check_TT_schedule_metadata
-check_TT_survey_metadata
-check_TT_analysis_metadata
-
-establish_unique_TT_ids
-
 
 ********************************************************************************
 * Code Block: TT-F                                             (User may change)
@@ -342,10 +372,10 @@ vcqi_global DESC_02_DENOMINATOR	ALL
 vcqi_global DESC_02_TO_TITLE 	 Women Received Ante-Natal Care
 * No subtitle
 vcqi_global DESC_02_TO_SUBTITLE
-* Remember that DESC_02 automatically assigns two footnotes, so if you
-* want to include another, start with the number 3.
+* Remember that DESC_02 automatically assigns three footnotes, so if you
+* want to include another, start with the number 4.
 * We are not using it here, but clear it out in case it was used earlier.
-vcqi_global DESC_02_TO_FOOTNOTE_3 
+vcqi_global DESC_02_TO_FOOTNOTE_4 
 DESC_02, cleanup
 
 * Who did they see for care?  (unweighted)
@@ -357,7 +387,7 @@ vcqi_global DESC_02_DENOMINATOR	RESPONDED
 vcqi_global DESC_02_TO_TITLE 	 Who Provided Ante-Natal Care?
 *No subtitle or extra footnote
 vcqi_global DESC_02_TO_SUBTITLE
-vcqi_global DESC_02_TO_FOOTNOTE_3 
+vcqi_global DESC_02_TO_FOOTNOTE_4 
 DESC_02, cleanup
 
 * Where were the babies delivered?
@@ -369,7 +399,7 @@ vcqi_global DESC_02_DENOMINATOR	ALL
 vcqi_global DESC_02_TO_TITLE 	 Place of Delivery
 *No subtitle or extra footnote
 vcqi_global DESC_02_TO_SUBTITLE
-vcqi_global DESC_02_TO_FOOTNOTE_3 
+vcqi_global DESC_02_TO_FOOTNOTE_4 
 DESC_02, cleanup
 
 * Who attended the delivery?
@@ -381,7 +411,7 @@ vcqi_global DESC_02_DENOMINATOR	ALL
 vcqi_global DESC_02_TO_TITLE 	 Who Attended the Birth?
 *No subtitle or extra footnote
 vcqi_global DESC_02_TO_SUBTITLE
-vcqi_global DESC_02_TO_FOOTNOTE_3 
+vcqi_global DESC_02_TO_FOOTNOTE_4 
 DESC_02, cleanup
 
 * Rec'd a vaccination card (weighted)
@@ -393,7 +423,7 @@ vcqi_global DESC_02_DENOMINATOR	ALL
 vcqi_global DESC_02_TO_TITLE 	 Woman Received an Ante-Natal Vaccination Card
 *No subtitle or extra footnote
 vcqi_global DESC_02_TO_SUBTITLE
-vcqi_global DESC_02_TO_FOOTNOTE_3 
+vcqi_global DESC_02_TO_FOOTNOTE_4 
 DESC_02, cleanup
 
 * If only 0 or 1 lifetime doses, why? (unweighted)
@@ -405,7 +435,7 @@ vcqi_global DESC_02_DENOMINATOR	RESPONDED
 vcqi_global DESC_02_TO_TITLE 	 Why Have You Received Fewer Than Two Lifetime TT Doses?
 *No subtitle or extra footnote
 vcqi_global DESC_02_TO_SUBTITLE
-vcqi_global DESC_02_TO_FOOTNOTE_3 
+vcqi_global DESC_02_TO_FOOTNOTE_4 
 DESC_02, cleanup
 
 * -------------------------------------------------------------------
@@ -416,8 +446,8 @@ vcqi_global TT_COVG_01_TO_TITLE    Protected at Birth from Neonatal Tetanus
 vcqi_global TT_COVG_01_TO_SUBTITLE
 vcqi_global TT_COVG_01_TO_FOOTNOTE_1  Abbreviations: CI=Confidence Interval; LCB=Lower Confidence Bound; UCB=Upper Confidence Bound; DEFF=Design Effect; ICC=Intracluster Correlation Coefficient
 vcqi_global TT_COVG_01_TO_FOOTNOTE_2  Note: This measure is a population estimate that incorporates survey weights.  The CI, LCB and UCB are calculated with software that take the complex survey design into account.
-vcqi_global SORT_PLOT_LOW_TO_HIGH 1 // 1=sort proportions on plot low at bottom to high at top; 0 is the opposite
-
+vcqi_global SORT_PLOT_LOW_TO_HIGH 1 // 1 means show strata w/ low outcomes at bottom and high at top
+                                    // 0 is the opposite
 TT_COVG_01
 
 * -------------------------------------------------------------------
@@ -545,6 +575,11 @@ COVG_DIFF_02
 *-------------------------------------------------------------------------------
 *                  Exit gracefully
 *-------------------------------------------------------------------------------
+*
+* Make augmented dataset for additional anaylsis purposes if user requests it.
+
+if "$VCQI_MAKE_AUGMENTED_DATASET"=="1" & "$VCQI_CHECK_INSTEAD_OF_RUN" != "1" make_SIA_augmented_dataset, noidenticaldupes
+
 *
 * Close the datasets that hold the results of 
 * hypothesis tests, and put them into the output spreadsheet

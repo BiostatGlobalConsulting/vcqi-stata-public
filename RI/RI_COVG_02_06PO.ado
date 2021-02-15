@@ -1,4 +1,4 @@
-*! RI_COVG_02_06PO version 1.13 - Biostat Global Consulting - 2020-12-16
+*! RI_COVG_02_06PO version 1.15 - Biostat Global Consulting - 2021-02-14
 *******************************************************************************
 * Change log
 * 				Updated
@@ -23,6 +23,8 @@
 *                                       the current value of ANALYSIS_COUNTER
 * 2020-12-16	1.13	Cait Clary		Allow double inchworms when showbars=1 then 
 * 										reset IWPLOT_SHOWBARS global
+* 2021-02-11	1.14	Dale Rhoda		Cleaner code for double inchworms or bar charts
+* 2021-02-14	1.15	Dale Rhoda		Implement filestub for OP plot calls
 *******************************************************************************
 
 program define RI_COVG_02_06PO
@@ -71,29 +73,34 @@ program define RI_COVG_02_06PO
 					
 					graph drop _all
 					
+					local filestub RI_COVG_02_${ANALYSIS_COUNTER}_opplot_`d'_`opp_stratum_id_`i''_`opp_stratum_name_`i''
+					
 					local savegph
 					if $SAVE_VCQI_GPH_FILES ///
-						local savegph   saving("Plots_OP/RI_COVG_02_${ANALYSIS_COUNTER}_opplot_`d'_`opp_stratum_id_`i''_`opp_stratum_name_`i''", replace)
+						local savegph   saving("Plots_OP/`filestub'", replace)
 
 					local savedata
 					if $VCQI_SAVE_OP_PLOT_DATA ///
-						local savedata savedata(Plots_OP/RI_COVG_02_${ANALYSIS_COUNTER}_opplot_`d'_`opp_stratum_id_`i''_`opp_stratum_name_`i'')			
+						local savedata savedata(Plots_OP/`filestub')			
 										
 					opplot got_valid_`d'_to_analyze  , clustvar(clusterid) plotn  weightvar(psweight) ///
 						   stratvar(stratumid) stratum(`=int(`opp_stratum_id_`i'')') ///
 						   title("`opp_stratum_id_`i'' - `opp_stratum_name_`i''") ///
 						   subtitle(`quote'"`subtitle'"`quote') ///
 						   barcolor1(vcqi_level3) barcolor2(gs15) `savegph' `savedata' ///
-						   export(Plots_OP/RI_COVG_02_${ANALYSIS_COUNTER}_opplot_`d'_`opp_stratum_id_`i''_`opp_stratum_name_`i''.png)
+						   export(Plots_OP/`filestub'.png)
 					
-					vcqi_log_comment $VCP 3 Comment "Organ pipe plot was created and exported for `opp_stratum_name_`i''."
+					vcqi_log_comment $VCP 3 Comment "Graphic file: `filestub'.png was created and saved."
+
+					graph drop _all
+										
 				}
 			}
 			noi di as text ""
 		}
 		
 		********************************
-		* Inchworm plots
+		 * Inchworm or barchart plots
 		
 		if "$VCQI_MAKE_IW_PLOTS" == "1" {
 		
@@ -113,7 +120,7 @@ program define RI_COVG_02_06PO
 				clear
 			}			
 			
-			noi di as text _col(5) "Inchworm plots (`ppd' plots per dose)"
+			noi di as text _col(5) "${IWPLOT_TYPE}s (`ppd' plots per dose)"
 		
 			capture mkdir Plots_IW_UW
 		
@@ -128,7 +135,7 @@ program define RI_COVG_02_06PO
 					title(RI - Valid Coverage of `=upper("`d'")') ///
 					name(RI_COVG_02_${ANALYSIS_COUNTER}_iwplot_`d') 
 
-				vcqi_log_comment $VCP 3 Comment "Valid coverage inchworm plot was created and exported."
+				vcqi_log_comment $VCP 3 Comment "Valid coverage ${IWPLOT_TYPE} for `d' was created and exported."
 
 				
 				if `=scalar(`=lower("`d'")'_min_age_days)'  < 365 {
@@ -141,7 +148,7 @@ program define RI_COVG_02_06PO
 						title(RI - Valid Coverage by Age 1 of `=upper("`d'")') ///
 						name(RI_COVG_02_${ANALYSIS_COUNTER}_iwplot_`d'_age1) 		
 
-					vcqi_log_comment $VCP 3 Comment "Valid coverage by age 1 inchworm plot was created and exported."
+					vcqi_log_comment $VCP 3 Comment "Valid coverage by age 1 ${IWPLOT_TYPE} for `d' was created and exported."
 				}
 				
 				* Double inchworm plot that shows crude coverage in gray and 
@@ -149,9 +156,6 @@ program define RI_COVG_02_06PO
 				
 				* Double inchworm plot that shows crude coverage in gray and 
 				* valid coverage in color
-
-				* Temporarily set IWPLOT_SHOWBARS to 0 so that the double inchworm plot is generated
-				vcqi_global IWPLOT_SHOWBARS 0
 				
 				graph drop _all
 
@@ -165,7 +169,7 @@ program define RI_COVG_02_06PO
 					caption(Gray hollow shape is crude coverage; colored shape is valid coverage, size(vsmall) span) 
 					
 
-				vcqi_log_comment $VCP 3 Comment "Valid & crude coverage double inchworm plot was created and exported."
+				vcqi_log_comment $VCP 3 Comment "Valid & crude coverage double ${IWPLOT_TYPE} for `d' was created and exported."
 
 				if `=scalar(`=lower("`d'")'_min_age_days)'  < 365 {
 				
@@ -180,11 +184,8 @@ program define RI_COVG_02_06PO
 						datafile2(${VCQI_OUTPUT_FOLDER}/RI_COVG_01_${ANALYSIS_COUNTER}) ///
 						caption(Gray hollow shape is crude coverage; colored shape is valid coverage, size(vsmall) span)
 
-					vcqi_log_comment $VCP 3 Comment "Valid & crude coverage by age 1 double inchworm plot was created and exported."
+					vcqi_log_comment $VCP 3 Comment "Valid & crude coverage by age 1 double ${IWPLOT_TYPE} for `d' was created and exported."
 				}				
-
-				* Revert IWPLOT_SHOWBARS back to the user's selection
-				vcqi_global IWPLOT_SHOWBARS $IWPLOT_SHOWBARS_SAVEOPT
 			}	
 			noi di as text ""
 		}

@@ -1,4 +1,4 @@
-*! SIA_COVG_04 version 1.02 - Biostat Global Consulting - 2020-03-26
+*! SIA_COVG_04 version 1.03 - Biostat Global Consulting - 2021-02-11
 *******************************************************************************
 * Change log
 * 				Updated
@@ -7,6 +7,8 @@
 * 2018-10-25	1.00	MK Trimner		Original 
 * 2019-10-09	1.01	Dale Rhoda		Turn off plotting
 * 2020-03-26	1.02	Dale Rhoda		Restore two missing if conditions
+* 2021-02-11	1.03	Dale Rhoda		Allow user to specify level4 with
+*                                       no LAYOUT and still recover gracefully
 *******************************************************************************
 
 program define SIA_COVG_04
@@ -35,6 +37,13 @@ program define SIA_COVG_04
 		
 		* Set aside the user-specified level 4 stratifier for now
 		vcqi_global VCQI_LEVEL4_SA_VARLIST $VCQI_LEVEL4_SET_VARLIST
+		
+		* If the user specified a VARLIST but not a LAYOUT, give the automatic LAYOUT a unique name
+		* so this indicator does not over-write it
+		if "$VCQI_LEVEL4_SET_LAYOUT" == "${VCQI_OUTPUT_FOLDER}/VCQI_LEVEL4_SET_LAYOUT_automatic" {
+			copy "${VCQI_OUTPUT_FOLDER}/VCQI_LEVEL4_SET_LAYOUT_automatic.dta" "${VCQI_OUTPUT_FOLDER}/VCQI_LEVEL4_SET_LAYOUT_auto1.dta", replace
+			vcqi_global VCQI_LEVEL4_SET_LAYOUT "${VCQI_OUTPUT_FOLDER}/VCQI_LEVEL4_SET_LAYOUT_auto1"
+		}
 		vcqi_global VCQI_LEVEL4_SA_LAYOUT  $VCQI_LEVEL4_SET_LAYOUT
 		
 		* Hard wire the level 4 stratifier to be doses_prior_to_sia; clear out the layout
@@ -105,8 +114,11 @@ program define SIA_COVG_04
 		
 		************************************************************************
 		* Set globals back to user-specified values
+
+		* Erase the temporary layout file used by this indicator
+		capture erase "${VCQI_OUTPUT_FOLDER}/VCQI_LEVEL4_SET_LAYOUT_automatic.dta"
 		
-		* Set level 4 stratifier back to user-specified value
+		* Set level 4 stratifier back to user-specified values
 		vcqi_global VCQI_LEVEL4_SET_VARLIST $VCQI_LEVEL4_SA_VARLIST 
 		vcqi_global VCQI_LEVEL4_SET_LAYOUT  $VCQI_LEVEL4_SA_LAYOUT 
 		

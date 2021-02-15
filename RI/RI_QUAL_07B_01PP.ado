@@ -1,4 +1,4 @@
-*! RI_QUAL_07B_01PP version 1.01 - Biostat Global Consulting - 2020-03-23
+*! RI_QUAL_07B_01PP version 1.02 - Biostat Global Consulting - 2021-01-29
 *******************************************************************************
 * Change log
 * 				Updated
@@ -8,6 +8,7 @@
 * 2020-03-23	1.01	Mary Prier		Added $VCQI_LEVEL4_SET_VARLIST and 
 * 										$VCQI_LEVEL4_STRATIFIER to the merge
 *										keepusing option
+* 2021-01-29	1.02	Dale Rhoda		Fix slash direction & error msg
 *******************************************************************************
 
 program define RI_QUAL_07B_01PP
@@ -22,10 +23,10 @@ program define RI_QUAL_07B_01PP
 		local exitflag 0
 
 		*Confirm calculate_MOV_flags has been run and RI_MOV_long_form_data.dta (i.e., Step07) is available
-		capture confirm file `"${VCQI_OUTPUT_FOLDER}\RI_MOV_long_form_data.dta"'
+		capture confirm file `"${VCQI_OUTPUT_FOLDER}/RI_MOV_long_form_data.dta"'
 		if _rc {
-			di as error "RI_MOV_long_form_data.dta must exist before running RI_QUAL_07B. Set the vcqi-global VCQI_TESTING_CODE to 1 and run calculate_MOV_flags before running RI_QUAL_07B."
-			vcqi_log_comment $VCP 1 Error "RI_MOV_long_form_data.dta must exist before running RI_QUAL_07B. Set the vcqi-global VCQI_TESTING_CODE to 1 and run calculate_MOV_flags before running RI_QUAL_07B."
+			di as error "RI_MOV_long_form_data.dta must exist before running RI_QUAL_07B. Be sure to run calculate_MOV_flags before running RI_QUAL_07B."
+			vcqi_log_comment $VCP 1 Error "RI_MOV_long_form_data.dta must exist before running RI_QUAL_07B. Be sure to run calculate_MOV_flags before running RI_QUAL_07B."
 			local exitflag 1
 		}
 		

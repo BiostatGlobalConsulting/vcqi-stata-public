@@ -1,12 +1,13 @@
-*! RI_VCTC_01_06PO version 1.01 - Biostat Global Consulting - 2021-01-06
+*! RI_VCTC_01_06PO version 1.02 - Biostat Global Consulting - 2021-02-01
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name			What Changed
 * 2020-09-24	1.00	Dale Rhoda		Original version
-* 2021-01-06  1.01	Dale Rhoda		Added timely_legend_info to list of 
-*																	temp datasets to delete later
+* 2021-01-06  	1.01	Dale Rhoda		Added timely_legend_info to list of 
+*										temp datasets to delete later
+* 2021-02-01	1.02	Dale Rhoda		Adjust formats in text table
 *******************************************************************************
 
 program define RI_VCTC_01_06PO
@@ -59,17 +60,17 @@ program define RI_VCTC_01_06PO
 							
 							if "`e'" == "N" {
 								count if inlist(got_crude_`d'_to_analyze,0,1)
-								local textit `textit' text(${TIMELY_YVAL_`i'} ${TIMELY_TEXTBAR_X_`e'} "`=string(`=r(N)',"%5.0fc")'" , placement(c) size(${TIMELY_TEXTBAR_SIZE_`e'}) color(${TIMELY_TEXTBAR_COLOR_`e'}))
+								local textit `textit' text(${TIMELY_YVAL_`i'} ${TIMELY_TEXTBAR_X_`e'} "`=string(`=r(N)',"%10.0fc")'" , placement(c) size(${TIMELY_TEXTBAR_SIZE_`e'}) color(${TIMELY_TEXTBAR_COLOR_`e'}))
 							}
 							
 							if "`e'" == "NHBR" {
 								count if $TIMELY_HBR_LINE_VARIABLE == 1
-								local textit `textit' text(${TIMELY_YVAL_`i'} ${TIMELY_TEXTBAR_X_`e'} "`=string(`=r(N)',"%5.0fc")'" , placement(c) size(${TIMELY_TEXTBAR_SIZE_`e'}) color(${TIMELY_TEXTBAR_COLOR_`e'}))		
+								local textit `textit' text(${TIMELY_YVAL_`i'} ${TIMELY_TEXTBAR_X_`e'} "`=string(`=r(N)',"%10.0fc")'" , placement(c) size(${TIMELY_TEXTBAR_SIZE_`e'}) color(${TIMELY_TEXTBAR_COLOR_`e'}))		
 							}
 
 							if "`e'" == "NEFF" {
 								svypd got_crude_`d'_to_analyze, adjust truncate
-								local textit `textit' text(${TIMELY_YVAL_`i'} ${TIMELY_TEXTBAR_X_`e'} "`=string(`=r(neff)',"%5.0fc")'" , placement(c) size(${TIMELY_TEXTBAR_SIZE_`e'}) color(${TIMELY_TEXTBAR_COLOR_`e'}))
+								local textit `textit' text(${TIMELY_YVAL_`i'} ${TIMELY_TEXTBAR_X_`e'} "`=string(`=r(neff)',"%10.0fc")'" , placement(c) size(${TIMELY_TEXTBAR_SIZE_`e'}) color(${TIMELY_TEXTBAR_COLOR_`e'}))
 							}
 
 							if "`e'" == "DEFF" {

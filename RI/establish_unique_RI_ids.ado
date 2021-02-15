@@ -1,4 +1,4 @@
-*! establish_unique_RI_ids version 1.09 - Biostat Global Consulting - 2020-10-13
+*! establish_unique_RI_ids version 1.10 - Biostat Global Consulting - 2021-02-14
 *******************************************************************************
 * Change log
 * 				Updated
@@ -20,6 +20,7 @@
 * 2019-10-12	1.08	Dale Rhoda		Fix RI11 type mismatch in 1.07 change
 * 2020-10-13	1.09	Dale Rhoda		Use clonevar instead of gen for rare
 *                                       RI03 of type double
+* 2021-02-14	1.10	Dale Rhoda		tostring RI11 if necessary
 *******************************************************************************
 
 program define establish_unique_RI_ids
@@ -48,6 +49,8 @@ program define establish_unique_RI_ids
 
 			* now add ID variables to the RI household interview dataset
 			use "${VCQI_OUTPUT_FOLDER}/${VCQI_RI_DATASET}_clean", clear
+			
+			capture tostring RI11, replace
 
 			save "${VCQI_OUTPUT_FOLDER}/RI_with_ids", replace
 
@@ -83,7 +86,7 @@ program define establish_unique_RI_ids
 			bysort RI01 RI03: gen dropthis1 = _n == 1
 			bysort RI03:     egen dropthis2 = total(dropthis1)
 			capture assert dropthis2 == 1 
-			if _rc == 0 gen clusterid = RI03
+			if _rc == 0 clonevar clusterid = RI03
 			else egen clusterid = group(RI01 RI03)
 			drop dropthis1 dropthis2
 
@@ -169,6 +172,8 @@ program define establish_unique_RI_ids
 			capture drop HH01
 			capture drop HH03
 			capture drop HH14
+			
+			compress
 			
 			save, replace
 		}

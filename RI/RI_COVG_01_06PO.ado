@@ -1,4 +1,4 @@
-*! RI_COVG_01_06PO version 1.07 - Biostat Global Consulting - 2017-08-26
+*! RI_COVG_01_06PO version 1.08 - Biostat Global Consulting - 2021-02-14
 *******************************************************************************
 * Change log
 * 				Updated
@@ -16,6 +16,7 @@
 * 2016-05-16	1.06	Dale Rhoda		Tell user how many inchworm plots
 *										will be made
 * 2017-08-26	1.07	Mary Prier		Added version 14.1 line
+* 2021-02-14	1.08	Dale Rhoda		Implement filestub for OP plot calls
 *******************************************************************************
 
 program define RI_COVG_01_06PO
@@ -62,22 +63,26 @@ program define RI_COVG_01_06PO
 
 				forvalues i = 1/`opp_nstrata' {
 					
+					graph drop _all
+
+					local filestub RI_COVG_01_${ANALYSIS_COUNTER}_opplot_`d'_`opp_stratum_id_`i''_`opp_stratum_name_`i''
+					
 					local savegph
 					if $SAVE_VCQI_GPH_FILES ///
-						local savegph   saving("Plots_OP/RI_COVG_01_${ANALYSIS_COUNTER}_opplot_`d'_`opp_stratum_id_`i''_`opp_stratum_name_`i''", replace)
+						local savegph   saving("Plots_OP/`filestub'", replace)
 
 					local savedata
 					if $VCQI_SAVE_OP_PLOT_DATA ///
-						local savedata savedata(Plots_OP/RI_COVG_01_${ANALYSIS_COUNTER}_opplot_`d'_`opp_stratum_id_`i''_`opp_stratum_name_`i'')			
+						local savedata savedata(Plots_OP/`filestub')			
 										
 					opplot got_crude_`d'_to_analyze  , clustvar(clusterid) plotn  weightvar(psweight) ///
 						   stratvar(stratumid) stratum(`=int(`opp_stratum_id_`i'')') ///
 						   title("`opp_stratum_id_`i'' - `opp_stratum_name_`i''") ///
 						   subtitle(`quote'"`subtitle'"`quote') ///
 						   barcolor1(vcqi_level3) barcolor2(gs15) `savegph' `savedata' ///
-						   export(Plots_OP/RI_COVG_01_${ANALYSIS_COUNTER}_opplot_`d'_`opp_stratum_id_`i''_`opp_stratum_name_`i''.png)
+						   export(Plots_OP/`filestub'.png)
 					
-					vcqi_log_comment $VCP 3 Comment "Organ pipe plot was created and exported for `opp_stratum_name_`i''."
+					vcqi_log_comment $VCP 3 Comment "Graphic file: `filestub'.png was created and saved."
 
 					graph drop _all
 
@@ -88,7 +93,7 @@ program define RI_COVG_01_06PO
 
 		
 		********************************
-		* Inchworm plots
+		 * Inchworm or barchart plots
 			
 		if "$VCQI_MAKE_IW_PLOTS" == "1" {
 		
@@ -108,7 +113,7 @@ program define RI_COVG_01_06PO
 				clear
 			}			
 			
-			noi di as text _col(5) "Inchworm plots (`ppd' plots per dose)"
+			noi di as text _col(5) "${IWPLOT_TYPE}s (`ppd' plots per dose)"
 			
 			capture mkdir Plots_IW_UW
 
@@ -121,7 +126,7 @@ program define RI_COVG_01_06PO
 					title(RI - Crude Coverage of `=upper("`d'")') ///
 					name(RI_COVG_01_${ANALYSIS_COUNTER}_iwplot_`d') 
 					
-				vcqi_log_comment $VCP 3 Comment "Inchworm plot was created and exported."
+				vcqi_log_comment $VCP 3 Comment "Crude coverage ${IWPLOT_TYPE} for `d' was created and exported."
 			
 				graph drop _all
 				

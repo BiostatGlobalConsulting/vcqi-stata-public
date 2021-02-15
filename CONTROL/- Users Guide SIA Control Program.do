@@ -1,18 +1,29 @@
-*! - Users Guide SIA Control Program version 1.03 - Biostat Global Consulting - 2020-12-12
+*! - Users Guide SIA Control Program version 1.04 - Biostat Global Consulting - 2021-02-14
 ********************************************************************************
 * Vaccination Coverage Quality Indicators (VCQI) control program to analyze
 * data from a supplemental immunization activity (SIA) survey 
 *
+* This program is configured to analyze the VCQI demonstration datasets
+* from a fictional coverage survey in the
+* fictional country of Harmonia.  It serves as a template that users
+* may copy to use with new datasets from real surveys.  
 *
-* Program example and template for the VCQI User's Guide
+* After copying the program, make a set of edits in Blocks RI-B and RI-D and 
+* RI-F below in accordance with guidance in the VCQI User's Guide.
+*
+* This program example is described in detail in Chapter 7 of the 
+* VCQI User's Guide.
+*
+* You will find the latest versions of VCQI documentation and programs at the
+* VCQI Resources Website:  http://www.biostatglobal.com/VCQI_RESOURCES.html
 *
 * Written by Biostat Global Consulting
 *
-* See bottom of program for log of program updates
+* See comments at the bottom of program for log of program updates.
 *
-* The user might customize this program by changing items below in the
-* code blocks marked SIA-B, SIA-D, and SIA-F below.  Those blocks are
-* marked "(User may change)".
+* IMPORTANT: The user may customize this program by changing items below in
+* code blocks marked RI-B, RI-D, and RI-F below.  Those blocks are marked 
+* "(User may change)".
 *
 ********************************************************************************
 * Code Block: SIA-A                                              (Do not change)
@@ -157,7 +168,7 @@ vcqi_global LEVEL3_NAME_DATASET ${VCQI_DATA_FOLDER}/level3names
 * (*UNLESS* the user also asks VCQI to PLOT_OUTCOMES_IN_TABLE_ORDER.)
 
 * List of demographic variables for stratified tables (can be left blank)
-vcqi_global VCQI_LEVEL4_SET_VARLIST urban_cluster
+vcqi_global VCQI_LEVEL4_SET_VARLIST 
 
 * Name of dataset that documents the user's preferred order and 
 * row labels for LEVEL4 strata
@@ -165,7 +176,7 @@ vcqi_global VCQI_LEVEL4_SET_VARLIST urban_cluster
 *  copy VCQI's file, edit it, move it to the input dataset folder and
 *  then point to it here during later VCQI runs.)
 
-vcqi_global VCQI_LEVEL4_SET_LAYOUT ${VCQI_DATA_FOLDER}/VCQI_LEVEL4_SET_LAYOUT_urban_cluster
+vcqi_global VCQI_LEVEL4_SET_LAYOUT 
 
 * These globals control how the output looks in the tabulated dataset 
 * from the 05TO programs; see Annex B in the VCQI User's Guide.
@@ -176,7 +187,7 @@ vcqi_global SHOW_LEVEL_3_ALONE         0
 vcqi_global SHOW_LEVEL_4_ALONE         0
 vcqi_global SHOW_LEVELS_2_3_TOGETHER   1
 
-vcqi_global SHOW_LEVELS_1_4_TOGETHER   1
+vcqi_global SHOW_LEVELS_1_4_TOGETHER   0
 vcqi_global SHOW_LEVELS_2_4_TOGETHER   0
 vcqi_global SHOW_LEVELS_3_4_TOGETHER   0
 vcqi_global SHOW_LEVELS_2_3_4_TOGETHER 0
@@ -196,8 +207,8 @@ vcqi_global VCQI_CI_METHOD WILSON
 
 vcqi_global EXPORT_TO_EXCEL 				1
 
-* Specify if you would like the excel columns to be narrow in Tabulated output
-* Set to 1 for yes - The code to do this is a little slow
+* Specify if you would like the excel columns to be narrow in tabulated output
+* Set to 1 for yes 
 vcqi_global MAKE_EXCEL_COLUMNS_NARROW 		1
 
 * User specifies the number of digits after the decimal place in coverage
@@ -214,16 +225,24 @@ vcqi_global MAKE_PLOTS      				1
 * unweighted plots to list strata in the same order as the tables;
 * otherwise the strata will be sorted by the outcome and shown in
 * bottom-to-top order of increasing indicator performance
-vcqi_global PLOT_OUTCOMES_IN_TABLE_ORDER 	1
+vcqi_global PLOT_OUTCOMES_IN_TABLE_ORDER 	0
 
 * Make inchworm plots? Set to 1 for yes.
 vcqi_global VCQI_MAKE_IW_PLOTS				1
 vcqi_global VCQI_MAKE_LEVEL2_IWPLOTS		0
 
+* Text at right side of inchworm plots
+* 1 1-sided 95% LCB | Point Estimate | 1-sided 95% UCB
+* 2 Point Estimate (2-sided 95% Confidence Interval)  [THIS IS THE DEFAULT]
+* 3 Point Estimate (2-sided 95% Confidence Interval) (0, 1-sided 95% UCB]
+* 4 Point Estimate (2-sided 95% Confidence Interval) [1-sided 95% UCB, 100)
+* 5 Point Estimate (2-sided 95% CI) (0, 1-sided 95% UCB] [1-sided 95% LCB, 100)
+vcqi_global VCQI_IWPLOT_CITEXT 				2
+
 * IWPLOT_SHOWBARS = 0 means show inchworm distributions
 * IWPLOT_SHOWBARS = 1 means show horizontal bars instead of inchworms
 
-vcqi_global IWPLOT_SHOWBARS					1
+vcqi_global IWPLOT_SHOWBARS					0
 
 * Make unweighted sample proportion plots? Set to 1 for yes.
 vcqi_global VCQI_MAKE_UW_PLOTS				1
@@ -234,14 +253,14 @@ vcqi_global VCQI_MAKE_OP_PLOTS				1
 
 * Save the data underlying each organ pipe plot?  Set to 1 for yes.
 *
-* Recall that organ pipe plots are very spare, and do not list the cluster id
-* for any of the bars
+* Recall that organ pipe plots do not include many quantitative details
+* and do not list the cluster id for any of the bars.
 *
 * If this option is turned on, (set to 1) then the organ pipe plot program 
 * will save a dataset in the Plots_OP folder for each plot.  The dataset will 
-* list the cluster id for each bar in the plot along with its height and 
-* width.  This makes it possible to identify precisely which cluster id goes
-* with which bar in the plot.
+* list the cluster id for each bar in the plot along with its height and width.
+* This makes it possible to identify which cluster id goes with which bar in
+* the plot and to understand the quantitative details of each bar.
 
 vcqi_global VCQI_SAVE_OP_PLOT_DATA			1
 
@@ -256,21 +275,21 @@ vcqi_global SAVE_VCQI_GPH_FILES				1
 *
 * WARNING!! If this macro is set to 1, VCQI will delete ALL files that
 * end in _database.dta in the VCQI_OUTPUT_FOLDER at the end of the run
-* If you want to save the databased, change the value to 0.
+* If you want to save the databases, change the value to 0.
 * (Usually 1)
 
-vcqi_global DELETE_VCQI_DATABASES_AT_END	0
+vcqi_global DELETE_VCQI_DATABASES_AT_END	1
 
 * Specify whether the code should delete intermediate datasets 
 * at the end of the analysis (Usually 1)
 * If you wish to keep them for additional analysis or debugging,
 * set the option to 0.
 
-vcqi_global DELETE_TEMP_VCQI_DATASETS		0
+vcqi_global DELETE_TEMP_VCQI_DATASETS		1
 
-* Set this global to 1 if you would like to create an augmented dataset
-* that merges survey dataset with derived variables calculated by VCQI.
-* Default value is 0 (no)
+* Set this parameter to 1 if you would like to create an augmented dataset
+* that merges the survey dataset with derived variables calculated by VCQI.
+* Default value is 1 (Yes)
 
 vcqi_global VCQI_MAKE_AUGMENTED_DATASET		1
 
@@ -285,6 +304,7 @@ vcqi_global VCQI_MAKE_AUGMENTED_DATASET		1
 check_SIA_schedule_metadata
 check_SIA_survey_metadata
 check_SIA_analysis_metadata
+
 establish_unique_SIA_ids
 
 if "$VCQI_CHECK_INSTEAD_OF_RUN" == "1" {
@@ -341,10 +361,10 @@ vcqi_global DESC_02_DENOMINATOR	ALL
 vcqi_global DESC_02_TO_TITLE 	 Child was here when campaign happened
 * No subtitle
 vcqi_global DESC_02_TO_SUBTITLE
-* Remember that DESC_02 automatically assigns two footnotes, so if you
-* want to include another, start with the number 3.
+* Remember that DESC_02 automatically assigns three footnotes, so if you
+* want to include another, start with the number 4.
 * We are not using it here, but clear it out in case it was used earlier.
-vcqi_global DESC_02_TO_FOOTNOTE_3 
+vcqi_global DESC_02_TO_FOOTNOTE_4 
 DESC_02, cleanup
 
 * How did people hear about the campaign?
@@ -356,7 +376,7 @@ vcqi_global DESC_02_DENOMINATOR	ALL
 vcqi_global DESC_02_TO_TITLE 	 Sources of information about the campaign
 * No subtitle and no extra footnotes
 vcqi_global DESC_02_TO_SUBTITLE
-vcqi_global DESC_02_TO_FOOTNOTE_3 
+vcqi_global DESC_02_TO_FOOTNOTE_4 
 DESC_02, cleanup
 
 * If the child did not receive the vaccine, why?
@@ -368,7 +388,7 @@ vcqi_global DESC_02_DENOMINATOR	ALL
 vcqi_global DESC_02_TO_TITLE 	 Reasons for non-vaccination in the campaign
 * No subtitle and no extra footnotes
 vcqi_global DESC_02_TO_SUBTITLE
-vcqi_global DESC_02_TO_FOOTNOTE_3 
+vcqi_global DESC_02_TO_FOOTNOTE_4 
 DESC_02, cleanup
 
 * Run the SIA coverage analyses
@@ -602,6 +622,7 @@ $VCQI____END_OF_PROGRAM
 * 				Updated 
 *				version 
 * Date 			number 	Name			What Changed 
+*-------------------------------------------------------------------------------
 * 2020-01-16	1.00	Dale Rhoda		Version as of 2020-01-16
 * 2020-04-09	1.01	Dale Rhoda		Add VCQI____END_OF_PROGRAM to 
 *                                       suppress showing this change log
@@ -612,6 +633,8 @@ $VCQI____END_OF_PROGRAM
 *                                       and update test dataset to 2020-10-16
 *                                       which is Harmonia instead of 
 *                                       Sassafrippi
+* 2021-02-14	1.04	Dale Rhoda		Tidy up and document in the updated
+*                                       VCQI User's Guide v2.9
 ******************************************************************************** 
 
 * turn on normal output to the log window again

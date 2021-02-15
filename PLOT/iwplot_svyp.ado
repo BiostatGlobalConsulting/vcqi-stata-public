@@ -1,4 +1,4 @@
-*! iwplot_svyp version 1.26 - Biostat Global Consulting - 2021-01-13
+*! iwplot_svyp version 1.27 - Biostat Global Consulting - 2021-02-06
 *******************************************************************************
 * Change log
 * 				Updated
@@ -125,6 +125,8 @@
 * 2019-10-17	1.25	Dale Rhoda		Set default decimal digits to 1
 *
 * 2021-01-13	1.26	Dale Rhoda		Rearrange interval orders in cistring5
+*
+* 2021-02-06	1.27	Dale Rhoda		Made bars wider (+/- 0.35 units wide)
 
 *********************************************************************************
 * All datasets which are called into this program should be stored in 
@@ -1485,10 +1487,10 @@ program define iwplot_svyp
 			gen ybar = .
 			gen xbar = .
 			forvalues i = 1/`nplotrows' {
-				replace ybar = `i'+0.20 			if rownumber == `i' & inlist(j,1,2)
+				replace ybar = `i'+0.35 			if rownumber == `i' & inlist(j,1,2)
 				replace xbar = `xrangemin' 			if rownumber == `i' & j == 1
 				replace xbar = `=min(`=table[`i', 1]',100)'	if rownumber == `i' & j == 2
-				local plotit `plotit' ( area ybar xbar if rownumber == `i', color(`outlinecolor`i'') lwidth(vthin) fcolor(`areacolor`i'')  fi(`areaintensity`i'') base(`=`i'-0.20') )
+				local plotit `plotit' ( area ybar xbar if rownumber == `i', color(`outlinecolor`i'') lwidth(vthin) fcolor(`areacolor`i'')  fi(`areaintensity`i'') base(`=`i'-0.35') )
 			}	
 		}
 		
@@ -1646,7 +1648,7 @@ program define iwplot_svyp
 		* export graph in chosen format
 		if `"`export'"'. != "" {
 			graph export `export'
-			noi di as text "Exported inchworm plot:"
+			noi di as text "Exported ${IWPLOT_TYPE}:"
 			noi di `"`export'"'
 		}
 

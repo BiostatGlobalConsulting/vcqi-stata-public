@@ -39,7 +39,7 @@ program define SIA_COVG_04_06PO
 				clear
 			}		
 			
-			noi di as text _col(5) "Inchworm plots (`ppd' plots)"		
+			noi di as text _col(5) "${IWPLOT_TYPE}s (`ppd' plots)"		
 			
 			capture mkdir Plots_IW_UW
 
@@ -50,7 +50,7 @@ program define SIA_COVG_04_06PO
 				datafile(${VCQI_OUTPUT_FOLDER}/SIA_COVG_04_${ANALYSIS_COUNTER}) ///
 				title(SIA - Received SIA Dose (%)) name(SIA_COVG_04_${ANALYSIS_COUNTER}_iwplot)
 				
-			vcqi_log_comment $VCP 3 Comment "Inchworm plot was created and exported."
+			vcqi_log_comment $VCP 3 Comment "${IWPLOT_TYPE} was created and exported."
 		}
 	}
 	

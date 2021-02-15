@@ -1,4 +1,4 @@
-*! RI_QUAL_09_06PO version 1.07 - Biostat Global Consulting - 2019-11-09
+*! RI_QUAL_09_06PO version 1.08 - Biostat Global Consulting - 2021-02-07
 *******************************************************************************
 * Change log
 * 				Updated
@@ -12,6 +12,8 @@
 * 2019-03-18  	1.06	Mary Prier		Added vcqi_global SORT_PLOT_LOW_TO_HIGH 
 *										  4 times (once before each plot call)
 * 2019-11-09	1.07 	Dale Rhoda		Introduced MOV_OUTPUT_DOSE_LIST
+* 2021-02-07    1.08	Dale Rhoda		List the _plot_ and _corplot_ databases
+*                                         in the global VCQI_DATABASES
 *******************************************************************************
 
 program define RI_QUAL_09_06PO
@@ -36,6 +38,9 @@ program define RI_QUAL_09_06PO
 				use "${VCQI_OUTPUT_FOLDER}/RI_QUAL_09_${ANALYSIS_COUNTER}_`d'_database", clear
 				
 				save "${VCQI_OUTPUT_FOLDER}/RI_QUAL_09_${ANALYSIS_COUNTER}_`d'_plot_database", replace
+				
+				global VCQI_DATABASES $VCQI_DATABASES RI_QUAL_09_${ANALYSIS_COUNTER}_`d'_plot_database
+				
 				gen estimate = n_mov / n_eligible if n_eligible != 0
 				replace estimate = 0 if n_eligible == 0
 				gen estimate_cor = n_cor_mov / n_mov if n_mov != 0
@@ -46,6 +51,9 @@ program define RI_QUAL_09_06PO
 				vcqi_global RI_QUAL_09_TEMP_DATASETS $RI_QUAL_09_TEMP_DATASETS RI_QUAL_09_${ANALYSIS_COUNTER}_`d'_plot_database
 					
 				save "${VCQI_OUTPUT_FOLDER}/RI_QUAL_09_${ANALYSIS_COUNTER}_`d'_corplot_database", replace
+				
+				global VCQI_DATABASES $VCQI_DATABASES RI_QUAL_09_${ANALYSIS_COUNTER}_`d'_corplot_database
+				
 				replace estimate = estimate_cor
 				replace n = n_mov
 				drop n_eligible n_mov
@@ -76,6 +84,9 @@ program define RI_QUAL_09_06PO
 			
 			use "${VCQI_OUTPUT_FOLDER}/RI_QUAL_09_${ANALYSIS_COUNTER}_anydose_database", clear
 			save "${VCQI_OUTPUT_FOLDER}/RI_QUAL_09_${ANALYSIS_COUNTER}_anydose_plot_database", replace
+			
+			global VCQI_DATABASES $VCQI_DATABASES RI_QUAL_09_${ANALYSIS_COUNTER}_anydose_plot_database
+			
 			gen estimate = n_mov / n_eligible if n_eligible != 0
 			replace estimate = 0 if n_eligible == 0
 			gen estimate_cor = n_cor_mov / n_mov if n_mov != 0
@@ -86,6 +97,9 @@ program define RI_QUAL_09_06PO
 			vcqi_global RI_QUAL_09_TEMP_DATASETS $RI_QUAL_09_TEMP_DATASETS RI_QUAL_09_${ANALYSIS_COUNTER}_anydose_plot_database
 			
 			save "${VCQI_OUTPUT_FOLDER}/RI_QUAL_09_${ANALYSIS_COUNTER}_anydose_corplot_database", replace
+			
+			global VCQI_DATABASES $VCQI_DATABASES RI_QUAL_09_${ANALYSIS_COUNTER}_anydose_corplot_database			
+			
 			replace estimate = estimate_cor
 			replace n = n_mov
 			drop n_eligible n_mov

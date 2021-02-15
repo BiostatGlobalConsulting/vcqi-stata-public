@@ -1,4 +1,4 @@
-*! vcqi_log_all_program_versions 1.13 - Biostat Global Consulting - 2021-01-05
+*! vcqi_log_all_program_versions 1.14 - Biostat Global Consulting - 2021-02-02
 ******************************************************************************* 
 * Change log 
 * 				Updated 
@@ -21,6 +21,7 @@
 *										  parse_EVIM_variables.ado in the RI list 
 * 2021-01-05	1.13	Dale Rhoda		Added programs recently added & 
 *                                         changed EVIM to CVDIMS
+* 2021-02-02	1.14	Dale Rhoda		Added iwplot_double_barchart_svyp
 ******************************************************************************* 
 
 program define vcqi_log_all_program_versions 
@@ -85,7 +86,7 @@ program define vcqi_log_all_program_versions
 		vcqi_log_program_version make_tables_from_svyp_output.ado 
 		vcqi_log_program_version make_tables_from_unwtd_output.ado 
 		vcqi_log_program_version make_unwtd_output_database.ado 
-		vcqi_log_program_version manage_source_paths.ado  // added 1/10/2020
+		vcqi_log_program_version manage_source_paths.ado  
 		vcqi_log_program_version set_TO_xlsx_column_width.ado
 		vcqi_log_program_version svyp_ci_calc.ado
 		vcqi_log_program_version svyp_null_result.ado
@@ -107,12 +108,13 @@ program define vcqi_log_all_program_versions
 		
 		* Plot
 		vcqi_log_program_version add_HH_vars_to_opplot_datasets.ado
-		vcqi_log_program_version color-vcqi_level1.style   // added 1/16/2020
-		vcqi_log_program_version color-vcqi_level2.style   // added 1/16/2020
-		vcqi_log_program_version color-vcqi_level3.style   // added 1/16/2020
-		vcqi_log_program_version color-vcqi_level4.style   // added 1/16/2020
-		vcqi_log_program_version color-vcqi_outline.style  // added 1/16/2020
+		vcqi_log_program_version color-vcqi_level1.style   
+		vcqi_log_program_version color-vcqi_level2.style   
+		vcqi_log_program_version color-vcqi_level3.style   
+		vcqi_log_program_version color-vcqi_level4.style   
+		vcqi_log_program_version color-vcqi_outline.style  
 		vcqi_log_program_version excel_wrapper_for_iwplot_svyp.ado
+		vcqi_log_program_version iwplot_double_barchart_svyp.ado
 		vcqi_log_program_version iwplot_svyp.ado 
 		vcqi_log_program_version opplot.ado 
 		vcqi_log_program_version uwplot_vcqi.ado 
@@ -138,7 +140,7 @@ program define vcqi_log_all_program_versions
 		vcqi_log_program_version establish_unique_RI_ids.ado 
 		vcqi_log_program_version gen_CVDIMS_variables.ado 	
 		vcqi_log_program_version make_RI_augmented_dataset.ado
-		vcqi_log_program_version parse_CVDIMS_variables.ado 	// added 3/4/2020
+		vcqi_log_program_version parse_CVDIMS_variables.ado 	
 		vcqi_log_program_version RI_ACC_01.ado 
 		vcqi_log_program_version RI_ACC_01_00GC.ado 
 		vcqi_log_program_version RI_ACC_01_01PP.ado 
@@ -185,7 +187,7 @@ program define vcqi_log_all_program_versions
 		vcqi_log_program_version RI_COVG_02_05TO.ado 
 		vcqi_log_program_version RI_COVG_02_06PO.ado 
 		vcqi_log_program_version RI_COVG_03.ado 
-		vcqi_log_program_version RI_COVG_03_00GC.ado  // added 1/10/2020
+		vcqi_log_program_version RI_COVG_03_00GC.ado 
 		vcqi_log_program_version RI_COVG_03_01PP.ado 
 		vcqi_log_program_version RI_COVG_03_02DQ.ado 
 		vcqi_log_program_version RI_COVG_03_03DV.ado 
@@ -290,7 +292,7 @@ program define vcqi_log_all_program_versions
 		
 		* SIA
 		vcqi_log_program_version check_SIA_analysis_metadata.ado 
-		vcqi_log_program_version check_SIA_COVG_01_03DV.ado  // added 1/10/2020
+		vcqi_log_program_version check_SIA_COVG_01_03DV.ado  
 		vcqi_log_program_version check_SIA_schedule_metadata.ado 
 		vcqi_log_program_version check_SIA_survey_metadata.ado 
 		vcqi_log_program_version establish_unique_SIA_ids.ado 
@@ -316,19 +318,19 @@ program define vcqi_log_all_program_versions
 		vcqi_log_program_version SIA_COVG_03_03DV.ado 
 		vcqi_log_program_version SIA_COVG_03_04GO.ado 
 		vcqi_log_program_version SIA_COVG_03_05TO.ado 
-		vcqi_log_program_version SIA_COVG_04.ado        // added 1/10/2020
-		vcqi_log_program_version SIA_COVG_04_00GC.ado   // added 1/10/2020
-		vcqi_log_program_version SIA_COVG_04_01PP.ado   // added 1/10/2020 
-		vcqi_log_program_version SIA_COVG_04_02DQ.ado   // added 1/10/2020 
-		vcqi_log_program_version SIA_COVG_04_03DV.ado   // added 1/10/2020 
-		vcqi_log_program_version SIA_COVG_04_04GO.ado   // added 1/10/2020 
-		vcqi_log_program_version SIA_COVG_04_05TO.ado   // added 1/10/2020
-		vcqi_log_program_version SIA_COVG_04_06PO.ado   // added 1/10/2020
-		vcqi_log_program_version SIA_COVG_05.ado        // added 1/10/2020
-		vcqi_log_program_version SIA_COVG_05_00GC.ado   // added 1/10/2020
-		vcqi_log_program_version SIA_COVG_05_01PP.ado   // added 1/10/2020
-		vcqi_log_program_version SIA_COVG_05_03DV.ado   // added 1/10/2020
-		vcqi_log_program_version SIA_COVG_05_05TO.ado   // added 1/10/2020
+		vcqi_log_program_version SIA_COVG_04.ado        
+		vcqi_log_program_version SIA_COVG_04_00GC.ado   
+		vcqi_log_program_version SIA_COVG_04_01PP.ado    
+		vcqi_log_program_version SIA_COVG_04_02DQ.ado    
+		vcqi_log_program_version SIA_COVG_04_03DV.ado    
+		vcqi_log_program_version SIA_COVG_04_04GO.ado    
+		vcqi_log_program_version SIA_COVG_04_05TO.ado   
+		vcqi_log_program_version SIA_COVG_04_06PO.ado   
+		vcqi_log_program_version SIA_COVG_05.ado        
+		vcqi_log_program_version SIA_COVG_05_00GC.ado   
+		vcqi_log_program_version SIA_COVG_05_01PP.ado   
+		vcqi_log_program_version SIA_COVG_05_03DV.ado   
+		vcqi_log_program_version SIA_COVG_05_05TO.ado   
 		vcqi_log_program_version SIA_QUAL_01.ado 
 		vcqi_log_program_version SIA_QUAL_01_01PP.ado 
 		vcqi_log_program_version SIA_QUAL_01_02DQ.ado 
@@ -341,9 +343,9 @@ program define vcqi_log_all_program_versions
 		vcqi_log_program_version check_TT_analysis_metadata.ado 
 		vcqi_log_program_version check_TT_schedule_metadata.ado 
 		vcqi_log_program_version check_TT_survey_metadata.ado 
-		vcqi_log_program_version cleanup_TT_dates_and_ticks.ado  // added 1/10/2020
+		vcqi_log_program_version cleanup_TT_dates_and_ticks.ado  
 		vcqi_log_program_version establish_unique_TT_ids.ado 
-		vcqi_log_program_version make_TT_augmented_dataset.ado  // added 1/10/2020
+		vcqi_log_program_version make_TT_augmented_dataset.ado  
 		vcqi_log_program_version TT_COVG_01.ado 
 		vcqi_log_program_version TT_COVG_01_01PP.ado 
 		vcqi_log_program_version TT_COVG_01_02DQ.ado 

@@ -1,4 +1,4 @@
-*! SIA_QUAL_01_06PO version 1.05 - Biostat Global Consulting - 2017-08-26
+*! SIA_QUAL_01_06PO version 1.06 - Biostat Global Consulting - 2021-02-14
 *******************************************************************************
 * Change log
 * 				Updated
@@ -9,6 +9,7 @@
 * 2016-09-08	1.03	Dale Rhoda		Add VCQI_MAKE_XX_PLOTS macros
 * 2017-01-31	1.04	Dale Rhoda		Fixed a typo
 * 2017-08-26	1.05	Mary Prier		Added version 14.1 line
+* 2021-02-14	1.06	Dale Rhoda		Make opplot filename fit 8 element pattern
 *******************************************************************************
 
 program define SIA_QUAL_01_06PO
@@ -52,21 +53,25 @@ program define SIA_QUAL_01_06PO
 			
 				graph drop _all
 				
+				local filestub SIA_QUAL_01_${ANALYSIS_COUNTER}_opplot_siacard_`opp_stratum_id_`i''_`opp_stratum_name_`i''
+				
 				if $SAVE_VCQI_GPH_FILES ///
-					local savegph   saving("Plots_OP/SIA_QUAL_01_${ANALYSIS_COUNTER}_opplot_`opp_stratum_id_`i''_`opp_stratum_name_`i''", replace)
+					local savegph   saving("Plots_OP/`filestub'", replace)
 
 				if $VCQI_SAVE_OP_PLOT_DATA ///
-					local savedata savedata(Plots_OP/SIA_QUAL_01_${ANALYSIS_COUNTER}_opplot_`opp_stratum_id_`i''_`opp_stratum_name_`i'')
+					local savedata savedata(Plots_OP/`filestub')
 
 				opplot got_campaign_card  , clustvar(clusterid) plotn  weightvar(psweight) ///
 					   stratvar(stratumid) stratum(`=int(`opp_stratum_id_`i'')') ///
 					   title("`opp_stratum_id_`i'' - `opp_stratum_name_`i''") ///
 					   subtitle(Vaccinated Respondent Received SIA Card) ///
 					   barcolor1(vcqi_level3) barcolor2(gs15) `savegph' `savedata' ///
-					   export(Plots_OP/SIA_QUAL_01_${ANALYSIS_COUNTER}_opplot_`opp_stratum_id_`i''_`opp_stratum_name_`i''.png) 
+					   export(Plots_OP/`filestub'.png) 
 					   
-				vcqi_log_comment $VCP 3 Comment "Graphic file: SIA_QUAL_01_${ANALYSIS_COUNTER}_opplot_`opp_stratum_id_`i''_`opp_stratum_name_`i''.png was created and saved."
+				vcqi_log_comment $VCP 3 Comment "Graphic file: `filestub'.png was created and saved."
 
+				graph drop _all
+				
 			}
 		}
 		

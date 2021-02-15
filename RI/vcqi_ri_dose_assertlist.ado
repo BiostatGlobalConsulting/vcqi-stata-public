@@ -1,10 +1,16 @@
-**! vcqi_ri_dose_assertlist version 1.00 - Mary Kay Trimner & Dale Rhoda - 2020-10-14
+**! vcqi_ri_dose_assertlist version 1.01 - Mary Kay Trimner & Dale Rhoda - 2021-02-01
 *******************************************************************************
 * Change log
 * 				Updated
 *				version
 * Date 			number 	Name				What Changed
 * 2020-10-14	1.00	Mary Kay Trimner	Original Version
+* 2021-02-01	1.01	Dale Rhoda			Change varnames of RI09[m/d/y] to
+*                                           include the new underscore (_)
+*                                           Also run MULTI_2 and MULTI_3 thru
+*                                           lower-case before running checks
+* 2021-02-02	1.02	Dale Rhoda			Allow user to specify an listlist
+*                               
 *******************************************************************************
 *
 * Contact Dale Rhoda (Dale.Rhoda@biostatglobal.com) with comments & suggestions.
@@ -14,9 +20,12 @@
 * It can be ran before VCQI to identify potential dose date issues.
 *
 program vcqi_ri_dose_assertlist
-	version 11.1
+	version 16.1
+	
+	syntax [, LISTlist(varlist)]
 	
 	qui {
+		
 		
 		* Do a check to see if the appropriate globals are set
 		* We will set a local to determine if the program needs to exit based on these checks
@@ -129,7 +138,6 @@ program vcqi_ri_dose_assertlist
 			tempfile vcqi_ri_dose_assertlist
 			save `vcqi_ri_dose_assertlist', replace
 			
-			
 			* Set local for ids
 			local ids RI01 RI03 RI11 RI12
 			
@@ -162,6 +170,20 @@ program vcqi_ri_dose_assertlist
 				gen dob_date_register_y = .
 			}
 			
+			
+			* User requested additional variables as IDs
+			*
+			* Trim them from the list if they don't occur in the dataset
+			
+			if "`listlist'" != "" {
+				foreach v in `listlist' {
+					capture confirm variable `v'
+					if _rc == 0 local ids `ids' `v'
+					else di as error "The user specified `v' as part of the list() option to vcqi_ri_dose_assertlist but `v' is not a variable in the VCQI_RI_DATASET or VCQI_RIHC_DATASET so we are dropping `v' from the list()."
+				}
+			}
+					
+			
 			/*  These are the date checks this program will perform:
 			1.	DOB is sensical if populated
 			2.	Interview date is sensical if populated
@@ -186,7 +208,7 @@ program vcqi_ri_dose_assertlist
 			}
 			
 			* Create single variables with interview date and other date values.
-			capture gen RI09 		= mdy(RI09m, RI09d, RI09y)
+			capture gen RI09 		= mdy(RI09_m, RI09_d, RI09_y)
 			gen dob_card 			= mdy(dob_date_card_m,dob_date_card_d,dob_date_card_y)
 			gen dob_history 		= mdy(dob_date_history_m,dob_date_history_d,dob_date_history_y)
 			
@@ -195,7 +217,7 @@ program vcqi_ri_dose_assertlist
 			gen latest_svy_date		= mdy($LATEST_SVY_VACC_DATE_M, $LATEST_SVY_VACC_DATE_D, $LATEST_SVY_VACC_DATE_Y)
 			
 			format %td RI09 dob_card dob_history earliest_svy_date latest_svy_date
-			order RI09 earliest_svy_date latest_svy_date, after(RI09y)		
+			order RI09 earliest_svy_date latest_svy_date, after(RI09_y)		
 
 			* We will compare where card and history are provided and they do not match
 			* to determine the appropriate dob
@@ -234,7 +256,7 @@ program vcqi_ri_dose_assertlist
 			
 
 			* Check to make sure the interview date is sensical
-			assertlist !missing(RI09) if !missing(RI09m) | !missing(RI09d) | !missing(RI09y), `output1' tag(Interview date is nonsensical) list(`ids' RI09 RI09m RI09d RI09y)   	
+			assertlist !missing(RI09) if !missing(RI09_m) | !missing(RI09_d) | !missing(RI09_y), `output1' tag(Interview date is nonsensical) list(`ids' RI09 RI09_m RI09_d RI09_y)   	
 
 			* First do an assertion to see which dobs are before interview date
 			assertlist dob < RI09, list(`ids' dob RI09) ///
@@ -274,7 +296,7 @@ program vcqi_ri_dose_assertlist
 				}
 
 				* Now look at multi doses
-				foreach d in $RI_MULTI_2_DOSE_LIST {
+				foreach d in `=lower("$RI_MULTI_2_DOSE_LIST")' {
 					* Confirm that first dose is less than the second and third
 					local `d'list `d'1_`s' `d'2_`s'
 					local `d'list2 `d'1_date_`s'_m `d'1_date_`s'_d `d'1_date_`s'_y `d'2_date_`s'_m `d'2_date_`s'_d `d'2_date_`s'_y
@@ -288,7 +310,7 @@ program vcqi_ri_dose_assertlist
 				}
 
 				* Now look at multi doses
-				foreach d in $RI_MULTI_3_DOSE_LIST {
+				foreach d in `=lower("$RI_MULTI_3_DOSE_LIST")' {
 					* Confirm that first dose is less than the second and third
 					local `d'list `d'1_`s' `d'2_`s' `d'3_`s'
 					local `d'list2 `d'1_date_`s'_m `d'1_date_`s'_d `d'1_date_`s'_y `d'2_date_`s'_m `d'2_date_`s'_d `d'2_date_`s'_y `d'3_date_`s'_m `d'3_date_`s'_d `d'3_date_`s'_y

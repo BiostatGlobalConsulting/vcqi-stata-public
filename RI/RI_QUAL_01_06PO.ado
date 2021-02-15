@@ -1,4 +1,4 @@
-*! RI_QUAL_01_06PO version 1.12 - Biostat Global Consulting - 2020-12-16
+*! RI_QUAL_01_06PO version 1.14 - Biostat Global Consulting - 2021-02-14
 *******************************************************************************
 * Change log
 * 				Updated
@@ -23,6 +23,8 @@
 * 2019-10-13	1.11	Dale Rhoda		Supress double-inchworms if user requests bars
 * 2020-12-16	1.12	Cait Clary		Allow double inchworms when showbars=1 then 
 * 										reset IWPLOT_SHOWBARS global
+* 2021-02-11	1.13	Dale Rhoda		Cleaner code for double inchworms or bar charts
+* 2021-02-14	1.14	Dale Rhoda		Make opplot filename fit 8 element pattern
 *******************************************************************************
 
 program define RI_QUAL_01_06PO
@@ -67,22 +69,26 @@ program define RI_QUAL_01_06PO
 
 				graph drop _all
 				
+				local filestub RI_QUAL_01_${ANALYSIS_COUNTER}_opplot_sawcard_`opp_stratum_id_`i''_`opp_stratum_name_`i''
+				
 				local savegph
 				if $SAVE_VCQI_GPH_FILES ///
-					local savegph   saving("Plots_OP/RI_QUAL_01_${ANALYSIS_COUNTER}_opplot_`opp_stratum_id_`i''_`opp_stratum_name_`i''", replace)
+					local savegph   saving("Plots_OP/`filestub'", replace)
 
 				local savedata
 				if $VCQI_SAVE_OP_PLOT_DATA ///
-					local savedata savedata(Plots_OP/RI_QUAL_01_${ANALYSIS_COUNTER}_opplot_`opp_stratum_id_`i''_`opp_stratum_name_`i'')			
+					local savedata savedata(Plots_OP/`filestub')			
 				
 				opplot had_card_or_register , clustvar(clusterid) plotn  weightvar(psweight) ///
 					   stratvar(stratumid) stratum(`=int(`opp_stratum_id_`i'')') ///
 					   title("`opp_stratum_id_`i'' - `opp_stratum_name_`i''") ///
 					   subtitle(`quote'"`subtitle'"`quote') ///
 					   barcolor1(vcqi_level3) barcolor2(gs15) `savegph' `savedata' ///
-					   export(Plots_OP/RI_QUAL_01_${ANALYSIS_COUNTER}_opplot_`opp_stratum_id_`i''_`opp_stratum_name_`i''.png)
+					   export(Plots_OP/`filestub'.png)
 				
-				vcqi_log_comment $VCP 3 Comment "Graphic file: RI_QUAL_01_${ANALYSIS_COUNTER}_`opp_stratum_id_`i''_`opp_stratum_name_`i''.png was created and saved."
+				vcqi_log_comment $VCP 3 Comment "Graphic file: `filestub'.png was created and saved."
+
+				graph drop _all
 
 			}
 		}
@@ -111,7 +117,7 @@ program define RI_QUAL_01_06PO
 			
 			if ($RI_RECORDS_SOUGHT_FOR_ALL == 1 | $RI_RECORDS_SOUGHT_IF_NO_CARD == 1 ) local ppd = `ppd' * 2
 			
-			noi di as text _col(5) "Inchworm plots for card availability (`ppd' plots)"		
+			noi di as text _col(5) "${IWPLOT_TYPE}s (`ppd' plots)"		
 			
 			capture mkdir Plots_IW_UW
 
@@ -122,16 +128,13 @@ program define RI_QUAL_01_06PO
 				datafile(${VCQI_OUTPUT_FOLDER}/RI_QUAL_01_${ANALYSIS_COUNTER}) ///
 				title(RI - Card Availability) name(RI_QUAL_01_${ANALYSIS_COUNTER}_iwplot)
 				
-			vcqi_log_comment $VCP 3 Comment "Inchworm plot was created and exported."
+			vcqi_log_comment $VCP 3 Comment "$IWPLOT_TYPE was created and exported."
 		}
 	
 
 		if "$VCQI_MAKE_IW_PLOTS" == "1" & ($RI_RECORDS_SOUGHT_FOR_ALL == 1 | $RI_RECORDS_SOUGHT_IF_NO_CARD == 1 ) {
 		
 			* Double inchworm plot that shows card availability in gray and card plus register in color
-
-			* Temporarily set IWPLOT_SHOWBARS to 0 so that the double inchworm plot is generated
-			vcqi_global IWPLOT_SHOWBARS 0
 
 			graph drop _all
 
@@ -144,11 +147,8 @@ program define RI_QUAL_01_06PO
 				datafile2(${VCQI_OUTPUT_FOLDER}/RI_QUAL_01_${ANALYSIS_COUNTER}) ///
 				caption(Gray hollow shape is card availability; colored shape is card plus register availability, size(vsmall) span) 				
 
-			vcqi_log_comment $VCP 3 Comment "Card & Register Availability double inchworm plot was created and exported."
+			vcqi_log_comment $VCP 3 Comment "Card & Register Availability double ${IWPLOT_TYPE} was created and exported."
 
-			* Revert IWPLOT_SHOWBARS back to the user's selection
-			vcqi_global IWPLOT_SHOWBARS $IWPLOT_SHOWBARS_SAVEOPT
-			
 		}
 	}
 	

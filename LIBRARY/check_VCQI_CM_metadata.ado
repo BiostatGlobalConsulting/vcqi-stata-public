@@ -1,4 +1,4 @@
-*! check_VCQI_CM_metadata version 1.01 - Biostat Global Consulting - 2020-12-16
+*! check_VCQI_CM_metadata version 1.02 - Biostat Global Consulting - 2021-02-14
 *******************************************************************************
 * Change log
 * 				Updated
@@ -9,7 +9,8 @@
 * 2020-12-16	1.01	MK Trimner		Added code to generate province_id and urban_cluster
 *										as missing if not provided in CM dataset
 *										replaced *! (NAME) with correct program name check_VCQI_CM_metadata
-*
+* 2021-02-14	1.02	Dale Rhoda		Confirm that each value of HH01 points
+*                                       to a single value of province_id
 *******************************************************************************
 
 program define check_VCQI_CM_metadata
@@ -34,7 +35,7 @@ program define check_VCQI_CM_metadata
 				capture confirm file "${VCQI_DATA_FOLDER}/${VCQI_CM_DATASET}.dta"
 				if _rc==0 {
 					use "${VCQI_DATA_FOLDER}/${VCQI_CM_DATASET}", clear
-
+					
 					* Determine which psweight is required
 					if "${VCQI_RI_DATASET}" != "" | "${VCQI_TT_DATASET}" != ""  {
 						local psw psweight_1year
@@ -88,6 +89,18 @@ program define check_VCQI_CM_metadata
 								local exitflag 1
 							}
 						}
+					}
+					
+					* Confirm that every row with the same value of HH01 has the same value of province_id
+					preserve
+					keep HH01 province_id
+					duplicates drop
+					bysort HH01: gen N = _N
+					count if N > 1
+					if r(N) > 0 {
+						di as error "The CM dataset has a problem.  At least one value of HH01 has more than one value of province_id.  Edit the CM dataset so that each value of HH01 is associated with a single value of province_id."
+						vcqi_log_comment $VCP 1 Error "The CM dataset has a problem.  At least one value of HH01 has more than one value of province_id.  Edit the CM dataset so that each value of HH01 is associated with a single value of province_id."
+						local exitflag 1
 					}
 				}
 				else {

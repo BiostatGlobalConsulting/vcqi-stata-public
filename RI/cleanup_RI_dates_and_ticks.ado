@@ -1,4 +1,4 @@
-*! cleanup_RI_dates_and_ticks version 1.16 - Biostat Global Consulting - 2021-01-16
+*! cleanup_RI_dates_and_ticks version 1.17 - Biostat Global Consulting - 2021-02-07
 *******************************************************************************
 * Change log
 * 				Updated
@@ -47,6 +47,7 @@
 * 										as these will be checked upstream and Interview date is now required
 * 2021-01-19	1.17	MKTrimner		Changed code that uses RI dataset in 2 spots to use "preclean" dataset from OUTPUT 
 *										if VCQI_RI_DATASET changed during check_RI_analysis_metadata	
+* 2021-02-07	1.18	MK Trimner		Clarified comment for multi doses when out of order that they could also be the same date.
 *******************************************************************************
 
 * This program accomplishes several things:
@@ -533,7 +534,7 @@ program define cleanup_RI_dates_and_ticks
 					
 					count if `d'12_`s'_ooo == 1
 					if r(N) > 0 vcqi_log_comment $VCP 4 Data ///
-					"The `s' date for dose 2 of `d' occurred before dose 1 in `=scalar(r(N))' instances. Both dates were set to missing and tick set to yes."
+					"The `s' date for dose 2 of `d' is either the same as dose 1 or occurred before dose 1 in `=scalar(r(N))' instances. Both dates were set to missing and tick set to yes."
 					
 					* If 1 and 2 were out of order, knock out the dates and
 					* mark the ticks
@@ -553,15 +554,15 @@ program define cleanup_RI_dates_and_ticks
 					
 					count if `d'12_`s'_ooo == 1
 					if r(N) > 0 vcqi_log_comment $VCP 4 Data ///
-					"The `s' date for dose 2 of `d' occurred before dose 1 in `=scalar(r(N))' instances. Both dates were set to missing and tick set to yes."
+					"The `s' date for dose 2 of `d' is either the same as dose 1 or occurred before dose 1 in `=scalar(r(N))' instances. Both dates were set to missing and tick set to yes."
 					
 					count if `d'23_`s'_ooo == 1
 					if r(N) > 0 vcqi_log_comment $VCP 4 Data ///
-					"The `s' date for dose 3 of `d' occurred before dose 2 in `=scalar(r(N))' instances. Both dates were set to missing and tick set to yes."
+					"The `s' date for dose 3 of `d'is either the same as dose 2 or occurred before dose 2 in `=scalar(r(N))' instances. Both dates were set to missing and tick set to yes."
 
 					count if `d'13_`s'_ooo == 1
 					if r(N) > 0 vcqi_log_comment $VCP 4 Data ///
-					"The `s' date for dose 3 of `d' occurred before dose 1 in `=scalar(r(N))' instances. All 3 dates were set to missing and tick set to yes."
+					"The `s' date for dose 3 of `d' is either the same as dose 1 or occurred before dose 1 in `=scalar(r(N))' instances. All 3 dates were set to missing and tick set to yes."
 
 					* If 1 and 2 were out of order, knock out the dates and
 					* mark the ticks

@@ -1,4 +1,4 @@
-*! vcqi_to_iwplot version 1.21 - Biostat Global Consulting - 2021-01-13
+*! vcqi_to_iwplot version 1.22 - Biostat Global Consulting - 2021-02-01
 *******************************************************************************
 * Change log
 * 				Updated
@@ -37,6 +37,7 @@
 * 2020-12-09	1.19	Dale Rhoda		Allow the user to plot strata in table order
 * 2020-12-12	1.20	Dale Rhoda		Allow the user to SHOW_LEVEL_4_ALONE
 * 2021-01-13	1.21	Dale Rhoda		Adjust note syntax to handle CITEXT 3 and 4
+* 2021-02-02	1.22	Dale Rhoda		Put brplot in filename if user requests bar charts
 *******************************************************************************
 
 program define vcqi_to_iwplot
@@ -61,6 +62,10 @@ program define vcqi_to_iwplot
 		
 		vcqi_halt_immediately
 	}
+
+	* If user reqeusted bar charts instead of inchworms, substitute the string brplot for iwplot
+	* in the name(s) of the .gph and .png files
+	if "$IWPLOT_SHOWBARS" == "1" local name `=subinstr("`name'","iwplot","brplot",.)'
 
 	use "`database'", clear
 	
@@ -275,7 +280,7 @@ program define vcqi_to_iwplot
 			inchworm_plotit, filetag(`filetag'_l2_`l2l') show1(`show1') show2(`show2') show3(`show3') ///
 					show4(`show4') `pass_thru_options' name(`name'_l2_`l2l'_`l2name_`l2l'')
 				
-			vcqi_log_comment $VCP 3 Comment "Inchworm plot was created and exported."
+			vcqi_log_comment $VCP 3 Comment "${IWPLOT_TYPE} was created and exported."
 		
 			graph drop _all
 		}
